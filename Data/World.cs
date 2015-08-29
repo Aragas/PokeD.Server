@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading.Tasks;
 
 using PokeD.Core.Interfaces;
 
@@ -16,14 +18,34 @@ namespace PokeD.Server.Data
 
         public World()
         {
-            Season = Season.Winter;
-            Weather = Weather.Blizzard;
+            Season = Season.Spring;
+            Weather = Weather.Sunny;
             DoDayCycle = true;
         }
 
+        public static int WorldProcessorThreadTime { get; set; }
+
         public void Update()
         {
+            var watch = Stopwatch.StartNew();
+            while (true)
+            {
+                {
+                }
 
+                if (watch.ElapsedMilliseconds < 1000)
+                {
+                    var time = (int) (1000 - watch.ElapsedMilliseconds);
+                    if (time < 0)
+                        time = 0;
+
+                    WorldProcessorThreadTime = (int) watch.ElapsedMilliseconds;
+                    Task.Delay(time).Wait();
+                }
+
+                watch.Reset();
+                watch.Start();
+            }
         }
 
         public List<string> GetWorld()

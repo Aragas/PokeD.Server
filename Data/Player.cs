@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
 using PokeD.Core.IO;
 using PokeD.Core.Packets;
+using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
 using PokeD.Core.Packets.Client;
 using PokeD.Core.Packets.Shared;
@@ -90,7 +92,10 @@ namespace PokeD.Server.Data
             }
             */
 
-            ///*
+            //*
+            if(!Client.Connected)
+                _server.RemovePlayer(this);
+
             if (Client.Connected && Client.DataAvailable > 0)
             {
                 var data = Stream.ReadLine();
@@ -108,7 +113,7 @@ namespace PokeD.Server.Data
             {
                 var str = reader.ReadLine();
 
-                if (string.IsNullOrEmpty(str))
+                if (string.IsNullOrEmpty(str) || !IPacket.DataIsValid(str))
                     return;
 
                 var packet = Response.Packets[IPacket.ParseID(str)]();
@@ -126,6 +131,8 @@ namespace PokeD.Server.Data
                 //    DumpPacketReceived(packet, data);
             }
         }
+
+
 
         private void HandlePacket(IPacket packet)
         {
@@ -176,35 +183,35 @@ namespace PokeD.Server.Data
                     break;
 
                 case PacketTypes.BattleRequest:
-                    //HandleBattleRequest(Data, Client);
+                    HandleBattleRequest((BattleRequestPacket) packet);
                     break;
 
                 case PacketTypes.BattleJoin:
-                    //HandleBattleJoin(Data, Client);
+                    HandleBattleJoin((BattleJoinPacket) packet);
                     break;
 
                 case PacketTypes.BattleQuit:
-                    //HandleBattleQuit(Data, Client);
+                    HandleBattleQuit((BattleQuitPacket) packet);
                     break;
 
                 case PacketTypes.BattleOffer:
-                    //HandleBattleOffer(Data, Client);
+                    HandleBattleOffer((BattleOfferPacket) packet);
                     break;
 
                 case PacketTypes.BattleStart:
-                    //HandleBattleStart(Data, Client);
+                    HandleBattleStart((BattleStartPacket) packet);
                     break;
 
                 case PacketTypes.BattleClientData:
-                    //HandleBattleClientData(Data, Client);
+                    HandleBattleClientData((BattleClientDataPacket) packet);
                     break;
 
                 case PacketTypes.BattleHostData:
-                    //HandleBattleHostData(Data, Client);
+                    HandleBattleHostData((BattleHostDataPacket) packet);
                     break;
 
                 case PacketTypes.BattlePokemonData:
-                    //HandleBattlePokemonData(Data, Client);
+                    HandleBattlePokemonData((BattlePokemonDataPacket) packet);
                     break;
 
                 case PacketTypes.ServerDataRequest:
@@ -226,18 +233,32 @@ namespace PokeD.Server.Data
             }
         }
 
-        public void SendPacketCustom(IPacket packet, int origin = -1)
+        public void SendPacketCustom(IPacket packet, int originID = -1)
         {
             if (Stream.Connected)
             {
                 packet.ProtocolVersion = _server.ProtocolVersion;
-                packet.Origin = origin;
+                packet.Origin = originID;
                 _sended.Add(packet);
                 Stream.SendPacket(ref packet);
             }
         }
 
+        public void SendGameDataToOtherPlayers(Player[] players)
+        {
+            foreach (var player in players)
+            {
+                if (player.ID != ID)
+                {
+                    var data = GeneratePlayerData();
+                    if (Positions.Count > 0)
+                        Position += Positions.Dequeue();
+                    data[6] = Position.ToPokeString();
 
+                    player.SendPacketCustom(new GameDataPacket {DataItems = new DataItems(data)}, ID);
+                }
+            }
+        }
 
 
         public List<string> GeneratePlayerData()

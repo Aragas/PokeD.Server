@@ -1,4 +1,7 @@
-﻿using PokeD.Core.Data;
+﻿using System;
+using System.Collections.Generic;
+
+using PokeD.Core.Data;
 using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
 using PokeD.Core.Packets.Client;
@@ -12,41 +15,46 @@ namespace PokeD.Server.Data
     {
         private void HandleGameData(GameDataPacket packet)
         {
-            /*
-            GameMode = packet.GameMode;
-            IsGameJoltPlayer = packet.IsGameJoltPlayer;
-            GameJoltId = packet.GameJoltId;
-            DecimalSeparator = packet.DecimalSeparator;
-            Name = packet.Name;
-            LevelFile = packet.LevelFile;
-            Position = packet.Position;
-            Facing = packet.Facing;
-            Moving = packet.Moving;
-            Skin = packet.Skin;
-            BusyType = packet.BusyType;
-            //Basic.ServersManager.UpdatePlayerList();
-            PokemonVisible = packet.PokemonVisible;
-            PokemonPosition = packet.PokemonPosition;
-            PokemonSkin = packet.PokemonSkin;
-            PokemonFacing = packet.PokemonFacing;
-            */
-
-            ParseGameData(packet);
+            if (IsFullPackageData(packet.DataItems.ToList()))
+                ParseGameData(packet);
 
             if (!Initialized)
             {
                 ID = _server.GenerateID();
-                SendPacketCustom(new IDPacket { DataItems = new DataItems(ID.ToString()) });
-                SendPacketCustom(new WorldDataPacket { DataItems = new DataItems(_server.World.GetWorld().ToArray()) });
+                SendPacketCustom(new IDPacket {DataItems = new DataItems(ID.ToString())});
+                SendPacketCustom(new WorldDataPacket {DataItems = new DataItems(_server.World.GetWorld().ToArray())});
 
                 _server.AddPlayer(this);
                 Initialized = true;
             }
         }
 
+        private static bool IsFullPackageData(List<string> dataItems)
+        {
+              if (string.Equals(dataItems[0], "1", StringComparison.OrdinalIgnoreCase))
+                foreach (string str in dataItems)
+                    if (string.IsNullOrEmpty(str) | string.IsNullOrWhiteSpace(str))
+                        return false;
+            else
+            {
+                var num = 0;
+                do
+                {
+                    if ((string.IsNullOrEmpty(dataItems[num]) | string.IsNullOrWhiteSpace(dataItems[num])) & (num != 2))
+                        return false;
+                    
+                    num++;
+                }
+                while (num <= 14);
+            }
+            return true;
+        }
+
+
+
         private void ParseGameData(GameDataPacket packet)
         {
-            string[] strArray = packet.DataItems.ToList().ToArray();
+            string[] strArray = packet.DataItems.ToArray();
             int index = 0;
             do
             {
@@ -80,7 +88,13 @@ namespace PokeD.Server.Data
                             break;
 
                         case 6:
-                            Position = packet.Position;
+                            if (packet.Position != new Vector3(float.MaxValue))
+                            {
+                                if (Position != packet.Position)
+                                    DoMoving(Position, packet.Position);
+                                
+                                Position = packet.Position;
+                            }
                             break;
 
                         case 7:
@@ -105,7 +119,8 @@ namespace PokeD.Server.Data
                             break;
 
                         case 12:
-                            PokemonPosition = packet.PokemonPosition;
+                            if (packet.PokemonPosition != new Vector3(float.MaxValue))
+                                PokemonPosition = packet.PokemonPosition;
                             break;
 
                         case 13:
@@ -122,9 +137,33 @@ namespace PokeD.Server.Data
             while (index <= 14);
         }
 
+
+        private Queue<Vector3> Positions = new Queue<Vector3>();
+        private void DoMoving(Vector3 lastPos, Vector3 newPos)
+        {
+            int steps = 10;
+            if (Positions.Count == 0)
+            {
+                int step = 1 / steps;
+                var direction = newPos - lastPos;
+
+                if (direction.X != 0)
+                    for (int i = 0; i < steps; i++)
+                        Positions.Enqueue(direction.X > 0 ? new Vector3(step, 0f, 0f) : new Vector3( -step, 0f, 0f));
+                
+                else if(direction.Y != 0)
+                    for (int i = 0; i < steps; i++)
+                        Positions.Enqueue(direction.X > 0 ? new Vector3(0f, step, 0f) : new Vector3(0f, -step, 0f));
+
+                else if(direction.Z != 0)
+                    for (int i = 0; i < steps; i++)
+                        Positions.Enqueue(direction.X > 0 ? new Vector3(0f, 0f, step) : new Vector3(0f, 0f, -step));
+            }
+        }
+
         private void HandleChatMessage(ChatMessagePacket packet)
         {
-            if (!_server.PlayerIsMuted(this))
+            if (!_server.PlayerIsMuted(ID))
             {
                 if (packet.Message.StartsWith("/"))
                     _server.ExecuteClientCommand(packet.Message);
@@ -137,7 +176,7 @@ namespace PokeD.Server.Data
 
         private void HandlePrivateMessage(ChatMessagePrivatePacket packet)
         {
-            if (!_server.PlayerIsMuted(this))
+            if (!_server.PlayerIsMuted(ID))
             {
                 var destinationPlayerID = _server.PlayerID(packet.DestinationPlayerName);
                 if (destinationPlayerID != -1)
