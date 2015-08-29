@@ -20,7 +20,7 @@ namespace PokeD.Server.Data
 
             if (!Initialized)
             {
-                ID = _server.GenerateID();
+                ID = _server.GeneratePlayerID();
                 SendPacketCustom(new IDPacket {DataItems = new DataItems(ID.ToString())});
                 SendPacketCustom(new WorldDataPacket {DataItems = new DataItems(_server.World.GetWorld().ToArray())});
 
