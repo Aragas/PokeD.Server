@@ -79,7 +79,10 @@ namespace PokeD.Server.Data
 
         public void Update()
         {
-            /*
+            if (!Client.Connected)
+                _server.RemovePlayer(this);
+
+            ///*
             if ((CurrentTask == null || CurrentTask.IsCompleted) && (Client.Connected && Client.DataAvailable > 0))
             {
                 CurrentTask = Task.Factory.StartNew(() =>
@@ -90,12 +93,9 @@ namespace PokeD.Server.Data
                     HandleData(Encoding.UTF8.GetBytes(data));
                 });
             }
-            */
+            //*/
 
-            //*
-            if(!Client.Connected)
-                _server.RemovePlayer(this);
-
+            /*
             if (Client.Connected && Client.DataAvailable > 0)
             {
                 var data = Stream.ReadLine();
@@ -103,7 +103,7 @@ namespace PokeD.Server.Data
                 LastMessage = DateTime.UtcNow;
                 HandleData(Encoding.UTF8.GetBytes(data));
             }
-            //*/
+            */
         }
 
 
@@ -118,7 +118,7 @@ namespace PokeD.Server.Data
 
                 var packet = Response.Packets[IPacket.ParseID(str)]();
                 packet.ParseData(str);
-                InputWrapper.ConsoleWrite(((PacketTypes) packet.ID).ToString());
+
                 _received.Add(packet);
 
 
@@ -222,29 +222,18 @@ namespace PokeD.Server.Data
         }
 
         
-        public void SendPacket(IPacket packet)
+        public void SendPacket(IPacket packet, int originID)
         {
             if (Stream.Connected)
             {
                 packet.ProtocolVersion = _server.ProtocolVersion;
-                packet.Origin = ID;
+                packet.Origin = originID == int.MinValue ? ID : originID;
                 _sended.Add(packet);
                 Stream.SendPacket(ref packet);
             }
         }
 
-        public void SendPacketCustom(IPacket packet, int originID = -1)
-        {
-            if (Stream.Connected)
-            {
-                packet.ProtocolVersion = _server.ProtocolVersion;
-                packet.Origin = originID;
-                _sended.Add(packet);
-                Stream.SendPacket(ref packet);
-            }
-        }
-
-        public void SendGameDataToOtherPlayers(Player[] players)
+        public void SendGameDataPlayers(Player[] players)
         {
             foreach (var player in players)
             {
@@ -252,10 +241,15 @@ namespace PokeD.Server.Data
                 {
                     var data = GeneratePlayerData();
                     if (Positions.Count > 0)
+                    {
                         Position += Positions.Dequeue();
-                    data[6] = Position.ToPokeString();
+                        //PokemonPosition += Positions.Dequeue();
+                    }
 
-                    player.SendPacketCustom(new GameDataPacket {DataItems = new DataItems(data)}, ID);
+                    data[6] = Position.ToPokeString();
+                    //data[12] = PokemonPosition.ToPokeString();
+
+                    player.SendPacket(new GameDataPacket {DataItems = new DataItems(data)}, ID);
                 }
             }
         }

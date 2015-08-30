@@ -1,9 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 
+using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
+using PokeD.Core.Packets.Server;
 
 namespace PokeD.Server.Data
 {
@@ -16,8 +17,12 @@ namespace PokeD.Server.Data
         public Season Season { get; set; }
         public Weather Weather { get; set; }
 
-        public World()
+        private readonly Server _server;
+
+        public World(Server server)
         {
+            _server = server;
+
             Season = Season.Spring;
             Weather = Weather.Sunny;
             DoDayCycle = true;
@@ -30,8 +35,7 @@ namespace PokeD.Server.Data
             var watch = Stopwatch.StartNew();
             while (true)
             {
-                {
-                }
+                _server.SendToAllPlayers(new WorldDataPacket { DataItems = GetWorld() });
 
                 if (watch.ElapsedMilliseconds < 1000)
                 {
@@ -48,11 +52,11 @@ namespace PokeD.Server.Data
             }
         }
 
-        public List<string> GetWorld()
+        public DataItems GetWorld()
         {
             if (DoDayCycle)
             {
-                DateTime now = DateTime.Now;
+                var now = DateTime.Now;
                 if (TimeOffset != 0)
                     CurrentTime = now.AddSeconds(TimeOffset).Hour + "," + now.AddSeconds(TimeOffset).Minute + "," + now.AddSeconds(TimeOffset).Second;
                 else
@@ -61,7 +65,7 @@ namespace PokeD.Server.Data
             else
                 CurrentTime = "12,0,0";
             
-            return new List<string> { ((int)Season).ToString(), ((int)Weather).ToString(), CurrentTime };
+            return new DataItems(new [] { ((int)Season).ToString(), ((int)Weather).ToString(), CurrentTime });
         }
 
 

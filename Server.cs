@@ -17,30 +17,34 @@ namespace PokeD.Server
 {
     public class Server : IUpdatable, IDisposable
     {
-        public ushort Port { get; set; }
+        public ushort Port { get; private set; }
 
         public float ProtocolVersion { get { return 0.5f; } }
         public string ServerName { get { return "PokeD Server"; } }
         public string ServerMessage { get { return "Testin' shit"; } }
         public int MaxPlayers { get { return 1000; } }
 
-        public INetworkTCPServer Listener { get; set; }
+
+        public World World { get; private set; }
 
 
-        public List<Player> PlayersJoining { get; set; }
-        public List<Player> Players { get; set; }
-        public List<Player> PlayersToUpdate { get; set; }
-        public List<Player> PlayersToAdd { get; set; }
-        public List<Player> PlayersToRemove { get; set; }
+        INetworkTCPServer Listener { get; set; }
 
-        private List<NearPlayers> NearPlayersList { get; set; }
+
+        List<Player> PlayersJoining { get; set; }
+        List<Player> Players { get; set; }
+        List<Player> PlayersToUpdate { get; set; }
+        List<Player> PlayersToAdd { get; set; }
+        List<Player> PlayersToRemove { get; set; }
+        public int PlayersCount { get { return Players.Count; } }
+
+        List<NearPlayers> NearPlayersList { get;  set; }
 
         ConcurrentQueue<PlayerPacket> PacketsToPlayer { get; set; }
         ConcurrentQueue<OriginPacket> PacketsToAllPlayers { get; set; }
 
-        private int FreePlayerID { get; set; }
+        int FreePlayerID { get; set; }
 
-        public World World { get; set; }
         
         public Server(ushort port = 15124)
         {
@@ -55,7 +59,7 @@ namespace PokeD.Server
             PacketsToPlayer = new ConcurrentQueue<PlayerPacket>();
             PacketsToAllPlayers = new ConcurrentQueue<OriginPacket>();
 
-            World = new World();
+            World = new World(this);
 
             NearPlayersList = new List<NearPlayers>(); 
 
@@ -74,7 +78,7 @@ namespace PokeD.Server
 
 
 
-        public static int ClientListnerThreadTime { get; set; }
+        public static int ClientListnerThreadTime { get; private set; }
         private void ListenToClientsCycle()
         {
             Listener = NetworkTCPServerWrapper.NewInstance(Port);
@@ -101,7 +105,7 @@ namespace PokeD.Server
         }
         
 
-        public static int PlayerWatcherThreadTime { get; set; }
+        public static int PlayerWatcherThreadTime { get; private set; }
         private void PlayerWatcher()
         {
             var watch = Stopwatch.StartNew();
@@ -150,10 +154,11 @@ namespace PokeD.Server
             {
                 if (player != online)
                 {
-                    player.SendPacketCustom(new CreatePlayerPacket { DataItems = new DataItems(online.ID.ToString()) });
-                    player.SendPacketCustom(new GameDataPacket { DataItems = new DataItems(online.GeneratePlayerData()) }, online.ID);
+                    player.SendPacket(new CreatePlayerPacket { DataItems = new DataItems(online.ID.ToString()) }, -1);
+                    player.SendPacket(new GameDataPacket { DataItems = new DataItems(online.GeneratePlayerData()) }, online.ID);
                 }
             }
+            player.SendPacket(new CreatePlayerPacket { DataItems = new DataItems(player.ID.ToString()) }, -1);
 
 
             SendToAllPlayers(new CreatePlayerPacket { DataItems = new DataItems(player.ID.ToString()) });
@@ -166,12 +171,30 @@ namespace PokeD.Server
         public void RemovePlayer(Player player)
         {
             PlayersToRemove.Add(player);
+
+            if (player.ID != 0)
+            {
+                SendToAllPlayers(new DestroyPlayerPacket { DataItems = new DataItems(player.ID.ToString()) });
+
+                SendToAllPlayers(new ChatMessagePacket { DataItems = new DataItems(string.Format("Player {0} disconnected!", player.Name)) });
+            }
         }
 
 
+        public void SendToPlayer(int destinationID, IPacket packet, int originID)
+        {
+            SendToPlayer(GetPlayer(destinationID), packet, originID);
+        }
+
+        public void SendToPlayer(Player player, IPacket packet, int originID)
+        {
+            if (player != null)
+                PacketsToPlayer.Enqueue(new PlayerPacket(player, ref packet, originID));
+        }
+
         public void SendToAllPlayers(IPacket packet, int originID = -1)
         {
-            PacketsToAllPlayers.Enqueue(new OriginPacket(originID, ref packet));
+            PacketsToAllPlayers.Enqueue(new OriginPacket(ref packet, originID));
         }
 
 
@@ -225,12 +248,12 @@ namespace PokeD.Server
 
             PlayerPacket playerPacket;
             while (PacketsToPlayer.TryDequeue(out playerPacket))
-                playerPacket.Player.SendPacket(playerPacket.Packet);
+                playerPacket.Player.SendPacket(playerPacket.Packet, playerPacket.OriginID);
 
             OriginPacket originPacket;
             while (PacketsToAllPlayers.TryDequeue(out originPacket))
                 foreach (var player in Players)
-                    player.SendPacketCustom(originPacket.Packet, originPacket.Origin);
+                    player.SendPacket(originPacket.Packet, originPacket.OriginID);
 
             #endregion Packet Sending
 
@@ -243,7 +266,8 @@ namespace PokeD.Server
                 var players = NearPlayersList[i];
                 if (players.Players != null)
                     for (int index = 0; index < players.Players.Length; index++)
-                        players.Players[index].SendGameDataToOtherPlayers(players.Players);
+                        if(players.Players[index].IsMoving)
+                            players.Players[index].SendGameDataPlayers(players.Players);
             }
 
             #endregion Moving Correction
@@ -330,36 +354,30 @@ namespace PokeD.Server
             return null;
         }
 
-        public void SendToPlayer(int destinationID, IPacket packet, int originID = -1)
-        {
-            var player = GetPlayer(destinationID);
-            
-            if(player != null)
-                player.SendPacketCustom(packet, originID);
-        }
-
 
         private struct PlayerPacket
         {
             public Player Player;
             public IPacket Packet;
+            public int OriginID;
 
-            public PlayerPacket(Player player, ref IPacket packet)
+            public PlayerPacket(Player player, ref IPacket packet, int originID = -1)
             {
                 Player = player;
                 Packet = packet;
+                OriginID = originID;
             }
         }
 
         private struct OriginPacket
         {
-            public int Origin;
             public IPacket Packet;
+            public int OriginID;
 
-            public OriginPacket(int origin, ref IPacket packet)
+            public OriginPacket(ref IPacket packet, int origin)
             {
-                Origin = origin;
                 Packet = packet;
+                OriginID = origin;
             }
         }
 

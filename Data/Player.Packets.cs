@@ -21,8 +21,8 @@ namespace PokeD.Server.Data
             if (!Initialized)
             {
                 ID = _server.GeneratePlayerID();
-                SendPacketCustom(new IDPacket {DataItems = new DataItems(ID.ToString())});
-                SendPacketCustom(new WorldDataPacket {DataItems = new DataItems(_server.World.GetWorld().ToArray())});
+                SendPacket(new IDPacket {DataItems = new DataItems(ID.ToString())}, -1);
+                SendPacket(new WorldDataPacket {DataItems = new DataItems(_server.World.GetWorld().ToArray())}, -1);
 
                 _server.AddPlayer(this);
                 Initialized = true;
@@ -138,11 +138,12 @@ namespace PokeD.Server.Data
         }
 
 
+        public bool IsMoving { get { return Positions.Count > 0; } }
         private Queue<Vector3> Positions = new Queue<Vector3>();
         private void DoMoving(Vector3 lastPos, Vector3 newPos)
         {
-            int steps = 10;
-            if (Positions.Count == 0)
+            int steps = 60;
+            if (!IsMoving)
             {
                 int step = 1 / steps;
                 var direction = newPos - lastPos;
@@ -171,7 +172,7 @@ namespace PokeD.Server.Data
                     _server.SendToAllPlayers(packet, packet.Origin);
             }
             else
-                SendPacketCustom(new ChatMessagePacket { DataItems = new DataItems("You are muted on this server!") });
+                SendPacket(new ChatMessagePacket { DataItems = new DataItems("You are muted on this server!") }, -1);
         }
 
         private void HandlePrivateMessage(ChatMessagePrivatePacket packet)
@@ -185,10 +186,10 @@ namespace PokeD.Server.Data
                     _server.SendToPlayer(packet.Origin, new ChatMessagePrivatePacket { DataItems = packet.DataItems }, packet.Origin);
                 }
                 else
-                    _server.SendToPlayer(packet.Origin, new ChatMessagePacket { DataItems = new DataItems(string.Format("The player with the name \"{0}\" doesn't exist.", packet.DestinationPlayerName)) });
+                    _server.SendToPlayer(packet.Origin, new ChatMessagePacket { DataItems = new DataItems(string.Format("The player with the name \"{0}\" doesn't exist.", packet.DestinationPlayerName)) }, -1);
             }
             else
-                _server.SendToPlayer(packet.Origin, new ChatMessagePacket { DataItems = new DataItems("You are muted on this server!") });
+                _server.SendToPlayer(packet.Origin, new ChatMessagePacket { DataItems = new DataItems("You are muted on this server!") }, -1);
         }
 
         private void HandleGameStateMessage(GameStateMessagePacket packet)
@@ -271,11 +272,11 @@ namespace PokeD.Server.Data
         {
             SendPacket(new ServerInfoDataPacket
             {
-                CurrentPlayers = _server.Players.Count,
+                CurrentPlayers = _server.PlayersCount,
                 MaxPlayers = _server.MaxPlayers,
                 ServerName = _server.ServerName,
                 ServerMessage = _server.ServerMessage
-            });
+            }, ID);
 
             _server.RemovePlayer(this);
         }
