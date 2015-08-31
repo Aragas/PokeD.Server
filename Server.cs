@@ -432,11 +432,6 @@ namespace PokeD.Server
         }
 
 
-        public void ExecuteServerCommand(string command)
-        {
-
-        }
-
         public void SendServerMessageToAll(string message)
         {
             for (int i = 0; i < Players.Count; i++)
@@ -501,6 +496,133 @@ namespace PokeD.Server
         public void RemoveRemoteClient(RemoteClient remoteClient)
         {
             RemoteClients.Remove(remoteClient);
+        }
+
+        public void ExecuteCommand(string message)
+        {
+            var command = message.Remove(0, 1).ToLower();
+            message = message.Remove(0, 1);
+
+            if (message.StartsWith("say "))
+                SendGlobalChatMessageToAll(message.Remove(0, 5));
+
+            else if (message.StartsWith("message "))
+                SendGlobalChatMessageToAll(message.Remove(0, 9));
+
+            else if (command.StartsWith("help server"))    // help from program
+                ExecuteHelpCommand(message.Remove(0, 11));
+
+            else if (command.StartsWith("help"))           // internal help from remote
+                ExecuteHelpCommand(message.Remove(0, 4));
+
+            else if (command.StartsWith("world "))
+                ExecuteWorldCommand(command.Remove(0, 6));
+
+            else
+                InputWrapper.ConsoleWrite("Invalid command!");
+        }
+
+        private void ExecuteWorldCommand(string command)
+        {
+            if (command.StartsWith("set "))
+            {
+                command = command.Remove(0, 4);
+
+                #region Weather
+                if (command.StartsWith("weather "))
+                {
+                    command = command.Remove(0, 8);
+
+                    Weather weather;
+                    if (Enum.TryParse(command, true, out weather))
+                    {
+                        World.Weather = weather;
+                        InputWrapper.ConsoleWrite(string.Format("Set Weather to {0}!", weather));
+                    }
+                    else
+                        InputWrapper.ConsoleWrite("Weather not found!");
+                }
+                #endregion Weather
+
+                #region Season
+                else if (command.StartsWith("season "))
+                {
+                    command = command.Remove(0, 7);
+
+                    Season season;
+                    if (Enum.TryParse(command, true, out season))
+                    {
+                        World.Season = season;
+                        InputWrapper.ConsoleWrite(string.Format("Set Season to {0}!", season));
+                    }
+                    else
+                        InputWrapper.ConsoleWrite("Season not found!");
+                }
+                #endregion Season
+
+                #region Time
+                else if (command.StartsWith("time "))
+                {
+                    command = command.Remove(0, 5);
+
+                    TimeSpan time;
+                    if (TimeSpan.TryParseExact(command, "hh\\:mm\\:ss", null, out time))
+                    {
+                        World.CurrentTime = time;
+                        World.UseRealTime = false;
+                        InputWrapper.ConsoleWrite(string.Format("Set time to {0}!", time));
+                        InputWrapper.ConsoleWrite("Disabled Real Time!");
+                    }
+                    else
+                        InputWrapper.ConsoleWrite("Invalid time!");
+                }
+                #endregion Time
+
+                #region DayCycle
+                else if (command.StartsWith("daycycle "))
+                {
+                    command = command.Remove(0, 9);
+
+                    World.DoDayCycle = command.StartsWith("true");
+                    InputWrapper.ConsoleWrite(string.Format("Set Day Cycle to {0}!", World.DoDayCycle));
+                }
+                #endregion DayCycle
+
+                #region Realtime
+                else if (command.StartsWith("realtime "))
+                {
+                    command = command.Remove(0, 9);
+
+                    World.UseRealTime = command.StartsWith("true");
+                    World.DoDayCycle = true;
+                    InputWrapper.ConsoleWrite(string.Format("Set Real Time to {0}!", World.UseRealTime));
+                    InputWrapper.ConsoleWrite("Enabled Day Cycle!");
+                }
+                #endregion Realtime
+
+                #region Location
+                else if (command.StartsWith("location "))
+                {
+                    command = command.Remove(0, 9);
+
+                    World.Location = command;
+                    World.UseLocation = true;
+                    InputWrapper.ConsoleWrite(string.Format("Set Location to {0}!", World.Location));
+                    InputWrapper.ConsoleWrite("Enabled Location!");
+                }
+                #endregion Location
+
+                else
+                    InputWrapper.ConsoleWrite("Invalid command!");
+            }
+
+            else
+                InputWrapper.ConsoleWrite("Invalid command!");
+        }
+
+        private static void ExecuteHelpCommand(string command)
+        {
+
         }
 
 
