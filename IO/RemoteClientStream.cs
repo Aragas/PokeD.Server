@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.IO;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
-
+using ICSharpCode.SharpZipLib.Zip.Compression;
+using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
 using PokeD.Core.IO;
@@ -14,35 +15,30 @@ using PokeD.Server.Exceptions;
 
 namespace PokeD.Server.IO
 {
-    public sealed class PlayerStream : IPokeStream
+    public sealed class RemoteClientStream : IPokeStream
     {
+        #region Properties
+
         public bool Connected { get { return _tcp != null && _tcp.Connected; } }
         public int DataAvailable { get { return _tcp != null ? _tcp.DataAvailable : 0; } }
 
-        public bool EncryptionEnabled { get { return false; } }
-        public uint CompressionThreshold { get { return 0; } }
 
+        public bool EncryptionEnabled { get; private set; }
 
+        public bool CompressionEnabled { get { return CompressionThreshold > 0; } }
+        public uint CompressionThreshold { get; private set; }
+
+        #endregion
 
         private readonly INetworkTCPClient _tcp;
 
+        private IAesStream _aesStream;
         private byte[] _buffer;
         private Encoding _encoding = Encoding.UTF8;
 
-        public PlayerStream(INetworkTCPClient tcp)
+        public RemoteClientStream(INetworkTCPClient tcp)
         {
             _tcp = tcp;
-        }
-
-
-        public void InitializeEncryption(byte[] key)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetCompression(uint threshold)
-        {
-            throw new NotImplementedException();
         }
 
 
@@ -50,7 +46,6 @@ namespace PokeD.Server.IO
         {
             _tcp.Connect(ip, port);
         }
-
         public void Disconnect()
         {
             _tcp.Disconnect();
@@ -64,6 +59,19 @@ namespace PokeD.Server.IO
         public bool DisconnectAsync()
         {
             return _tcp.DisconnectAsync();
+        }
+
+
+        public void InitializeEncryption(byte[] key)
+        {
+            _aesStream = new BouncyCastleAES(_tcp, key);
+
+            EncryptionEnabled = true;
+        }
+
+        public void SetCompression(uint threshold)
+        {
+            CompressionThreshold = threshold;
         }
 
 
@@ -92,17 +100,17 @@ namespace PokeD.Server.IO
         // BUG: Is broken?
         public static byte[] GetVarIntBytes(int _value)
         {
-            uint value = (uint) _value;
+            uint value = (uint)_value;
 
             var bytes = new List<byte>();
             while (true)
             {
                 if ((value & 0xFFFFFF80u) == 0)
                 {
-                    bytes.Add((byte) value);
+                    bytes.Add((byte)value);
                     break;
                 }
-                bytes.Add((byte) (value & 0x7F | 0x80));
+                bytes.Add((byte)(value & 0x7F | 0x80));
                 value >>= 7;
             }
 
@@ -120,7 +128,7 @@ namespace PokeD.Server.IO
 
         public void WriteSByte(sbyte value)
         {
-            WriteByte(unchecked((byte) value));
+            WriteByte(unchecked((byte)value));
         }
 
         public void WriteByte(byte value)
@@ -135,7 +143,7 @@ namespace PokeD.Server.IO
                 _buffer = tempBuff;
             }
             else
-                _buffer = new byte[] {value};
+                _buffer = new byte[] { value };
         }
 
         // -- Short & UShort
@@ -171,10 +179,10 @@ namespace PokeD.Server.IO
         {
             WriteByteArray(new[]
             {
-                (byte) ((value & 0xFF000000) >> 24),
-                (byte) ((value & 0xFF0000) >> 16),
-                (byte) ((value & 0xFF00) >> 8),
-                (byte) (value & 0xFF)
+                (byte)((value & 0xFF000000) >> 24),
+                (byte)((value & 0xFF0000) >> 16),
+                (byte)((value & 0xFF00) >> 8),
+                (byte)(value & 0xFF)
             });
         }
 
@@ -192,14 +200,14 @@ namespace PokeD.Server.IO
         {
             WriteByteArray(new[]
             {
-                (byte) ((value & 0xFF00000000000000) >> 56),
-                (byte) ((value & 0xFF000000000000) >> 48),
-                (byte) ((value & 0xFF0000000000) >> 40),
-                (byte) ((value & 0xFF00000000) >> 32),
-                (byte) ((value & 0xFF000000) >> 24),
-                (byte) ((value & 0xFF0000) >> 16),
-                (byte) ((value & 0xFF00) >> 8),
-                (byte) (value & 0xFF)
+                (byte)((value & 0xFF00000000000000) >> 56),
+                (byte)((value & 0xFF000000000000) >> 48),
+                (byte)((value & 0xFF0000000000) >> 40),
+                (byte)((value & 0xFF00000000) >> 32),
+                (byte)((value & 0xFF000000) >> 24),
+                (byte)((value & 0xFF0000) >> 16),
+                (byte)((value & 0xFF00) >> 8),
+                (byte)(value & 0xFF)
             });
         }
 
@@ -301,13 +309,6 @@ namespace PokeD.Server.IO
             return buffer[0];
         }
 
-        public char ReadChar()
-        {
-            return _encoding.GetChars(new []{ ReadByte() })[0];
-            //return BitConverter.ToChar(new[] { ReadByte(), ReadByte() }, 0);
-            //return Convert.ToChar(ReadByte());
-        }
-
         public VarInt ReadVarInt1()
         {
             var result = 0;
@@ -316,10 +317,10 @@ namespace PokeD.Server.IO
             while (true)
             {
                 var current = ReadByte();
-                result |= (current & 0x7F) << length++*7;
+                result |= (current & 0x7F) << length++ * 7;
 
                 if (length > 6)
-                    throw new ServerException("Reading error: VarInt too long.");
+                    throw new ServerException("Remote Client Stream reading error: VarInt too long.");
 
                 if ((current & 0x80) != 0x80)
                     break;
@@ -336,15 +337,15 @@ namespace PokeD.Server.IO
             while (true)
             {
                 var current = ReadByte();
-                result |= (current & 0x7Fu) << length++*7;
+                result |= (current & 0x7Fu) << length++ * 7;
 
                 if (length > 5)
-                    throw new ServerException("Reading error: VarInt may not be longer than 28 bits.");
+                    throw new ServerException("Remote Client Stream reading error: VarInt may not be longer than 28 bits.");
 
                 if ((current & 0x80) != 128)
                     break;
             }
-            return (int) result;
+            return (int)result;
         }
 
         public byte[] ReadByteArray(int value)
@@ -363,7 +364,7 @@ namespace PokeD.Server.IO
 
         public string ReadLine()
         {
-            return _tcp.ReadLine();
+            throw new NotImplementedException();
         }
 
         // -- Read methods
@@ -371,74 +372,133 @@ namespace PokeD.Server.IO
 
         private void Send(byte[] buffer, int offset, int count)
         {
-            _tcp.Send(buffer, offset, count);
+            if (EncryptionEnabled)
+                _aesStream.Write(buffer, offset, count);
+            else
+                _tcp.Send(buffer, offset, count);
         }
 
         private int Receive(byte[] buffer, int offset, int count)
         {
-            return _tcp.Receive(buffer, offset, count);
+            if (EncryptionEnabled)
+                return _aesStream.Read(buffer, offset, count);
+            else
+                return _tcp.Receive(buffer, offset, count);
         }
 
         public void SendPacket(ref IPacket packet)
         {
-            var str = CreateData(ref packet);
-            _tcp.WriteLine(str);
+            WriteVarInt(packet.ID);
+            packet.WritePacket(this);
+            Purge(false);
         }
+
 
         public Task SendAsync(byte[] buffer, int offset, int count)
         {
-            return _tcp.SendAsync(buffer, offset, count);
+            if (EncryptionEnabled)
+                return _aesStream.WriteAsync(buffer, offset, count);
+            else
+                return _tcp.SendAsync(buffer, offset, count);
         }
 
         public Task<int> ReadAsync(byte[] buffer, int offset, int count)
         {
-            return _tcp.ReceiveAsync(buffer, offset, count);
+            if (EncryptionEnabled)
+                return _aesStream.ReadAsync(buffer, offset, count);
+            else
+                return _tcp.ReceiveAsync(buffer, offset, count);
         }
 
         public async Task SendPacketAsync(IPacket packet)
         {
-            //var str = CreateData(ref packet);
-            //
-            //await _tcp.WriteLineAsync(str);
+            WriteVarInt(packet.ID);
+            packet.WritePacket(this);
+            Purge(true);
         }
 
-        private static string CreateData(ref IPacket packet)
+
+        #region Purge
+
+        private void Purge(bool async = false)
         {
-            var dataItems = packet.DataItems.ToList();
+            if (CompressionEnabled)
+                PurgeModernWithCompression(async);
+            else
+                PurgeModernWithoutCompression(async);
+        }
 
-            var stringBuilder = new StringBuilder();
+        private void PurgeModernWithoutCompression(bool async = false)
+        {
+            var lenBytes = GetVarIntBytes(_buffer.Length);
 
-            stringBuilder.Append(packet.ProtocolVersion.ToString(CultureInfo.InvariantCulture));
-            stringBuilder.Append("|");
-            stringBuilder.Append(packet.ID.ToString());
-            stringBuilder.Append("|");
-            stringBuilder.Append(packet.Origin.ToString());
-            stringBuilder.Append("|");
-            stringBuilder.Append(dataItems.Count.ToString());
-            stringBuilder.Append("|0|");
+            var tempBuff = new byte[_buffer.Length + lenBytes.Length];
 
-            var num = 0;
-            for (int i = 0; i < dataItems.Count - 1; i++)
+            Buffer.BlockCopy(lenBytes, 0, tempBuff, 0, lenBytes.Length);
+            Buffer.BlockCopy(_buffer, 0, tempBuff, lenBytes.Length, _buffer.Length);
+
+            if (async)
+                SendAsync(tempBuff, 0, tempBuff.Length);
+            else
+                Send(tempBuff, 0, tempBuff.Length);
+
+            _buffer = null;
+        }
+
+        private void PurgeModernWithCompression(bool async = false)
+        {
+            int packetLength = 0; // -- data.Length + GetVarIntBytes(data.Length).Length
+            int dataLength = 0; // -- UncompressedData.Length
+            var data = _buffer;
+
+            packetLength = _buffer.Length + GetVarIntBytes(_buffer.Length).Length; // -- Get first Packet length
+
+            if (packetLength >= CompressionThreshold) // -- if Packet length > threshold, compress
             {
-                num += dataItems[i].Length;
-                stringBuilder.Append(num);
-                stringBuilder.Append("|");
+                using (var outputStream = new MemoryStream())
+                using (var inputStream = new DeflaterOutputStream(outputStream, new Deflater(0)))
+                {
+                    inputStream.Write(_buffer, 0, _buffer.Length);
+                    inputStream.Finish();
+
+                    data = outputStream.ToArray();
+                }
+
+                dataLength = data.Length;
+                packetLength = dataLength + GetVarIntBytes(data.Length).Length; // -- Calculate new packet length
             }
 
-            foreach (var dataItem in dataItems)
-                stringBuilder.Append(dataItem);
-            
-            return stringBuilder.ToString();
+
+            var packetLengthByteLength = GetVarIntBytes(packetLength);
+            var dataLengthByteLength = GetVarIntBytes(dataLength);
+
+            var tempBuff = new byte[data.Length + packetLengthByteLength.Length + dataLengthByteLength.Length];
+
+            Buffer.BlockCopy(packetLengthByteLength, 0, tempBuff, 0, packetLengthByteLength.Length);
+            Buffer.BlockCopy(dataLengthByteLength, 0, tempBuff, packetLengthByteLength.Length, dataLengthByteLength.Length);
+            Buffer.BlockCopy(data, 0, tempBuff, packetLengthByteLength.Length + dataLengthByteLength.Length, data.Length);
+
+            if (async)
+                SendAsync(tempBuff, 0, tempBuff.Length);
+            else
+                Send(tempBuff, 0, tempBuff.Length);
+
+            _buffer = null;
         }
 
+        #endregion
 
         public void Dispose()
         {
+            // Do not dispose it.
             if (_tcp != null)
             {
                 _tcp.DisconnectAsync();
                 _tcp.Dispose();
             }
+
+            if (_aesStream != null)
+                _aesStream.Dispose();
 
             _buffer = null;
         }

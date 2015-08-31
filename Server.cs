@@ -8,7 +8,6 @@ using Newtonsoft.Json;
 
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
-using PokeD.Core.IO;
 using PokeD.Core.Packets.Chat;
 using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
@@ -16,37 +15,9 @@ using PokeD.Core.Wrappers;
 
 using PokeD.Server.Data;
 using PokeD.Server.Extensions;
-using PokeD.Server.IO;
 
 namespace PokeD.Server
 {
-    public class RemoteClient : IUpdatable, IDisposable
-    {
-        IPokeStream Stream { get; set; }
-
-        readonly Server _server;
-
-        public RemoteClient(INetworkTcpClient client, Server server)
-        {
-            Stream = new PlayerStream(client);
-            _server = server;
-        }
-
-        public void Update()
-        {
-
-        }
-
-        public void Dispose()
-        {
-            if (Stream != null)
-                Stream.Dispose();
-
-
-            _server.RemoveRemoteClient(this);
-        }
-    }
-
     public enum MuteStatus
     {
         Completed,
