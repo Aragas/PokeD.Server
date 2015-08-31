@@ -100,6 +100,8 @@ namespace PokeD.Server
 
             MutedPlayers = new Dictionary<int, List<int>>();
 
+            RemoteClients = new List<RemoteClient>();
+
             FreePlayerID = 10;
         }
 

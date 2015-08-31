@@ -33,24 +33,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <Choose>
-    <When Condition="Exists('..\PokeD.Core')">
-      <ItemGroup>
-        <ProjectReference Include="..\PokeD.Core\PokeD.Core.csproj">
-          <Project>{1CF84E56-3BBE-4A3A-9234-5951BF2558C3}</Project>
-          <Name>PokeD.Core</Name>
-        </ProjectReference>
-      </ItemGroup>
-    </When>
-    <When Condition="!Exists('..\PokeD.Core')">
-      <ItemGroup>
-        <ProjectReference Include="PokeD.Core\PokeD.Core.csproj">
-          <Project>{1CF84E56-3BBE-4A3A-9234-5951BF2558C3}</Project>
-          <Name>PokeD.Core</Name>
-        </ProjectReference>
-      </ItemGroup>
-    </When>
-  </Choose>
   <ItemGroup>
     <Compile Include="PKCS1Signature.cs" />
     <Compile Include="Data\Player.Settings.cs" />
@@ -113,6 +95,24 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <Choose>
+    <When Condition="Exists('..\PokeD.Core')">
+      <ItemGroup>
+        <ProjectReference Include="..\PokeD.Core\PokeD.Core.csproj">
+          <Project>{1CF84E56-3BBE-4A3A-9234-5951BF2558C3}</Project>
+          <Name>PokeD.Core</Name>
+        </ProjectReference>
+      </ItemGroup>
+    </When>
+    <When Condition="!Exists('..\PokeD.Core')">
+      <ItemGroup>
+        <ProjectReference Include="PokeD.Core\PokeD.Core.csproj">
+          <Project>{1CF84E56-3BBE-4A3A-9234-5951BF2558C3}</Project>
+          <Name>PokeD.Core</Name>
+        </ProjectReference>
+      </ItemGroup>
+    </When>
+  </Choose>
   <ItemGroup>
     <ProjectReference Include="OpenWeatherMap\OpenWeatherMap.csproj">
       <Project>{88ce0793-0612-44ba-81f1-0ce7a248b66f}</Project>

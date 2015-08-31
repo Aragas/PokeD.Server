@@ -9,17 +9,17 @@ using PokeD.Server.Exceptions;
 
 namespace PokeD.Server.IO
 {
-    public sealed class PlayerDataReader : IPokeDataReader
+    public sealed class DataReader : IPokeDataReader
     {
         private readonly Stream _stream;
         private readonly Encoding _encoding = Encoding.UTF8;
 
-        public PlayerDataReader(Stream stream)
+        public DataReader(Stream stream)
         {
             _stream = stream;
         }
 
-        public PlayerDataReader(byte[] data)
+        public DataReader(byte[] data)
         {
             _stream = new MemoryStream(data);
         }

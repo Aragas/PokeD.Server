@@ -1,6 +1,5 @@
 using System;
-using System.IO;
-using System.Threading;
+
 using PokeD.Core.Interfaces;
 using PokeD.Core.IO;
 using PokeD.Core.Packets;
@@ -26,23 +25,25 @@ namespace PokeD.Server.Data
 
         public void Update()
         {
-            int packetId = 0;
-            byte[] data = null;
-
-
-            if (!CompressionEnabled)
+            if (Stream.Connected && Stream.DataAvailable > 0)
             {
-                var packetLength = Stream.ReadVarInt();
-                if (packetLength == 0)
-                    throw new ServerException("Remote Client reading error: Packet Length size is 0");
+                int packetId = 0;
+                byte[] data = null;
 
-                packetId = Stream.ReadVarInt();
 
-                data = Stream.ReadByteArray(packetLength - 1);
+                if (!CompressionEnabled)
+                {
+                    var packetLength = Stream.ReadVarInt();
+                    if (packetLength == 0)
+                        throw new ServerException("Remote Client reading error: Packet Length size is 0");
+
+                    packetId = Stream.ReadVarInt();
+
+                    data = Stream.ReadByteArray(packetLength - 1);
+                }
+
+                HandlePacket(packetId, data);
             }
-
-            HandlePacket(packetId, data);
-
         }
 
         /// <summary>
@@ -52,7 +53,7 @@ namespace PokeD.Server.Data
         /// <param name="data">Packet byte[] data</param>
         private void HandlePacket(int id, byte[] data)
         {
-            using (var reader = new PlayerDataReader(data))
+            using (var reader = new DataReader(data))
             {
                 var packet = default(IPacket);
 
