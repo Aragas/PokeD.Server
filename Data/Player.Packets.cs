@@ -15,12 +15,13 @@ namespace PokeD.Server.Data
 {
     public partial class Player
     {
-        [JsonIgnore] public bool IsMoving { get { return Positions.Count > 0; } }
-        [JsonIgnore] private Queue<Vector3> Positions = new Queue<Vector3>();
+        [JsonIgnore] public bool IsMoving { get { return Positions.Count > 0 && MovindUpdateRate > 0; } }
+        [JsonIgnore] Queue<Vector3> Positions = new Queue<Vector3>();
 
+        int MovindUpdateRate { get; set; }
         private void DoMoving(Vector3 lastPos, Vector3 newPos)
         {
-            int steps = 60;
+            int steps = MovindUpdateRate;
             if (!IsMoving)
             {
                 int step = 1 / steps;

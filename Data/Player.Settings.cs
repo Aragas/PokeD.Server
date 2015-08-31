@@ -31,6 +31,9 @@ namespace PokeD.Server.Data
             else if (command.StartsWith("unmute "))
                 ExecuteUnmuteCommand(message.Remove(0, 7));
 
+            else if (command.StartsWith("move "))
+                ExecuteMoveCommand(message.Remove(0, 5));
+
             else
                 SendCommandResponse("Invalid command!");
         }
@@ -66,7 +69,7 @@ namespace PokeD.Server.Data
                 #region Weather
                 if (command.StartsWith("weather "))
                 {
-                    command = command.Remove(0, 8);
+                    command = command.Remove(0, 8).Trim();
 
                     Weather weather;
                     if (Enum.TryParse(command, true, out weather))
@@ -82,7 +85,7 @@ namespace PokeD.Server.Data
                 #region Season
                 else if (command.StartsWith("season "))
                 {
-                    command = command.Remove(0, 7);
+                    command = command.Remove(0, 7).Trim();
 
                     Season season;
                     if (Enum.TryParse(command, true, out season))
@@ -98,7 +101,7 @@ namespace PokeD.Server.Data
                 #region Time
                 else if (command.StartsWith("time "))
                 {
-                    command = command.Remove(0, 5);
+                    command = command.Remove(0, 5).Trim();
 
                     TimeSpan time;
                     if (TimeSpan.TryParseExact(command, "hh\\:mm\\:ss", null, out time))
@@ -116,7 +119,7 @@ namespace PokeD.Server.Data
                 #region DayCycle
                 else if (command.StartsWith("daycycle "))
                 {
-                    command = command.Remove(0, 9);
+                    command = command.Remove(0, 9).Trim();
 
                     CustomWorld.DoDayCycle = command.StartsWith("true");
                     SendCommandResponse(string.Format("Set Day Cycle to {0}!", CustomWorld.DoDayCycle));
@@ -126,7 +129,7 @@ namespace PokeD.Server.Data
                 #region Realtime
                 else if (command.StartsWith("realtime "))
                 {
-                    command = command.Remove(0, 9);
+                    command = command.Remove(0, 9).Trim();
 
                     CustomWorld.UseRealTime = command.StartsWith("true");
                     CustomWorld.DoDayCycle = true;
@@ -136,9 +139,9 @@ namespace PokeD.Server.Data
                 #endregion Realtime
 
                 #region Location
-                else if (command.StartsWith("location "))
+                else if (command.StartsWith("location ") && false)
                 {
-                    command = command.Remove(0, 9);
+                    command = command.Remove(0, 9).Trim();
 
                     CustomWorld.Location = command;
                     CustomWorld.UseLocation = true;
@@ -190,6 +193,44 @@ namespace PokeD.Server.Data
                     SendCommandResponse(string.Format("Player {0} not found.", name));
                     break;
             }
+        }
+
+        private void ExecuteMoveCommand(string command)
+        {
+            if (command.StartsWith("set "))
+            {
+                command = command.Remove(0, 4);
+
+                if (command.StartsWith("updaterate "))
+                {
+                    command = command.Remove(0, 11).Trim();
+
+                    int updateRate;
+                    if (command.StartsWith("normal"))
+                    {
+                        MovindUpdateRate = 60;
+                        SendCommandResponse("Set moving correction updaterate to Normal!");
+                    }
+                    else if (command.StartsWith("fast"))
+                    {
+                        MovindUpdateRate = 30;
+                        SendCommandResponse("Set moving correction updaterate to Fast!");
+                    }
+                    else if (int.TryParse(command, out updateRate) && updateRate >= 0 && updateRate < 100)
+                    {
+                        MovindUpdateRate = updateRate;
+                        SendCommandResponse(string.Format("Set moving correction updaterate to {0}!", updateRate));
+                    }
+                    else
+                        SendCommandResponse("Number invalid!");
+                }
+
+                else
+                    SendCommandResponse("Invalid command!");
+            }
+
+            else
+                SendCommandResponse("Invalid command!"); 
         }
 
         private void SendCommandResponse(string message)

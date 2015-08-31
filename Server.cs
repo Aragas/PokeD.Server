@@ -37,7 +37,7 @@ namespace PokeD.Server
         public float ProtocolVersion { get { return 0.5f; } }
 
         [JsonProperty("ServerName")]
-        public string ServerName { get { return "PokeD Server"; } }
+        public string ServerName { get; set; }
 
         [JsonProperty("ServerMessage")]
         public string ServerMessage { get; set; }
@@ -50,6 +50,7 @@ namespace PokeD.Server
         public ushort RemotePort { get; private set; }
 
         public World World { get; private set; }
+        public bool CustomWorldDisabled { get; private set; }
 
 
         INetworkTCPServer PlayerListener { get; set; }
@@ -79,6 +80,8 @@ namespace PokeD.Server
         #endregion Player Stuff
         
         List<RemoteClient> RemoteClients { get; set; }
+
+        bool IsDisposing { get; set; }
 
         public Server(ushort port = 15124, ushort remotePort = 15050)
         {
@@ -194,7 +197,7 @@ namespace PokeD.Server
                     NearPlayersList[i] = nearPlayers;
                 }
 
-                if (watch.ElapsedMilliseconds < 4000)
+                if (watch.ElapsedMilliseconds < 400)
                 {
                     PlayerWatcherThreadTime = watch.ElapsedMilliseconds;
                     Task.Delay((int)(400 - watch.ElapsedMilliseconds)).Wait();
@@ -361,11 +364,11 @@ namespace PokeD.Server
             #region Packet Sending
 
             PlayerPacket playerPacket;
-            while (PacketsToPlayer.TryDequeue(out playerPacket))
+            while (!IsDisposing && PacketsToPlayer.TryDequeue(out playerPacket))
                 playerPacket.Player.SendPacket(playerPacket.Packet, playerPacket.OriginID);
 
             OriginPacket originPacket;
-            while (PacketsToAllPlayers.TryDequeue(out originPacket))
+            while (!IsDisposing && PacketsToAllPlayers.TryDequeue(out originPacket))
                 foreach (var player in Players)
                     player.SendPacket(originPacket.Packet, originPacket.OriginID);
 
@@ -500,14 +503,13 @@ namespace PokeD.Server
 
         public void ExecuteCommand(string message)
         {
-            var command = message.Remove(0, 1).ToLower();
-            message = message.Remove(0, 1);
+            var command = message.ToLower();
 
             if (message.StartsWith("say "))
-                SendGlobalChatMessageToAll(message.Remove(0, 5));
+                SendGlobalChatMessageToAll(message.Remove(0, 4));
 
             else if (message.StartsWith("message "))
-                SendGlobalChatMessageToAll(message.Remove(0, 9));
+                SendServerMessageToAll(message.Remove(0, 8));
 
             else if (command.StartsWith("help server"))    // help from program
                 ExecuteHelpCommand(message.Remove(0, 11));
@@ -524,7 +526,19 @@ namespace PokeD.Server
 
         private void ExecuteWorldCommand(string command)
         {
-            if (command.StartsWith("set "))
+            if (command.StartsWith("enable") || command.StartsWith("enable custom"))
+            {
+                CustomWorldDisabled = true;
+                InputWrapper.ConsoleWrite("Enabled Custom World!");
+            }
+
+            else if (command.StartsWith("disable") || command.StartsWith("disable custom"))
+            {
+                CustomWorldDisabled = false;
+                InputWrapper.ConsoleWrite("Disabled Custom World!");
+            }
+
+            else if(command.StartsWith("set "))
             {
                 command = command.Remove(0, 4);
 
@@ -628,6 +642,8 @@ namespace PokeD.Server
 
         public void Dispose()
         {
+            IsDisposing = true;
+
             for (int i = 0; i < PlayersJoining.Count; i++)
                 PlayersJoining[i].Dispose();
 

@@ -66,11 +66,13 @@ namespace PokeD.Server.Data
                         CurrentTimeString = DateTime.Now.Hour + "," + DateTime.Now.Minute + "," + DateTime.Now.Second;
                 
                 #region Location
-                if (UseLocation)
+                if (UseLocation && false)
                     if (CurrentWeatherResponse != null || (CurrentWeatherResponse != null && DateTime.Now.Subtract(CurrentWeatherResponse.LastUpdate.Value) > new TimeSpan(0, 20, 0)) || LocationChanged)
                     {
                         var client = new OpenWeatherMapClient();
+
                         CurrentWeatherResponse = client.CurrentWeather.GetByName(Location).Result;
+
 
                         var weather = CurrentWeatherResponse.Weather.Number;
                         if (Enumerable.Range(200, 32).Contains(weather))
@@ -101,9 +103,10 @@ namespace PokeD.Server.Data
                         else if (CurrentWeatherResponse.Temperature.Value < 18)
                             Season = Season.Summer;
 
+
                         LocationChanged = false;
                     }
-                
+
                 #endregion Location
 
             }

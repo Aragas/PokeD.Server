@@ -93,6 +93,8 @@ namespace PokeD.Server.Data
             Stream = new PlayerStream(client);
             _server = server;
 
+            MovindUpdateRate = 60;
+
             CancellationTokenSource = new CancellationTokenSource();
         }
 
@@ -129,7 +131,7 @@ namespace PokeD.Server.Data
             if (UpdateWatch.ElapsedMilliseconds < 1000)
                 return;
 
-            if (UseCustomWorld)
+            if (!_server.CustomWorldDisabled && UseCustomWorld)
             {
                 CustomWorld.Update();
                 SendPacket(new WorldDataPacket { DataItems = CustomWorld.GenerateDataItems() }, -1);
