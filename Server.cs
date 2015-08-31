@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
+using PokeD.Core.IO;
 using PokeD.Core.Packets.Chat;
 using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
@@ -15,9 +16,37 @@ using PokeD.Core.Wrappers;
 
 using PokeD.Server.Data;
 using PokeD.Server.Extensions;
+using PokeD.Server.IO;
 
 namespace PokeD.Server
 {
+    public class RemoteClient : IUpdatable, IDisposable
+    {
+        IPokeStream Stream { get; set; }
+
+        readonly Server _server;
+
+        public RemoteClient(INetworkTcpClient client, Server server)
+        {
+            Stream = new PlayerStream(client);
+            _server = server;
+        }
+
+        public void Update()
+        {
+
+        }
+
+        public void Dispose()
+        {
+            if (Stream != null)
+                Stream.Dispose();
+
+
+            _server.RemoveRemoteClient(this);
+        }
+    }
+
     public enum MuteStatus
     {
         Completed,
@@ -46,10 +75,14 @@ namespace PokeD.Server
         public int MaxPlayers { get; set; }
 
 
+        [JsonProperty("RemotePort")]
+        public ushort RemotePort { get; private set; }
+
         public World World { get; private set; }
 
 
-        INetworkTCPServer Listener { get; set; }
+        INetworkTCPServer PlayerListener { get; set; }
+        INetworkTCPServer RemoteListener { get; set; }
 
 
         #region Player Stuff
@@ -74,10 +107,12 @@ namespace PokeD.Server
 
         #endregion Player Stuff
         
+        List<RemoteClient> RemoteClients { get; set; }
 
-        public Server(ushort port = 15124)
+        public Server(ushort port = 15124, ushort remotePort = 15050)
         {
             Port = port;
+            RemotePort = remotePort;
 
             Players = new List<Player>();
             PlayersJoining = new List<Player>();
@@ -100,7 +135,7 @@ namespace PokeD.Server
 
         public void Start()
         {
-            ThreadWrapper.StartThread(ListenToClientsCycle,     true, "ClientListnerThread");
+            ThreadWrapper.StartThread(ListenToConnectionsCycle, true, "ListenToConnectionsThread");
             ThreadWrapper.StartThread(PlayerWatcherCycle,       true, "PlayerWatcherThread");
             ThreadWrapper.StartThread(PlayerCorrectionCycle,    true, "PlayerCorrectionThread");
         }
@@ -124,25 +159,28 @@ namespace PokeD.Server
         }
 
 
-        public static int ClientListnerThreadTime { get; private set; }
-        private void ListenToClientsCycle()
+        public static long ClientConnectionsThreadTime { get; private set; }
+        private void ListenToConnectionsCycle()
         {
-            Listener = NetworkTCPServerWrapper.NewInstance(Port);
-            Listener.Start();
+            PlayerListener = NetworkTCPServerWrapper.NewInstance(Port);
+            PlayerListener.Start();
+
+            RemoteListener = NetworkTCPServerWrapper.NewInstance(RemotePort);
+            RemoteListener.Start();
 
             var watch = Stopwatch.StartNew();
             while (true)
             {
-                PlayersJoining.Add(new Player(Listener.AcceptNetworkTCPClient(), this));
+                if(PlayerListener.AvailableClients)
+                    PlayersJoining.Add(new Player(PlayerListener.AcceptNetworkTCPClient(), this));
+
+                if (RemoteListener.AvailableClients)
+                    RemoteClients.Add(new RemoteClient(RemoteListener.AcceptNetworkTCPClient(), this));
 
                 if (watch.ElapsedMilliseconds < 250)
                 {
-                    var time = (int) (250 - watch.ElapsedMilliseconds);
-                    if (time < 0)
-                        time = 0;
-
-                    ClientListnerThreadTime = (int) watch.ElapsedMilliseconds;
-                    Task.Delay(time).Wait();
+                    ClientConnectionsThreadTime = watch.ElapsedMilliseconds;
+                    Task.Delay((int)(250 - watch.ElapsedMilliseconds)).Wait();
                 }
 
                 watch.Reset();
@@ -151,7 +189,7 @@ namespace PokeD.Server
         }
         
 
-        public static int PlayerWatcherThreadTime { get; private set; }
+        public static long PlayerWatcherThreadTime { get; private set; }
         private void PlayerWatcherCycle()
         {
             var watch = Stopwatch.StartNew();
@@ -164,12 +202,12 @@ namespace PokeD.Server
                         NearPlayersList.Add(new NearPlayers(player.LevelFile, null));
                 
 
-                for (int i = 0; i < NearPlayersList.Count; i++)
+                for (var i = 0; i < NearPlayersList.Count; i++)
                 {
                     var nearPlayers = NearPlayersList[i];
 
                     var playerList = new List<Player>();
-                    foreach (Player player in players)
+                    foreach (var player in players)
                         if (nearPlayers.LevelName == player.LevelFile)
                             playerList.Add(player);
                     nearPlayers.Players = playerList.ToArray();
@@ -179,12 +217,8 @@ namespace PokeD.Server
 
                 if (watch.ElapsedMilliseconds < 4000)
                 {
-                    var time = (int)(400 - watch.ElapsedMilliseconds);
-                    if (time < 0)
-                        time = 0;
-
-                    PlayerWatcherThreadTime = (int)watch.ElapsedMilliseconds;
-                    Task.Delay(time).Wait();
+                    PlayerWatcherThreadTime = watch.ElapsedMilliseconds;
+                    Task.Delay((int)(400 - watch.ElapsedMilliseconds)).Wait();
                 }
                 watch.Reset();
                 watch.Start();
@@ -192,7 +226,7 @@ namespace PokeD.Server
 
         }
 
-        public static int PlayerCorrectionThreadTime { get; private set; }
+        public static long PlayerCorrectionThreadTime { get; private set; }
         private void PlayerCorrectionCycle()
         {
             var watch = Stopwatch.StartNew();
@@ -202,7 +236,7 @@ namespace PokeD.Server
                 {
                     var players = NearPlayersList[i];
                     if (players.Players != null)
-                        for (int index = 0; index < players.Players.Length; index++)
+                        for (var index = 0; index < players.Players.Length; index++)
                             if (players.Players[index].IsMoving)
                                 players.Players[index].SendGameDataPlayers(players.Players);
                 }
@@ -210,12 +244,8 @@ namespace PokeD.Server
 
                 if (watch.ElapsedMilliseconds < 16)
                 {
-                    var time = (int)(16 - watch.ElapsedMilliseconds);
-                    if (time < 0)
-                        time = 0;
-
-                    PlayerCorrectionThreadTime = (int)watch.ElapsedMilliseconds;
-                    Task.Delay(time).Wait();
+                    PlayerCorrectionThreadTime = watch.ElapsedMilliseconds;
+                    Task.Delay((int)(16 - watch.ElapsedMilliseconds)).Wait();
                 }
                 watch.Reset();
                 watch.Start();
@@ -299,6 +329,11 @@ namespace PokeD.Server
         Stopwatch UpdateWatch = Stopwatch.StartNew();
         public void Update()
         {
+
+            for (int i = 0; i < RemoteClients.Count; i++)
+                RemoteClients[i].Update();
+            
+
 
             #region Player Filtration
 
@@ -434,7 +469,7 @@ namespace PokeD.Server
         }
 
 
-
+        
         /// <summary>
         /// Get Player ID by name.
         /// </summary>
@@ -479,6 +514,12 @@ namespace PokeD.Server
             }
 
             return -1;
+        }
+
+
+        public void RemoveRemoteClient(RemoteClient remoteClient)
+        {
+            RemoteClients.Remove(remoteClient);
         }
 
 
