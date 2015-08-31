@@ -2,3 +2,7 @@
 	path = PokeD.Core
 	url = https://github.com/PokeD/PokeD.Core
 	branch = master
+[submodule "OpenWeatherMap"]
+	path = OpenWeatherMap
+	url = https://github.com/PokeD/OpenWeatherMap-Api-Net.git
+	branch = master

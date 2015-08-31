@@ -1,35 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
 using PokeD.Core.IO;
 using PokeD.Core.Wrappers;
+
 using PokeD.Server.Exceptions;
 
 namespace PokeD.Server.IO
 {
     public sealed class PlayerStream : IPokeStream
     {
-        #region Properties
+        public bool Connected { get { return _tcp != null && _tcp.Connected; } }
+        public int DataAvailable { get { return _tcp != null ? _tcp.DataAvailable : 0; } }
 
-        public bool Connected
-        {
-            get { return _tcp != null && _tcp.Connected; }
-        }
-
-
-        public bool EncryptionEnabled { get; private set; }
-
-        public bool ModernCompressionEnabled { get; private set; }
-        public long ModernCompressionThreshold { get; private set; }
-
-        #endregion
 
         private readonly INetworkTcpClient _tcp;
 

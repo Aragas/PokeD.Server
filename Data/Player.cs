@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+
+using Newtonsoft.Json;
 
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
@@ -12,6 +15,7 @@ using PokeD.Core.Packets;
 using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
 using PokeD.Core.Packets.Client;
+using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
 using PokeD.Core.Wrappers;
@@ -23,67 +27,84 @@ namespace PokeD.Server.Data
     public partial class Player : IUpdatable, IDisposable
     {
 
-        private INetworkTcpClient Client { get; set; }
-        private IPokeStream Stream { get; set; }
+        #region Game Values
 
-        private Task CurrentTask { get; set; } 
-        private TimeSpan TaskTimeLimit { get; set; }
-
-
-        private readonly Server _server;
-
-        // -- Debug -- //
-        readonly List<IPacket> _received = new List<IPacket>();
-        readonly List<IPacket> _sended = new List<IPacket>();
-        // -- Debug -- //
-
-        #region Game values
-
+        [JsonIgnore]
         public int ID { get; set; }
 
-        public string GameMode { get; set; }
-        public bool IsGameJoltPlayer { get; set; }
-        public long GameJoltId { get; set; }
-        public char DecimalSeparator { get; set; }
-        public string Name { get; set; }
-        public string LevelFile { get; set; }
-        public Vector3 Position { get; set; }
-        public int Facing { get; set; }
-        public bool Moving { get; set; }
-        public string Skin { get; set; }
-        public string BusyType { get; set; }
-        public bool PokemonVisible { get; set; }
-        public Vector3 PokemonPosition { get; set; }
-        public string PokemonSkin { get; set; }
-        public int PokemonFacing { get; set; }
-
+        [JsonIgnore]
         public bool Initialized { get; set; }
 
+        [JsonIgnore]
+        public string GameMode { get; set; }
+        [JsonIgnore]
+        public bool IsGameJoltPlayer { get; set; }
+        [JsonIgnore]
+        public long GameJoltId { get; set; }
+        [JsonIgnore]
+        public char DecimalSeparator { get; set; }
+        [JsonIgnore]
+        public string Name { get; set; }
+        [JsonIgnore]
+        public string LevelFile { get; set; }
+        [JsonIgnore]
+        public Vector3 Position { get; set; }
+        [JsonIgnore]
+        public int Facing { get; set; }
+        [JsonIgnore]
+        public bool Moving { get; set; }
+        [JsonIgnore]
+        public string Skin { get; set; }
+        [JsonIgnore]
+        public string BusyType { get; set; }
+        [JsonIgnore]
+        public bool PokemonVisible { get; set; }
+        [JsonIgnore]
+        public Vector3 PokemonPosition { get; set; }
+        [JsonIgnore]
+        public string PokemonSkin { get; set; }
+        [JsonIgnore]
+        public int PokemonFacing { get; set; }
+
+        [JsonIgnore]
         public DateTime LastMessage { get; set; }
+        [JsonIgnore]
         public DateTime LastPing { get; set; }
 
 
-        #endregion Game values
+        #endregion Game Values
+
+        IPokeStream Stream { get; set; }
+
+        CancellationTokenSource CancellationTokenSource { get; set; }
+        Task CurrentTask { get; set; }
+
+
+        readonly Server _server;
+
+        // -- Debug -- //
+        List<IPacket> _received = new List<IPacket>();
+        List<IPacket> _sended = new List<IPacket>();
+        // -- Debug -- //
 
 
         public Player(INetworkTcpClient client, Server server)
         {
-            Client = client;
-            Stream = new PlayerStream(Client);
-
-            TaskTimeLimit = new TimeSpan(0, 0, 0, 0, 500);
-
+            Stream = new PlayerStream(client);
             _server = server;
+
+            CancellationTokenSource = new CancellationTokenSource();
         }
 
 
+        Stopwatch UpdateWatch = Stopwatch.StartNew();
         public void Update()
         {
-            if (!Client.Connected)
+            if (!Stream.Connected)
                 _server.RemovePlayer(this);
 
-            ///*
-            if ((CurrentTask == null || CurrentTask.IsCompleted) && (Client.Connected && Client.DataAvailable > 0))
+            /*
+            if ((CurrentTask == null || CurrentTask.IsCompleted) && (Stream.Connected && Stream.DataAvailable > 0))
             {
                 CurrentTask = Task.Factory.StartNew(() =>
                 {
@@ -91,19 +112,31 @@ namespace PokeD.Server.Data
 
                     LastMessage = DateTime.UtcNow;
                     HandleData(Encoding.UTF8.GetBytes(data));
-                });
+                }, CancellationTokenSource.Token);
             }
-            //*/
+            */
 
-            /*
-            if (Client.Connected && Client.DataAvailable > 0)
+            ///*
+            if (Stream.Connected && Stream.DataAvailable > 0)
             {
                 var data = Stream.ReadLine();
 
                 LastMessage = DateTime.UtcNow;
                 HandleData(Encoding.UTF8.GetBytes(data));
             }
-            */
+            //*/
+
+            if (UpdateWatch.ElapsedMilliseconds < 1000)
+                return;
+
+            if (UseCustomWorld)
+            {
+                CustomWorld.Update();
+                SendPacket(new WorldDataPacket { DataItems = CustomWorld.GenerateDataItems() }, -1);
+            }
+
+            UpdateWatch.Reset();
+            UpdateWatch.Start();
         }
 
 
@@ -123,23 +156,14 @@ namespace PokeD.Server.Data
 
 
                 HandlePacket(packet);
-
-                //if (SavePackets)
-                //    PacketsReceived.Add(packet);
-                //
-                //if (SavePacketsToDisk)
-                //    DumpPacketReceived(packet, data);
             }
         }
-
-
-
+        
         private void HandlePacket(IPacket packet)
         {
             switch ((PacketTypes) packet.ID)
             {
                 case PacketTypes.Unknown:
-                    //ServerClient.QueueMessage("Invalid Data have been received from " + ((IPEndPoint)Client.Client.RemoteEndPoint).Address.ToString(), Main.LogType.Debug, null);
                     break;
 
                 case PacketTypes.GameData:
@@ -217,7 +241,6 @@ namespace PokeD.Server.Data
                 case PacketTypes.ServerDataRequest:
                     HandleServerDataRequest((ServerDataRequestPacket) packet);
                     break;
-
             }
         }
 
@@ -239,7 +262,7 @@ namespace PokeD.Server.Data
             {
                 if (player.ID != ID)
                 {
-                    var data = GeneratePlayerData();
+                    var data = GenerateDataItems();
                     if (Positions.Count > 0)
                     {
                         Position += Positions.Dequeue();
@@ -249,37 +272,45 @@ namespace PokeD.Server.Data
                     data[6] = Position.ToPokeString();
                     //data[12] = PokemonPosition.ToPokeString();
 
-                    player.SendPacket(new GameDataPacket {DataItems = new DataItems(data)}, ID);
+                    player.SendPacket(new GameDataPacket { DataItems = data }, ID);
                 }
             }
         }
 
 
-        public List<string> GeneratePlayerData()
+        public DataItems GenerateDataItems()
         {
-            List<string> list = new List<string>();
-            list.Add(GameMode);
-            list.Add(IsGameJoltPlayer ? "1" : "0");
-            list.Add(GameJoltId.ToString());
-            list.Add(DecimalSeparator.ToString());
-            list.Add(Name);
-            list.Add(LevelFile);
-            list.Add(Position.ToPokeString());
-            list.Add(Facing.ToString());
-            list.Add(Moving ? "1" : "0");
-            list.Add(Skin.ToString());
-            list.Add(BusyType);
-            list.Add(PokemonVisible ? "1" : "0");
-            list.Add(PokemonPosition.ToPokeString());
-            list.Add(PokemonSkin);
-            list.Add(PokemonFacing.ToString());
-            return list;
+            var list = new List<string>
+            {
+                GameMode,
+                IsGameJoltPlayer ? "1" : "0",
+                GameJoltId.ToString(),
+                DecimalSeparator.ToString(),
+                Name,
+                LevelFile,
+                Position.ToPokeString(),
+                Facing.ToString(),
+                Moving ? "1" : "0",
+                Skin,
+                BusyType,
+                PokemonVisible ? "1" : "0",
+                PokemonPosition.ToPokeString(),
+                PokemonSkin,
+                PokemonFacing.ToString()
+            };
+            return new DataItems(list);
         }
 
 
         public void Dispose()
         {
+            if(Stream != null)
+                Stream.Dispose();
 
+            if(CurrentTask != null && !CurrentTask.IsCompleted)
+                CancellationTokenSource.Cancel();
+
+            _server.RemovePlayer(this);
         }
     }
 }
