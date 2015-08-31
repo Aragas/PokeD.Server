@@ -138,8 +138,11 @@ namespace PokeD.Server
             PlayerListener = NetworkTCPServerWrapper.NewInstance(Port);
             PlayerListener.Start();
 
-            RemoteListener = NetworkTCPServerWrapper.NewInstance(RemotePort);
-            RemoteListener.Start();
+            if (RemotePort != 0)
+            {
+                RemoteListener = NetworkTCPServerWrapper.NewInstance(RemotePort);
+                RemoteListener.Start();
+            }
 
             var watch = Stopwatch.StartNew();
             while (true)
@@ -147,8 +150,11 @@ namespace PokeD.Server
                 if(PlayerListener.AvailableClients)
                     PlayersJoining.Add(new Player(PlayerListener.AcceptNetworkTCPClient(), this));
 
-                if (RemoteListener.AvailableClients)
-                    RemoteClients.Add(new RemoteClient(RemoteListener.AcceptNetworkTCPClient(), this));
+                if (RemoteListener != null)
+                {
+                    if (RemoteListener.AvailableClients)
+                        RemoteClients.Add(new RemoteClient(RemoteListener.AcceptNetworkTCPClient(), this));
+                }
 
                 if (watch.ElapsedMilliseconds < 250)
                 {
@@ -302,10 +308,12 @@ namespace PokeD.Server
         Stopwatch UpdateWatch = Stopwatch.StartNew();
         public void Update()
         {
+            if (RemoteListener != null)
+            {
+                for (int i = 0; i < RemoteClients.Count; i++)
+                    RemoteClients[i].Update();
+            }
 
-            for (int i = 0; i < RemoteClients.Count; i++)
-                RemoteClients[i].Update();
-            
 
 
             #region Player Filtration
