@@ -382,7 +382,8 @@ namespace PokeD.Server.IO
         public void SendPacket(ref IPacket packet)
         {
             var str = CreateData(ref packet);
-            _tcp.WriteLine(str);
+            var array = Encoding.UTF8.GetBytes(str + "\r\n");
+            _tcp.Send(array, 0, array.Length);
         }
 
         public Task SendAsync(byte[] buffer, int offset, int count)
@@ -395,11 +396,11 @@ namespace PokeD.Server.IO
             return _tcp.ReceiveAsync(buffer, offset, count);
         }
 
-        public async Task SendPacketAsync(IPacket packet)
+        public Task SendPacketAsync(IPacket packet)
         {
-            //var str = CreateData(ref packet);
-            //
-            //await _tcp.WriteLineAsync(str);
+            var str = CreateData(ref packet);
+            var array = Encoding.UTF8.GetBytes(str + "\r\n");
+            return _tcp.SendAsync(array, 0, array.Length);
         }
 
         private static string CreateData(ref IPacket packet)

@@ -12,7 +12,7 @@ namespace PokeD.Server.Extensions
 {
     public static class FileSystemWrapperExtensions
     {
-        public static bool LoadUserSettings(ref Player player)
+        public static bool LoadUserSettings(Player player)
         {
             if (player.GameJoltId == 0)
                 return false;

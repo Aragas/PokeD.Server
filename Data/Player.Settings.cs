@@ -208,17 +208,17 @@ namespace PokeD.Server.Data
                     int updateRate;
                     if (command.StartsWith("normal"))
                     {
-                        MovindUpdateRate = 60;
+                        MovingUpdateRate = 60;
                         SendCommandResponse("Set moving correction updaterate to Normal!");
                     }
                     else if (command.StartsWith("fast"))
                     {
-                        MovindUpdateRate = 30;
+                        MovingUpdateRate = 30;
                         SendCommandResponse("Set moving correction updaterate to Fast!");
                     }
-                    else if (int.TryParse(command, out updateRate) && updateRate >= 0 && updateRate < 100)
+                    else if (int.TryParse(command, out updateRate) && updateRate >= 0 && updateRate <= 100)
                     {
-                        MovindUpdateRate = updateRate;
+                        MovingUpdateRate = updateRate;
                         SendCommandResponse(string.Format("Set moving correction updaterate to {0}!", updateRate));
                     }
                     else

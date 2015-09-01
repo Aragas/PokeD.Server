@@ -66,7 +66,7 @@ namespace PokeD.Server.Data
                         CurrentTimeString = DateTime.Now.Hour + "," + DateTime.Now.Minute + "," + DateTime.Now.Second;
                 
                 #region Location
-                if (UseLocation && false)
+                if (UseLocation)
                     if (CurrentWeatherResponse != null || (CurrentWeatherResponse != null && DateTime.Now.Subtract(CurrentWeatherResponse.LastUpdate.Value) > new TimeSpan(0, 20, 0)) || LocationChanged)
                     {
                         var client = new OpenWeatherMapClient();

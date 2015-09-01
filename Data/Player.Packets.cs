@@ -15,17 +15,22 @@ namespace PokeD.Server.Data
 {
     public partial class Player
     {
-        [JsonIgnore] public bool IsMoving { get { return Positions.Count > 0 && MovindUpdateRate > 0; } }
+        [JsonIgnore] public bool IsMovingNew { get { return (Position.X % 1) != 0 || (Position.Z % 1) != 0; } }
+
+        [JsonIgnore] public bool IsMoving { get { return Positions.Count > 0; } }
         [JsonIgnore] Queue<Vector3> Positions = new Queue<Vector3>();
 
-        int MovindUpdateRate { get; set; }
+        int MovingUpdateRate { get; set; }
         private void DoMoving(Vector3 lastPos, Vector3 newPos)
         {
-            int steps = MovindUpdateRate;
-            if (!IsMoving)
+            var steps = MovingUpdateRate;
+            if (Initialized && !IsMoving)
             {
-                int step = 1 / steps;
+                //*
+                var step = (float) 1 / (float) steps;
                 var direction = newPos - lastPos;
+                if (direction.Distance() > 1)
+                    return;
 
                 if (direction.X != 0)
                     for (int i = 0; i < steps; i++)
@@ -38,6 +43,26 @@ namespace PokeD.Server.Data
                 else if (direction.Z != 0)
                     for (int i = 0; i < steps; i++)
                         Positions.Enqueue(direction.X > 0 ? new Vector3(0f, 0f, step) : new Vector3(0f, 0f, -step));
+                //*/
+
+                /*
+                var step = (float)1 / (float)steps;
+                var direction = newPos - lastPos;
+                if (direction.Distance() > 1)
+                    return;
+
+                if (direction.X != 0)
+                    for (int i = 0; i < steps; i++)
+                        Positions.Enqueue(direction.X > 0 ? new Vector3((step + step * (i+1)), 0f, 0f) : new Vector3(-(step + step * (i + 1)), 0f, 0f));
+
+                else if (direction.Y != 0)
+                    for (int i = 0; i < steps; i++)
+                        Positions.Enqueue(direction.X > 0 ? new Vector3(0f, (step + step * (i + 1)), 0f) : new Vector3(0f, -(step + step * (i + 1)), 0f));
+
+                else if (direction.Z != 0)
+                    for (int i = 0; i < steps; i++)
+                        Positions.Enqueue(direction.X > 0 ? new Vector3(0f, 0f, (step + step * (i + 1))) : new Vector3(0f, 0f, -(step + step * (i + 1))));
+                */
             }
         }
 
@@ -68,6 +93,8 @@ namespace PokeD.Server.Data
         private void ParseGameData(GameDataPacket packet)
         {
             string[] strArray = packet.DataItems.ToArray();
+            if(strArray.Length < 14)
+                return;
             int index = 0;
             do
             {
@@ -97,17 +124,34 @@ namespace PokeD.Server.Data
                             break;
 
                         case 5:
+                            //if(packet.LevelFile != "mainmenu\\mainmenu1.dat")
+                            //    LevelFile = packet.LevelFile;
                             LevelFile = packet.LevelFile;
                             break;
 
                         case 6:
-                            if (packet.Position != new Vector3(float.MaxValue))
+                            if (packet.GetPokemonPosition(DecimalSeparator) != Vector3.Zero)
                             {
-                                if (Position != packet.Position)
-                                    DoMoving(Position, packet.Position);
+                                if (_server.MoveCorrectionEnabled && Position != packet.GetPosition(DecimalSeparator))
+                                    DoMoving(Position, packet.GetPosition(DecimalSeparator));
                                 
-                                Position = packet.Position;
+                                Position = packet.GetPosition(DecimalSeparator);
                             }
+
+                            //if (Position != packet.Position)
+                            //    DoMoving(Position, packet.Position);
+                            
+                            //if (packet.Position != new Vector3(float.MaxValue))
+                            //{
+                            //    if (Position != packet.Position)
+                            //    {
+                            //        BeforeMove = Position;
+                            //        DoMoving(Position, packet.Position);
+                            //    }
+                            //
+                            //    if(BeforeMove != packet.Position)
+                            //        Position = packet.Position;
+                            //}
                             break;
 
                         case 7:
@@ -132,8 +176,8 @@ namespace PokeD.Server.Data
                             break;
 
                         case 12:
-                            if (packet.PokemonPosition != new Vector3(float.MaxValue))
-                                PokemonPosition = packet.PokemonPosition;
+                            if (packet.GetPokemonPosition(DecimalSeparator) != Vector3.Zero)
+                                PokemonPosition = packet.GetPokemonPosition(DecimalSeparator);
                             break;
 
                         case 13:
@@ -156,12 +200,9 @@ namespace PokeD.Server.Data
             if (IsFullPackageData(packet.DataItems))
                 ParseGameData(packet);
 
+
             if (!Initialized)
             {
-                ID = _server.GeneratePlayerID();
-                SendPacket(new IDPacket { PlayerID = ID }, -1);
-                SendPacket(new WorldDataPacket { DataItems = _server.World.GenerateDataItems() }, -1);
-
                 _server.AddPlayer(this);
                 Initialized = true;
             }

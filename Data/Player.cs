@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Linq;
 
 using Newtonsoft.Json;
 
@@ -76,16 +73,15 @@ namespace PokeD.Server.Data
 
         IPokeStream Stream { get; set; }
 
-        CancellationTokenSource CancellationTokenSource { get; set; }
-        Task CurrentTask { get; set; }
-
 
         readonly Server _server;
 
+#if DEBUG
         // -- Debug -- //
         List<IPacket> _received = new List<IPacket>();
         List<IPacket> _sended = new List<IPacket>();
         // -- Debug -- //
+#endif
 
 
         public Player(INetworkTCPClient client, Server server)
@@ -93,9 +89,7 @@ namespace PokeD.Server.Data
             Stream = new PlayerStream(client);
             _server = server;
 
-            MovindUpdateRate = 60;
-
-            CancellationTokenSource = new CancellationTokenSource();
+            MovingUpdateRate = 60;
         }
 
 
@@ -105,33 +99,20 @@ namespace PokeD.Server.Data
             if (!Stream.Connected)
                 _server.RemovePlayer(this);
 
-            /*
-            if ((CurrentTask == null || CurrentTask.IsCompleted) && (Stream.Connected && Stream.DataAvailable > 0))
-            {
-                CurrentTask = Task.Factory.StartNew(() =>
-                {
-                    var data = Stream.ReadLine();
-
-                    LastMessage = DateTime.UtcNow;
-                    HandleData(Encoding.UTF8.GetBytes(data));
-                }, CancellationTokenSource.Token);
-            }
-            */
-
-            ///*
             if (Stream.Connected && Stream.DataAvailable > 0)
             {
                 var data = Stream.ReadLine();
 
                 LastMessage = DateTime.UtcNow;
-                HandleData(Encoding.UTF8.GetBytes(data));
+                HandleData(data);
             }
-            //*/
 
+
+            // Stuff that is done every 1 second
             if (UpdateWatch.ElapsedMilliseconds < 1000)
                 return;
 
-            if (!_server.CustomWorldDisabled && UseCustomWorld)
+            if (_server.CustomWorldEnabled && UseCustomWorld)
             {
                 CustomWorld.Update();
                 SendPacket(new WorldDataPacket { DataItems = CustomWorld.GenerateDataItems() }, -1);
@@ -142,25 +123,26 @@ namespace PokeD.Server.Data
         }
 
 
-        private void HandleData(byte[] data)
+        private void HandleData(string data)
         {
-            using (var reader = new StreamReader(new MemoryStream(data)))
+            if (string.IsNullOrEmpty(data) || !IPacket.DataIsValid(data))
+                return;
+
+            int id;
+            if (IPacket.TryParseID(data, out id))
             {
-                var str = reader.ReadLine();
+                var packet = PlayerResponse.Packets[id]().ParseData(data);
 
-                if (string.IsNullOrEmpty(str) || !IPacket.DataIsValid(str))
-                    return;
-
-                var packet = PlayerResponse.Packets[IPacket.ParseID(str)]();
-                packet.ParseData(str);
-
-                _received.Add(packet);
-
-
-                HandlePacket(packet);
+                if (packet != null)
+                {
+                    HandlePacket(packet);
+#if DEBUG
+                    _received.Add(packet);
+#endif
+                }
             }
         }
-        
+
         private void HandlePacket(IPacket packet)
         {
             switch ((PlayerPacketTypes) packet.ID)
@@ -252,33 +234,41 @@ namespace PokeD.Server.Data
             if (Stream.Connected)
             {
                 packet.ProtocolVersion = _server.ProtocolVersion;
-                packet.Origin = originID == int.MinValue ? ID : originID;
-                _sended.Add(packet);
+                packet.Origin = originID;
+
                 Stream.SendPacket(ref packet);
+
+#if DEBUG
+                _sended.Add(packet);
+#endif
             }
         }
 
+
+        /// <summary>
+        /// Call it only from 16 ms thread.
+        /// </summary>
+        /// <param name="players"></param>
         public void SendGameDataPlayers(Player[] players)
         {
-            foreach (var player in players)
+            foreach (var player in players.Where(player => player.ID != ID))
             {
-                if (player.ID != ID)
-                {
-                    var data = GenerateDataItems();
-                    if (Positions.Count > 0)
-                    {
-                        Position += Positions.Dequeue();
-                        //PokemonPosition += Positions.Dequeue();
-                    }
+                var data = GenerateDataItems();
 
-                    data[6] = Position.ToPokeString();
-                    //data[12] = PokemonPosition.ToPokeString();
+                var pos = Positions.Dequeue();
+                Position += pos;
+                //PokemonPosition += pos;
 
-                    player.SendPacket(new GameDataPacket { DataItems = data }, ID);
-                }
+                //Position = Positions.Dequeue();
+
+
+                data[6] = Position.ToPokeString(DecimalSeparator);
+                //data[12] = PokemonPosition.ToPokeString();
+
+                player.SendPacket(new GameDataPacket {DataItems = data}, ID);
+                //player.SendPacket(new GameDataPacket { DataItems = GenerateDataItems() }, ID);
             }
         }
-
 
         public DataItems GenerateDataItems()
         {
@@ -290,13 +280,36 @@ namespace PokeD.Server.Data
                 DecimalSeparator.ToString(),
                 Name,
                 LevelFile,
-                Position.ToPokeString(),
+                Position.ToPokeString(DecimalSeparator),
                 Facing.ToString(),
                 Moving ? "1" : "0",
                 Skin,
                 BusyType,
                 PokemonVisible ? "1" : "0",
-                PokemonPosition.ToPokeString(),
+                PokemonPosition.ToPokeString(DecimalSeparator),
+                PokemonSkin,
+                PokemonFacing.ToString()
+            };
+            return new DataItems(list);
+        }
+
+        public DataItems GenerateDataItems(char separator)
+        {
+            var list = new List<string>
+            {
+                GameMode,
+                IsGameJoltPlayer ? "1" : "0",
+                GameJoltId.ToString(),
+                DecimalSeparator.ToString(),
+                Name,
+                LevelFile,
+                Position.ToPokeString(separator),
+                Facing.ToString(),
+                Moving ? "1" : "0",
+                Skin,
+                BusyType,
+                PokemonVisible ? "1" : "0",
+                PokemonPosition.ToPokeString(separator),
                 PokemonSkin,
                 PokemonFacing.ToString()
             };
@@ -308,9 +321,6 @@ namespace PokeD.Server.Data
         {
             if(Stream != null)
                 Stream.Dispose();
-
-            if(CurrentTask != null && !CurrentTask.IsCompleted)
-                CancellationTokenSource.Cancel();
 
             _server.RemovePlayer(this);
         }
