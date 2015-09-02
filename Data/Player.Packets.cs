@@ -258,7 +258,7 @@ namespace PokeD.Server.Data
 
         private void HandleTradeOffer(TradeOfferPacket packet)
         {
-            _server.SendToPlayer(packet.DestinationPlayerID, new TradeOfferPacket { DataItems = packet.DataItems }, packet.Origin);
+            _server.SendToPlayer(packet.DestinationPlayerID, new TradeOfferPacket { DataItems = new DataItems(packet.TradeData) }, packet.Origin);
         }
 
         private void HandleTradeStart(TradeStartPacket packet)
@@ -269,27 +269,28 @@ namespace PokeD.Server.Data
 
         private void HandleBattleClientData(BattleClientDataPacket packet)
         {
-            _server.SendToPlayer(packet.DestinationPlayerID, new BattleClientDataPacket { DataItems = packet.DataItems }, packet.Origin);
+            _server.SendToPlayer(packet.DestinationPlayerID, new BattleClientDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
         }
 
         private void HandleBattleHostData(BattleHostDataPacket packet)
         {
-            _server.SendToPlayer(packet.DestinationPlayerID, new BattleHostDataPacket { DataItems = packet.DataItems }, packet.Origin);
+            _server.SendToPlayer(packet.DestinationPlayerID, new BattleHostDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
         }
 
         private void HandleBattleJoin(BattleJoinPacket packet)
         {
             _server.SendToPlayer(packet.DestinationPlayerID, new BattleJoinPacket() , packet.Origin);
+            //_server.SendToPlayer(packet.DestinationPlayerID, packet, packet.Origin);
         }
 
         private void HandleBattleOffer(BattleOfferPacket packet)
         {
-            _server.SendToPlayer(packet.DestinationPlayerID, new BattleOfferPacket { DataItems = packet.DataItems }, packet.Origin);
+            _server.SendToPlayer(packet.DestinationPlayerID, new BattleOfferPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
         }
 
         private void HandleBattlePokemonData(BattlePokemonDataPacket packet)
         {
-            _server.SendToPlayer(packet.DestinationPlayerID, new BattlePokemonDataPacket { DataItems = packet.DataItems }, packet.Origin);
+            _server.SendToPlayer(packet.DestinationPlayerID, new BattlePokemonDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
         }
 
         private void HandleBattleQuit(BattleQuitPacket packet)
