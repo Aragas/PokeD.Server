@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+
 using Newtonsoft.Json;
 
 using PokeD.Core.Data;
@@ -12,6 +13,7 @@ using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Wrappers;
 
+using PokeD.Server.Clients;
 using PokeD.Server.Data;
 using PokeD.Server.Extensions;
 
@@ -65,10 +67,10 @@ namespace PokeD.Server
 
         [JsonIgnore]
         public int PlayersCount { get { return Players.Count; } }
-        List<Player> Players { get; set; }
-        List<Player> PlayersJoining { get; set; }
-        List<Player> PlayersToAdd { get; set; }
-        List<Player> PlayersToRemove { get; set; }
+        ClientList Players { get; set; }
+        List<IClient> PlayersJoining { get; set; }
+        List<IClient> PlayersToAdd { get; set; }
+        List<IClient> PlayersToRemove { get; set; }
 
         List<NearPlayers> NearPlayersList { get; set; }
 
@@ -98,10 +100,10 @@ namespace PokeD.Server
             Port = port;
             RemotePort = remotePort;
 
-            Players = new List<Player>();
-            PlayersJoining = new List<Player>();
-            PlayersToAdd = new List<Player>();
-            PlayersToRemove = new List<Player>();
+            Players = new ClientList();
+            PlayersJoining = new List<IClient>();
+            PlayersToAdd = new List<IClient>();
+            PlayersToRemove = new List<IClient>();
 
             PacketsToPlayer = new ConcurrentQueue<PlayerPacket>();
             PacketsToAllPlayers = new ConcurrentQueue<OriginPacket>();
@@ -122,6 +124,8 @@ namespace PokeD.Server
         {
             var status = FileSystemWrapper.LoadSettings(FileName, this);
 
+            Logger.Log(LogType.Info, string.Format("Starting {0}", ServerName));
+
             ThreadWrapper.StartThread(ListenToConnectionsCycle, true, "ListenToConnectionsThread");
             if (MoveCorrectionEnabled)
             {
@@ -135,6 +139,8 @@ namespace PokeD.Server
         public bool Stop()
         {
             var status = FileSystemWrapper.SaveSettings(FileName, this);
+
+            Logger.Log(LogType.Info, string.Format("Stopping {0}", ServerName));
 
             Dispose();
 
@@ -187,7 +193,7 @@ namespace PokeD.Server
             var watch = Stopwatch.StartNew();
             while (true)
             {
-                var players = new List<Player>(Players);
+                var players = new List<Player>(Players.GetConcreteTypeEnumerator<Player>());
 
                 foreach (var player in players.Where(player => !NearPlayersList.Exists(nearPlayers => nearPlayers.LevelName == player.LevelFile)))
                     NearPlayersList.Add(new NearPlayers(player.LevelFile, null));
@@ -301,7 +307,7 @@ namespace PokeD.Server
             SendToPlayer(GetPlayer(destinationID), packet, originID);
         }
 
-        public void SendToPlayer(Player player, IPacket packet, int originID)
+        public void SendToPlayer(IClient player, IPacket packet, int originID)
         {
             if (player != null)
                 PacketsToPlayer.Enqueue(new PlayerPacket(player, ref packet, originID));
@@ -316,7 +322,7 @@ namespace PokeD.Server
                     {
                         var player = Players[i];
                         if (!MutedPlayers[originID].Contains(player.ID))
-                            PacketsToPlayer.Enqueue(new PlayerPacket(player, ref packet, originID));
+                            PacketsToPlayer.Enqueue(new PlayerPacket(player , ref packet, originID));
                     }
 
                     return;
@@ -344,6 +350,7 @@ namespace PokeD.Server
 
                 if (playerToAdd.ID != 0)
                 {
+                    Logger.Log(LogType.Server, string.Format("The player {0} joined the game from IP {1}", playerToAdd.Name, playerToAdd.IP));
                     SendToAllPlayers(new ChatMessagePacket { DataItems = new DataItems(string.Format("Player {0} joined the game!", playerToAdd.Name)) });
                 }
             }
@@ -360,6 +367,7 @@ namespace PokeD.Server
                 {
                     SendToAllPlayers(new DestroyPlayerPacket { DataItems = new DataItems(playerToRemove.ID.ToString()) });
 
+                    Logger.Log(LogType.Server, string.Format("The player {0} disconnected, playtime was {1:hh\\:mm\\:ss}", playerToRemove.Name, DateTime.Now - playerToRemove.ConnectionTime));
                     SendToAllPlayers(new ChatMessagePacket { DataItems = new DataItems(string.Format("Player {0} disconnected!", playerToRemove.Name)) });
                 }
             }
@@ -495,7 +503,7 @@ namespace PokeD.Server
         /// </summary>
         /// <param name="id">Player ID.</param>
         /// <returns>Returns null is player is not found.</returns>
-        public Player GetPlayer(int id)
+        public IClient GetPlayer(int id)
         {
             for (int i = 0; i < Players.Count; i++)
             {
@@ -721,11 +729,11 @@ namespace PokeD.Server
 
         private struct PlayerPacket
         {
-            public Player Player;
+            public IClient Player;
             public IPacket Packet;
             public int OriginID;
 
-            public PlayerPacket(Player player, ref IPacket packet, int originID = -1)
+            public PlayerPacket(IClient player, ref IPacket packet, int originID = -1)
             {
                 Player = player;
                 Packet = packet;

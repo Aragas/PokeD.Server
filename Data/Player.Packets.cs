@@ -195,6 +195,7 @@ namespace PokeD.Server.Data
         }
         
 
+
         private void HandleGameData(GameDataPacket packet)
         {
             if (IsFullPackageData(packet.DataItems))
@@ -217,7 +218,10 @@ namespace PokeD.Server.Data
                 ExecuteCommand(packet.Message);
             }
             else
+            {
+                Logger.LogChatMessage(Name, packet.Message);
                 _server.SendToAllPlayers(packet, packet.Origin);
+            }
         }
 
         private void HandlePrivateMessage(ChatMessagePrivatePacket packet)
@@ -237,13 +241,20 @@ namespace PokeD.Server.Data
             var playerName = _server.GetPlayerName(packet.Origin);
 
             if (!string.IsNullOrEmpty(playerName))
-                _server.SendToAllPlayers(new ChatMessagePacket { Message = string.Format("The player {0} {1}", playerName, packet.DataItems[0]) });
+            {
+                var message = string.Format("The player {0} {1}", playerName, packet.EventMessage);
+
+                Logger.Log(LogType.Server, message);
+                _server.SendGlobalChatMessageToAll(message);
+            }
         }
 
 
         private void HandleTradeRequest(TradeRequestPacket packet)
         {
-            _server.SendToPlayer(packet.DestinationPlayerID, new TradeRequestPacket(), packet.Origin);
+            // XNOR
+            if(IsGameJoltPlayer == _server.GetPlayer(packet.DestinationPlayerID).IsGameJoltPlayer)
+                _server.SendToPlayer(packet.DestinationPlayerID, new TradeRequestPacket(), packet.Origin);
         }
 
         private void HandleTradeJoin(TradeJoinPacket packet)

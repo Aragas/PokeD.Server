@@ -1,17 +1,18 @@
 using System;
-
+using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
 using PokeD.Core.IO;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Remote.Authorization;
 using PokeD.Core.Wrappers;
 
+using PokeD.Server.Clients;
 using PokeD.Server.Exceptions;
 using PokeD.Server.IO;
 
 namespace PokeD.Server.Data
 {
-    public partial class RemoteClient : IUpdatable, IDisposable
+    public partial class RemoteClient : IClient
     {
         IPokeStream Stream { get; set; }
 
@@ -98,6 +99,22 @@ namespace PokeD.Server.Data
 
 
             _server.RemoveRemoteClient(this);
+        }
+
+        public int ID { get; private set; }
+        public string Name { get; private set; }
+        public string IP { get; private set; }
+        public DateTime ConnectionTime { get; private set; }
+        public bool UseCustomWorld { get; private set; }
+        public bool IsGameJoltPlayer { get; private set; }
+        public DataItems GenerateDataItems()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void SendPacket(IPacket packet, int originID)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

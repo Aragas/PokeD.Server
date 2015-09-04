@@ -34,6 +34,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ClientList.cs" />
+    <Compile Include="Clients\IClient.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="PKCS1Signature.cs" />
     <Compile Include="Data\Player.Settings.cs" />
     <Compile Include="Data\Player.cs" />

@@ -17,11 +17,12 @@ using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
 using PokeD.Core.Wrappers;
 
+using PokeD.Server.Clients;
 using PokeD.Server.IO;
 
 namespace PokeD.Server.Data
 {
-    public partial class Player : IUpdatable, IDisposable
+    public partial class Player : IClient
     {
 
         #region Game Values
@@ -39,9 +40,14 @@ namespace PokeD.Server.Data
         [JsonIgnore]
         public long GameJoltId { get; set; }
         [JsonIgnore]
-        public char DecimalSeparator { get; set; }
+        private char DecimalSeparator { get; set; }
         [JsonIgnore]
         public string Name { get; set; }
+        [JsonIgnore]
+        public string IP { get { return Client.IP; } }
+        [JsonIgnore]
+        public DateTime ConnectionTime { get; private set; }
+
         [JsonIgnore]
         public string LevelFile { get; set; }
         [JsonIgnore]
@@ -71,6 +77,7 @@ namespace PokeD.Server.Data
 
         #endregion Game Values
 
+        INetworkTCPClient Client { get; set; }
         IPokeStream Stream { get; set; }
 
 
@@ -86,8 +93,11 @@ namespace PokeD.Server.Data
 
         public Player(INetworkTCPClient client, Server server)
         {
-            Stream = new PlayerStream(client);
+            Client = client;
+            Stream = new PlayerStream(Client);
             _server = server;
+
+            ConnectionTime = DateTime.Now;
 
             MovingUpdateRate = 60;
         }
