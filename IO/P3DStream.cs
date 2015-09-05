@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Numerics;
 using System.Text;
@@ -20,6 +21,7 @@ namespace PokeD.Server.IO
 
 
         private readonly INetworkTCPClient _tcp;
+        private Encoding _encoding = Encoding.UTF8;
 
 
         public P3DStream(INetworkTCPClient tcp)
@@ -183,7 +185,11 @@ namespace PokeD.Server.IO
 
         public byte ReadByte()
         {
-            throw new NotSupportedException();
+            var buffer = new byte[1];
+
+            Receive(buffer, 0, buffer.Length);
+
+            return buffer[0];
         }
 
         public VarInt ReadVarInt()
@@ -198,11 +204,28 @@ namespace PokeD.Server.IO
 
         public string ReadLine()
         {
-            return _tcp.ReadLine();
+            var result = new StringBuilder();
+            var lastChar = (char) ReadByte();
+
+            while (true)
+            {
+                var newChar = (char) ReadByte();
+                // Dunno if -1 handling should be used
+                if ((lastChar == '\r' && newChar == '\n') || newChar == -1)
+                    return result.ToString();
+
+                result.Append(lastChar);
+                lastChar = newChar;
+            }
         }
 
         // -- Read methods
 
+
+        private int Receive(byte[] buffer, int offset, int count)
+        {
+            return _tcp.Receive(buffer, offset, count);
+        }
 
         public void SendPacket(ref IPacket packet)
         {
