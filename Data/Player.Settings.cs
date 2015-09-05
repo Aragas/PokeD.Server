@@ -104,7 +104,7 @@ namespace PokeD.Server.Data
                     command = command.Remove(0, 5).Trim();
 
                     TimeSpan time;
-                    if (TimeSpan.TryParseExact(command, "hh\\:mm\\:ss", null, out time))
+                    if (TimeSpan.TryParseExact(command, "HH\\:mm\\:ss", null, out time))
                     {
                         CustomWorld.CurrentTime = time;
                         CustomWorld.UseRealTime = false;

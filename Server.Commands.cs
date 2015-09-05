@@ -8,7 +8,6 @@ namespace PokeD.Server
 {
     public partial class Server
     {
-
         public void ExecuteCommand(string message)
         {
             var command = message.ToLower();
@@ -88,7 +87,7 @@ namespace PokeD.Server
                     command = command.Remove(0, 5);
 
                     TimeSpan time;
-                    if (TimeSpan.TryParseExact(command, "hh\\:mm\\:ss", null, out time))
+                    if (TimeSpan.TryParseExact(command, "HH\\:mm\\:ss", null, out time))
                     {
                         World.CurrentTime = time;
                         World.UseRealTime = false;
