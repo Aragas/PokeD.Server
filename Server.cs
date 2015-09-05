@@ -357,7 +357,7 @@ namespace PokeD.Server
                 {
                     SendToAllPlayers(new DestroyPlayerPacket { DataItems = new DataItems(playerToRemove.ID.ToString()) });
 
-                    Logger.Log(LogType.Server, $"The player {playerToRemove.Name} disconnected, playtime was {DateTime.Now - playerToRemove.ConnectionTime:HH\\:mm\\:ss}");
+                    Logger.Log(LogType.Server, $"The player {playerToRemove.Name} disconnected, playtime was {DateTime.Now - playerToRemove.ConnectionTime:hh\\:mm\\:ss}");
                     SendToAllPlayers(new ChatMessagePacket { DataItems = new DataItems($"Player {playerToRemove.Name} disconnected!") });
                 }
             }
@@ -485,7 +485,7 @@ namespace PokeD.Server
 
             return list.ToArray();
         }
-
+            
         /// <summary>
         /// Get Player ID by name.
         /// </summary>
