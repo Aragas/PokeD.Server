@@ -246,7 +246,7 @@ namespace PokeD.Server.IO
         {
             if (_tcp != null)
             {
-                _tcp.DisconnectAsync();
+                _tcp.Disconnect();
                 _tcp.Dispose();
             }
         }
