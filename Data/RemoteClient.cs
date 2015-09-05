@@ -1,4 +1,5 @@
 using System;
+
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
 using PokeD.Core.IO;
@@ -14,13 +15,20 @@ namespace PokeD.Server.Data
 {
     public partial class RemoteClient : IClient
     {
-        IPokeStream Stream { get; set; }
+        public int ID { get; private set; }
+        public string Name { get; private set; }
+        public string IP { get; private set; }
+        public DateTime ConnectionTime { get; private set; }
+        public bool UseCustomWorld { get; private set; }
+        public bool IsGameJoltPlayer { get; private set; }
+
+        IPokeStream Stream { get; }
 
         readonly Server _server;
 
         public RemoteClient(INetworkTCPClient client, Server server)
         {
-            Stream = new PlayerStream(client);
+            Stream = new P3DStream(client);
             _server = server;
         }
 
@@ -54,14 +62,12 @@ namespace PokeD.Server.Data
         /// <param name="data">Packet byte[] data</param>
         private void HandlePacket(int id, byte[] data)
         {
-            using (var reader = new DataReader(data))
+            using (var reader = new ProtobufDataReader(data))
             {
-                var packet = default(IPacket);
-
                 if (RemoteResponse.Packets[id] == null)
                     throw new ServerException("RemoteClient eeading error: Wrong packet ID.");
 
-                packet = RemoteResponse.Packets[id]().ReadPacket(reader);
+                var packet = RemoteResponse.Packets[id]().ReadPacket(reader);
 
                 HandlePacket(packet);
             }
@@ -92,29 +98,24 @@ namespace PokeD.Server.Data
                 Stream.SendPacket(ref packet);
         }
 
-        public void Dispose()
-        {
-            if (Stream != null)
-                Stream.Dispose();
 
-
-            _server.RemoveRemoteClient(this);
-        }
-
-        public int ID { get; private set; }
-        public string Name { get; private set; }
-        public string IP { get; private set; }
-        public DateTime ConnectionTime { get; private set; }
-        public bool UseCustomWorld { get; private set; }
-        public bool IsGameJoltPlayer { get; private set; }
         public DataItems GenerateDataItems()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public void SendPacket(IPacket packet, int originID)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
+        }
+
+
+        public void Dispose()
+        {
+            Stream?.Dispose();
+
+
+            _server.RemoveRemoteClient(this);
         }
     }
 }

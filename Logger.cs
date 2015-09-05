@@ -58,12 +58,12 @@ namespace PokeD.Server
     {
         public static void Log(LogType type, string message)
         {
-            InputWrapper.LogWriteLine(string.Format("[{0:yyyy-MM-dd_hh:mm:ss}]_[{1}]:{2}", DateTime.Now, type, message));
+            InputWrapper.LogWriteLine($"[{DateTime.Now:yyyy-MM-dd_hh:mm:ss}]_[{type}]:{message}");
         }
 
         public static void LogChatMessage(string player, string message)
         {
-            InputWrapper.LogWriteLine(string.Format("[{0:yyyy-MM-dd_hh:mm:ss}]_<{1}>_{2}", DateTime.Now, player, message));
+            InputWrapper.LogWriteLine($"[{DateTime.Now:yyyy-MM-dd_hh:mm:ss}]_<{player}>_{message}");
         }
     }
 }

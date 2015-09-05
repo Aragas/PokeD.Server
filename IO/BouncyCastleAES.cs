@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Engines;
@@ -43,29 +42,11 @@ namespace PokeD.Server.IO
             _tcp.Send(encrypted, 0, encrypted.Length);
         }
 
-
-        public async Task<int> ReadAsync(byte[] buffer, int offset, int count)
-        {
-            var length = await _tcp.ReceiveAsync(buffer, offset, count);
-            var decrypted = _decryptCipher.ProcessBytes(buffer, offset, length);
-            Buffer.BlockCopy(decrypted, 0, buffer, offset, decrypted.Length);
-            return length;
-        }
-
-        public Task WriteAsync(byte[] buffer, int offset, int count)
-        {
-            var encrypted = _encryptCipher.ProcessBytes(buffer, offset, count);
-            return _tcp.SendAsync(encrypted, 0, encrypted.Length);
-        }
-
-
         public void Dispose()
         {
-            if (_decryptCipher != null)
-                _decryptCipher.Reset();
+            _decryptCipher?.Reset();
 
-            if (_encryptCipher != null)
-                _encryptCipher.Reset();
+            _encryptCipher?.Reset();
         }
     }
 }

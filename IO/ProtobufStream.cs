@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using System.Text;
-using System.Threading.Tasks;
+
 using ICSharpCode.SharpZipLib.Zip.Compression;
 using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
+
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
 using PokeD.Core.IO;
@@ -15,17 +16,17 @@ using PokeD.Server.Exceptions;
 
 namespace PokeD.Server.IO
 {
-    public sealed class RemoteClientStream : IPokeStream
+    public sealed class ProtobufStream : IPokeStream
     {
         #region Properties
 
-        public bool Connected { get { return _tcp != null && _tcp.Connected; } }
-        public int DataAvailable { get { return _tcp != null ? _tcp.DataAvailable : 0; } }
+        public bool Connected => _tcp != null && _tcp.Connected;
+        public int DataAvailable => _tcp?.DataAvailable ?? 0;
 
 
         public bool EncryptionEnabled { get; private set; }
 
-        public bool CompressionEnabled { get { return CompressionThreshold > 0; } }
+        public bool CompressionEnabled => CompressionThreshold > 0;
         public uint CompressionThreshold { get; private set; }
 
         #endregion
@@ -36,7 +37,7 @@ namespace PokeD.Server.IO
         private byte[] _buffer;
         private Encoding _encoding = Encoding.UTF8;
 
-        public RemoteClientStream(INetworkTCPClient tcp)
+        public ProtobufStream(INetworkTCPClient tcp)
         {
             _tcp = tcp;
         }
@@ -49,16 +50,6 @@ namespace PokeD.Server.IO
         public void Disconnect()
         {
             _tcp.Disconnect();
-        }
-
-        public Task ConnectAsync(string ip, ushort port)
-        {
-            return _tcp.ConnectAsync(ip, port);
-        }
-
-        public bool DisconnectAsync()
-        {
-            return _tcp.DisconnectAsync();
         }
 
 
@@ -309,26 +300,6 @@ namespace PokeD.Server.IO
             return buffer[0];
         }
 
-        public VarInt ReadVarInt1()
-        {
-            var result = 0;
-            var length = 0;
-
-            while (true)
-            {
-                var current = ReadByte();
-                result |= (current & 0x7F) << length++ * 7;
-
-                if (length > 6)
-                    throw new ServerException("Remote Client Stream reading error: VarInt too long.");
-
-                if ((current & 0x80) != 0x80)
-                    break;
-            }
-
-            return result;
-        }
-
         public VarInt ReadVarInt()
         {
             uint result = 0;
@@ -364,7 +335,7 @@ namespace PokeD.Server.IO
 
         public string ReadLine()
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         // -- Read methods
@@ -390,45 +361,21 @@ namespace PokeD.Server.IO
         {
             WriteVarInt(packet.ID);
             packet.WritePacket(this);
-            Purge(false);
-        }
-
-
-        public Task SendAsync(byte[] buffer, int offset, int count)
-        {
-            if (EncryptionEnabled)
-                return _aesStream.WriteAsync(buffer, offset, count);
-            else
-                return _tcp.SendAsync(buffer, offset, count);
-        }
-
-        public Task<int> ReadAsync(byte[] buffer, int offset, int count)
-        {
-            if (EncryptionEnabled)
-                return _aesStream.ReadAsync(buffer, offset, count);
-            else
-                return _tcp.ReceiveAsync(buffer, offset, count);
-        }
-
-        public async Task SendPacketAsync(IPacket packet)
-        {
-            WriteVarInt(packet.ID);
-            packet.WritePacket(this);
-            Purge(true);
+            Purge();
         }
 
 
         #region Purge
 
-        private void Purge(bool async = false)
+        private void Purge()
         {
             if (CompressionEnabled)
-                PurgeModernWithCompression(async);
+                PurgeModernWithCompression();
             else
-                PurgeModernWithoutCompression(async);
+                PurgeModernWithoutCompression();
         }
 
-        private void PurgeModernWithoutCompression(bool async = false)
+        private void PurgeModernWithoutCompression()
         {
             var lenBytes = GetVarIntBytes(_buffer.Length);
 
@@ -437,15 +384,12 @@ namespace PokeD.Server.IO
             Buffer.BlockCopy(lenBytes, 0, tempBuff, 0, lenBytes.Length);
             Buffer.BlockCopy(_buffer, 0, tempBuff, lenBytes.Length, _buffer.Length);
 
-            if (async)
-                SendAsync(tempBuff, 0, tempBuff.Length);
-            else
-                Send(tempBuff, 0, tempBuff.Length);
+            Send(tempBuff, 0, tempBuff.Length);
 
             _buffer = null;
         }
 
-        private void PurgeModernWithCompression(bool async = false)
+        private void PurgeModernWithCompression()
         {
             int packetLength = 0; // -- data.Length + GetVarIntBytes(data.Length).Length
             int dataLength = 0; // -- UncompressedData.Length
@@ -478,10 +422,7 @@ namespace PokeD.Server.IO
             Buffer.BlockCopy(dataLengthByteLength, 0, tempBuff, packetLengthByteLength.Length, dataLengthByteLength.Length);
             Buffer.BlockCopy(data, 0, tempBuff, packetLengthByteLength.Length + dataLengthByteLength.Length, data.Length);
 
-            if (async)
-                SendAsync(tempBuff, 0, tempBuff.Length);
-            else
-                Send(tempBuff, 0, tempBuff.Length);
+            Send(tempBuff, 0, tempBuff.Length);
 
             _buffer = null;
         }
@@ -497,8 +438,7 @@ namespace PokeD.Server.IO
                 _tcp.Dispose();
             }
 
-            if (_aesStream != null)
-                _aesStream.Dispose();
+            _aesStream?.Dispose();
 
             _buffer = null;
         }

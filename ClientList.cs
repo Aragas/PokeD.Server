@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,7 +8,7 @@ namespace PokeD.Server
 {
     public class ClientList : IEnumerable
     {
-        public int Count {  get { return Clients.Count; } }
+        public int Count => Clients.Count;
 
         private List<IClient> Clients { get; set; } 
 
@@ -34,10 +33,7 @@ namespace PokeD.Server
             return list.AsEnumerable();
         }
 
-        public IClient this[int index]
-        {
-            get { return Clients[index]; }
-        }
+        public IClient this[int index] => Clients[index];
 
         public void Add(IClient client)
         {

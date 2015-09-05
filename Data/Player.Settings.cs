@@ -75,7 +75,7 @@ namespace PokeD.Server.Data
                     if (Enum.TryParse(command, true, out weather))
                     {
                         CustomWorld.Weather = weather;
-                        SendCommandResponse(string.Format("Set Weather to {0}!", weather));
+                        SendCommandResponse($"Set Weather to {weather}!");
                     }
                     else
                         SendCommandResponse("Weather not found!");
@@ -91,7 +91,7 @@ namespace PokeD.Server.Data
                     if (Enum.TryParse(command, true, out season))
                     {
                         CustomWorld.Season = season;
-                        SendCommandResponse(string.Format("Set Season to {0}!", season));
+                        SendCommandResponse($"Set Season to {season}!");
                     }
                     else
                         SendCommandResponse("Season not found!");
@@ -108,7 +108,7 @@ namespace PokeD.Server.Data
                     {
                         CustomWorld.CurrentTime = time;
                         CustomWorld.UseRealTime = false;
-                        SendCommandResponse(string.Format("Set time to {0}!", time));
+                        SendCommandResponse($"Set time to {time}!");
                         SendCommandResponse("Disabled Real Time!");
                     }
                     else
@@ -122,7 +122,7 @@ namespace PokeD.Server.Data
                     command = command.Remove(0, 9).Trim();
 
                     CustomWorld.DoDayCycle = command.StartsWith("true");
-                    SendCommandResponse(string.Format("Set Day Cycle to {0}!", CustomWorld.DoDayCycle));
+                    SendCommandResponse($"Set Day Cycle to {CustomWorld.DoDayCycle}!");
                 }
                 #endregion DayCycle
 
@@ -133,7 +133,7 @@ namespace PokeD.Server.Data
 
                     CustomWorld.UseRealTime = command.StartsWith("true");
                     CustomWorld.DoDayCycle = true;
-                    SendCommandResponse(string.Format("Set Real Time to {0}!", CustomWorld.UseRealTime));
+                    SendCommandResponse($"Set Real Time to {CustomWorld.UseRealTime}!");
                     SendCommandResponse("Enabled Day Cycle!");
                 }
                 #endregion Realtime
@@ -145,7 +145,7 @@ namespace PokeD.Server.Data
 
                     CustomWorld.Location = command;
                     CustomWorld.UseLocation = true;
-                    SendCommandResponse(string.Format("Set Location to {0}!", CustomWorld.Location));
+                    SendCommandResponse($"Set Location to {CustomWorld.Location}!");
                     SendCommandResponse("Enabled Location!");
                 }
                 #endregion Location
@@ -164,7 +164,7 @@ namespace PokeD.Server.Data
             switch (_server.MutePlayer(ID, name))
             {
                 case MuteStatus.Completed:
-                    SendCommandResponse(string.Format("Successfull muted {0} !", name));
+                    SendCommandResponse($"Successfull muted {name} !");
                     break;
 
                 case MuteStatus.MutedYourself:
@@ -172,7 +172,7 @@ namespace PokeD.Server.Data
                     break;
 
                 case MuteStatus.PlayerNotFound:
-                    SendCommandResponse(string.Format("Player {0} not found.", name));
+                    SendCommandResponse($"Player {name} not found.");
                     break;
             }
         }
@@ -182,15 +182,15 @@ namespace PokeD.Server.Data
             switch (_server.UnMutePlayer(ID, name))
             {
                 case MuteStatus.Completed:
-                    SendCommandResponse(string.Format("Successfull unmuted {0} !", name));
+                    SendCommandResponse($"Successfull unmuted {name} !");
                     break;
 
                 case MuteStatus.IsNotMuted:
-                    SendCommandResponse(string.Format("Player {0} is not muted!", name));
+                    SendCommandResponse($"Player {name} is not muted!");
                     break;
 
                 case MuteStatus.PlayerNotFound:
-                    SendCommandResponse(string.Format("Player {0} not found.", name));
+                    SendCommandResponse($"Player {name} not found.");
                     break;
             }
         }
@@ -219,7 +219,7 @@ namespace PokeD.Server.Data
                     else if (int.TryParse(command, out updateRate) && updateRate >= 0 && updateRate <= 100)
                     {
                         MovingUpdateRate = updateRate;
-                        SendCommandResponse(string.Format("Set moving correction updaterate to {0}!", updateRate));
+                        SendCommandResponse($"Set moving correction updaterate to {updateRate}!");
                     }
                     else
                         SendCommandResponse("Number invalid!");

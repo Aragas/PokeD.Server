@@ -31,54 +31,55 @@ namespace PokeD.Server.Data
         public int ID { get; set; }
 
         [JsonIgnore]
-        public bool Initialized { get; set; }
+        public bool Initialized { get; private set; }
 
         [JsonIgnore]
-        public string GameMode { get; set; }
+        public string GameMode { get; private set; }
         [JsonIgnore]
-        public bool IsGameJoltPlayer { get; set; }
+        public bool IsGameJoltPlayer { get; private set; }
         [JsonIgnore]
-        public long GameJoltId { get; set; }
+        public long GameJoltId { get; private set; }
         [JsonIgnore]
         private char DecimalSeparator { get; set; }
         [JsonIgnore]
-        public string Name { get; set; }
+        public string Name { get; private set; }
         [JsonIgnore]
-        public string IP { get { return Client.IP; } }
-        [JsonIgnore]
-        public DateTime ConnectionTime { get; private set; }
+        public string IP => Client.IP;
 
         [JsonIgnore]
-        public string LevelFile { get; set; }
-        [JsonIgnore]
-        public Vector3 Position { get; set; }
-        [JsonIgnore]
-        public int Facing { get; set; }
-        [JsonIgnore]
-        public bool Moving { get; set; }
-        [JsonIgnore]
-        public string Skin { get; set; }
-        [JsonIgnore]
-        public string BusyType { get; set; }
-        [JsonIgnore]
-        public bool PokemonVisible { get; set; }
-        [JsonIgnore]
-        public Vector3 PokemonPosition { get; set; }
-        [JsonIgnore]
-        public string PokemonSkin { get; set; }
-        [JsonIgnore]
-        public int PokemonFacing { get; set; }
+        public DateTime ConnectionTime { get; }
 
         [JsonIgnore]
-        public DateTime LastMessage { get; set; }
+        public string LevelFile { get; private set; }
         [JsonIgnore]
-        public DateTime LastPing { get; set; }
+        public Vector3 Position { get; private set; }
+        [JsonIgnore]
+        public int Facing { get; private set; }
+        [JsonIgnore]
+        public bool Moving { get; private set; }
+        [JsonIgnore]
+        public string Skin { get; private set; }
+        [JsonIgnore]
+        public string BusyType { get; private set; }
+        [JsonIgnore]
+        public bool PokemonVisible { get; private set; }
+        [JsonIgnore]
+        public Vector3 PokemonPosition { get; private set; }
+        [JsonIgnore]
+        public string PokemonSkin { get; private set; }
+        [JsonIgnore]
+        public int PokemonFacing { get; private set; }
+
+        [JsonIgnore]
+        public DateTime LastMessage { get; private set; }
+        [JsonIgnore]
+        public DateTime LastPing { get; private set; }
 
 
         #endregion Game Values
 
-        INetworkTCPClient Client { get; set; }
-        IPokeStream Stream { get; set; }
+        INetworkTCPClient Client { get; }
+        IPokeStream Stream { get; }
 
 
         readonly Server _server;
@@ -94,7 +95,7 @@ namespace PokeD.Server.Data
         public Player(INetworkTCPClient client, Server server)
         {
             Client = client;
-            Stream = new PlayerStream(Client);
+            Stream = new P3DStream(Client);
             _server = server;
 
             ConnectionTime = DateTime.Now;
@@ -329,8 +330,7 @@ namespace PokeD.Server.Data
 
         public void Dispose()
         {
-            if(Stream != null)
-                Stream.Dispose();
+            Stream?.Dispose();
 
             _server.RemovePlayer(this);
         }

@@ -5,8 +5,8 @@ namespace PokeD.Server.Data
     public partial class RemoteClient
     {
         AuthorizationStatus AuthorizationStatus = AuthorizationStatus.RemoteClientEnabled;
-        bool CompressionEnabled { get { return CompressionTreshold > 0; } }
-        uint CompressionTreshold { get { return Stream.CompressionThreshold; } }
+        bool CompressionEnabled => CompressionTreshold > 0;
+        uint CompressionTreshold => Stream.CompressionThreshold;
 
         private void HandleAuthorizationRequest(AuthorizationRequestPacket packet)
         {
@@ -72,7 +72,6 @@ namespace PokeD.Server.Data
                 }
                 else
                     SendPacket(new CompressionResponsePacket {Threshold = packet.Threshold});
-
             }
         }
     }

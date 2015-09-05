@@ -9,17 +9,17 @@ using PokeD.Server.Exceptions;
 
 namespace PokeD.Server.IO
 {
-    public sealed class DataReader : IPokeDataReader
+    public sealed class ProtobufDataReader : IPokeDataReader
     {
         private readonly Stream _stream;
         private readonly Encoding _encoding = Encoding.UTF8;
 
-        public DataReader(Stream stream)
+        public ProtobufDataReader(Stream stream)
         {
             _stream = stream;
         }
 
-        public DataReader(byte[] data)
+        public ProtobufDataReader(byte[] data)
         {
             _stream = new MemoryStream(data);
         }
@@ -259,8 +259,7 @@ namespace PokeD.Server.IO
 
         public void Dispose()
         {
-            if (_stream != null)
-                _stream.Dispose();
+            _stream?.Dispose();
         }
     }
 }

@@ -17,7 +17,7 @@ namespace PokeD.Server.Extensions
             if (player.GameJoltId == 0)
                 return false;
 
-            var filename = string.Format("{0}.json", player.GameJoltId);
+            var filename = $"{player.GameJoltId}.json";
             using (var stream = FileSystemWrapper.UsersFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).Result.OpenAsync(FileAccess.ReadAndWrite).Result)
             using (var reader = new StreamReader(stream))
             {
@@ -35,7 +35,7 @@ namespace PokeD.Server.Extensions
             if (player.GameJoltId == 0)
                 return false;
 
-            var filename = string.Format("{0}.json", player.GameJoltId);
+            var filename = $"{player.GameJoltId}.json";
             using (var stream = FileSystemWrapper.UsersFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).Result.OpenAsync(FileAccess.ReadAndWrite).Result)
             using (var writer = new StreamWriter(stream))
             {

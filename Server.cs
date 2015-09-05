@@ -19,15 +19,7 @@ using PokeD.Server.Extensions;
 
 namespace PokeD.Server
 {
-    public enum MuteStatus
-    {
-        Completed,
-        PlayerNotFound,
-        MutedYourself,
-        IsNotMuted
-    }
-
-    public class Server : IUpdatable, IDisposable
+    public partial class Server : IUpdatable, IDisposable
     {
         public const string FileName = "Server.json";
 
@@ -35,16 +27,16 @@ namespace PokeD.Server
         public ushort Port { get; private set; }
 
         [JsonIgnore]
-        public float ProtocolVersion { get { return 0.5f; } }
+        public float ProtocolVersion => 0.5f;
 
         [JsonProperty("ServerName")]
-        public string ServerName { get; set; }
+        public string ServerName { get; private set; }
 
         [JsonProperty("ServerMessage")]
-        public string ServerMessage { get; set; }
+        public string ServerMessage { get; private set; }
 
         [JsonProperty("MaxPlayers")]
-        public int MaxPlayers { get; set; }
+        public int MaxPlayers { get; private set; }
 
 
         [JsonProperty("RemotePort")]
@@ -54,7 +46,7 @@ namespace PokeD.Server
         public bool MoveCorrectionEnabled { get; private set; }
 
         [JsonProperty("World")]
-        public World World { get; private set; }
+        World World { get; set; }
         [JsonProperty("CustomWorldEnabled")]
         public bool CustomWorldEnabled { get; private set; }
 
@@ -66,27 +58,34 @@ namespace PokeD.Server
         #region Player Stuff
 
         [JsonIgnore]
-        public int PlayersCount { get { return Players.Count; } }
-        ClientList Players { get; set; }
-        List<IClient> PlayersJoining { get; set; }
-        List<IClient> PlayersToAdd { get; set; }
-        List<IClient> PlayersToRemove { get; set; }
+        public int PlayersCount => Players.Count;
 
-        List<NearPlayers> NearPlayersList { get; set; }
+        ClientList Players { get; }
+        List<IClient> PlayersJoining { get; }
+        List<IClient> PlayersToAdd { get; }
+        List<IClient> PlayersToRemove { get; }
+
+        ConcurrentDictionary<string, Player[]> NearPlayers { get; }
 
         ConcurrentQueue<PlayerPacket> PacketsToPlayer { get; set; }
         ConcurrentQueue<OriginPacket> PacketsToAllPlayers { get; set; }
 
         [JsonProperty("MutedPlayers")]
-        Dictionary<int, List<int>> MutedPlayers { get; set; }
+        Dictionary<int, List<int>> MutedPlayers { get; }
 
         int FreePlayerID { get; set; }
 
         #endregion Player Stuff
 
-        List<RemoteClient> RemoteClients { get; set; }
+        List<RemoteClient> RemoteClients { get; }
+
+
+        int ListenToConnectionsThread { get; set; }
+        int PlayerWatcherThread { get; set; }
+        int PlayerCorrectionThread { get; set; }
 
         bool IsDisposing { get; set; }
+
 
         public Server(ushort port = 15124, ushort remotePort = 15050)
         {
@@ -110,7 +109,7 @@ namespace PokeD.Server
 
             World = new World();
 
-            NearPlayersList = new List<NearPlayers>();
+            NearPlayers = new ConcurrentDictionary<string, Player[]>();
 
             MutedPlayers = new Dictionary<int, List<int>>();
 
@@ -119,18 +118,17 @@ namespace PokeD.Server
             FreePlayerID = 10;
         }
 
-
         public bool Start()
         {
             var status = FileSystemWrapper.LoadSettings(FileName, this);
 
-            Logger.Log(LogType.Info, string.Format("Starting {0}", ServerName));
+            Logger.Log(LogType.Info, $"Starting {ServerName}");
 
-            ThreadWrapper.StartThread(ListenToConnectionsCycle, true, "ListenToConnectionsThread");
+            ListenToConnectionsThread = ThreadWrapper.StartThread(ListenToConnectionsCycle, true, "ListenToConnectionsThread");
             if (MoveCorrectionEnabled)
             {
-                ThreadWrapper.StartThread(PlayerWatcherCycle, true, "PlayerWatcherThread");
-                ThreadWrapper.StartThread(PlayerCorrectionCycle, true, "PlayerCorrectionThread");
+                PlayerWatcherThread = ThreadWrapper.StartThread(PlayerWatcherCycle, true, "PlayerWatcherThread");
+                PlayerCorrectionThread = ThreadWrapper.StartThread(PlayerCorrectionCycle, true, "PlayerCorrectionThread");
             }
 
             return status;
@@ -140,7 +138,16 @@ namespace PokeD.Server
         {
             var status = FileSystemWrapper.SaveSettings(FileName, this);
 
-            Logger.Log(LogType.Info, string.Format("Stopping {0}", ServerName));
+            Logger.Log(LogType.Info, $"Stopping {ServerName}");
+
+            if(ThreadWrapper.IsRunning(ListenToConnectionsThread))
+                ThreadWrapper.AbortThread(ListenToConnectionsThread);
+
+            if (ThreadWrapper.IsRunning(PlayerWatcherThread))
+                ThreadWrapper.AbortThread(PlayerWatcherThread);
+
+            if (ThreadWrapper.IsRunning(PlayerCorrectionThread))
+                ThreadWrapper.AbortThread(PlayerCorrectionThread);
 
             Dispose();
 
@@ -161,7 +168,7 @@ namespace PokeD.Server
             }
 
             var watch = Stopwatch.StartNew();
-            while (true)
+            while (!IsDisposing)
             {
                 if (PlayerListener.AvailableClients)
                     PlayersJoining.Add(new Player(PlayerListener.AcceptNetworkTCPClient(), this));
@@ -191,22 +198,21 @@ namespace PokeD.Server
         private void PlayerWatcherCycle()
         {
             var watch = Stopwatch.StartNew();
-            while (true)
+            while (!IsDisposing)
             {
                 var players = new List<Player>(Players.GetConcreteTypeEnumerator<Player>());
 
-                foreach (var player in players.Where(player => !NearPlayersList.Exists(nearPlayers => nearPlayers.LevelName == player.LevelFile)))
-                    NearPlayersList.Add(new NearPlayers(player.LevelFile, null));
-                
-                for (var i = 0; i < NearPlayersList.Count; i++)
-                {
-                    var nearPlayers = NearPlayersList[i];
+                foreach (var player in players.Where(player => !NearPlayers.ContainsKey(player.LevelFile)))
+                    NearPlayers.TryAdd(player.LevelFile, null);
 
+                foreach (var level in NearPlayers.Keys)
+                {
                     var playerList = new List<Player>();
-                    foreach (var player in players.Where(player => nearPlayers.LevelName == player.LevelFile))
+                    foreach (var player in players.Where(player => level == player.LevelFile))
                         playerList.Add(player);
 
-                    NearPlayersList[i] = new NearPlayers(nearPlayers.LevelName, playerList.ToArray());
+                    var array = playerList.ToArray();
+                    NearPlayers.AddOrUpdate(level, array, (s, players1) => players1 = array);
                 }
 
 
@@ -224,32 +230,17 @@ namespace PokeD.Server
             }
         }
 
+
         public static long PlayerCorrectionThreadTime { get; private set; }
         private void PlayerCorrectionCycle()
         {
             var watch = Stopwatch.StartNew();
-            while (true)
+            while (!IsDisposing)
             {
-                for (int i = 0; i < NearPlayersList.Count; i++)
-                {
-                    var players = NearPlayersList[i];
-                    if (players.Players != null)
-                        for (var index = 0; index < players.Players.Length; index++)
-                        {
-                            var player = players.Players[index];
-                            if (player.IsMovingNew)
-                            {
-                                //    if (players.Players[index].IsMoving)
-                                //        players.Players[index].SendGameDataPlayers(players.Players);
-                                for (var index1 = 0; index1 < players.Players.Length; index1++)
-                                {
-                                    var playerToSend = players.Players[index1];
-                                    if (player != playerToSend)
-                                        playerToSend.SendPacket(new GameDataPacket {DataItems = player.GenerateDataItems() }, player.ID);
-                                }
-                            }
-                        }
-                }
+                foreach (var nearPlayers in NearPlayers.Where(nearPlayers => nearPlayers.Value != null))
+                    foreach (var player in nearPlayers.Value.Where(player => player.IsMoving))
+                        foreach (var playerToSend in nearPlayers.Value.Where(playerToSend => player != playerToSend))
+                            playerToSend.SendPacket(new GameDataPacket { DataItems = player.GenerateDataItems() }, player.ID);
 
 
 
@@ -264,7 +255,6 @@ namespace PokeD.Server
                 watch.Reset();
                 watch.Start();
             }
-
         }
 
 
@@ -350,8 +340,8 @@ namespace PokeD.Server
 
                 if (playerToAdd.ID != 0)
                 {
-                    Logger.Log(LogType.Server, string.Format("The player {0} joined the game from IP {1}", playerToAdd.Name, playerToAdd.IP));
-                    SendToAllPlayers(new ChatMessagePacket { DataItems = new DataItems(string.Format("Player {0} joined the game!", playerToAdd.Name)) });
+                    Logger.Log(LogType.Server, $"The player {playerToAdd.Name} joined the game from IP {playerToAdd.IP}");
+                    SendToAllPlayers(new ChatMessagePacket { DataItems = new DataItems($"Player {playerToAdd.Name} joined the game!") });
                 }
             }
 
@@ -367,8 +357,8 @@ namespace PokeD.Server
                 {
                     SendToAllPlayers(new DestroyPlayerPacket { DataItems = new DataItems(playerToRemove.ID.ToString()) });
 
-                    Logger.Log(LogType.Server, string.Format("The player {0} disconnected, playtime was {1:hh\\:mm\\:ss}", playerToRemove.Name, DateTime.Now - playerToRemove.ConnectionTime));
-                    SendToAllPlayers(new ChatMessagePacket { DataItems = new DataItems(string.Format("Player {0} disconnected!", playerToRemove.Name)) });
+                    Logger.Log(LogType.Server, $"The player {playerToRemove.Name} disconnected, playtime was {DateTime.Now - playerToRemove.ConnectionTime:hh\\:mm\\:ss}");
+                    SendToAllPlayers(new ChatMessagePacket { DataItems = new DataItems($"Player {playerToRemove.Name} disconnected!") });
                 }
             }
 
@@ -537,145 +527,7 @@ namespace PokeD.Server
         {
             RemoteClients.Remove(remoteClient);
         }
-
-        public void ExecuteCommand(string message)
-        {
-            var command = message.ToLower();
-
-            if (message.StartsWith("say "))
-                SendGlobalChatMessageToAll(message.Remove(0, 4));
-
-            else if (message.StartsWith("message "))
-                SendServerMessageToAll(message.Remove(0, 8));
-
-            else if (command.StartsWith("help server"))    // help from program
-                ExecuteHelpCommand(message.Remove(0, 11));
-
-            else if (command.StartsWith("help"))           // internal help from remote
-                ExecuteHelpCommand(message.Remove(0, 4));
-
-            else if (command.StartsWith("world "))
-                ExecuteWorldCommand(command.Remove(0, 6));
-
-            else
-                InputWrapper.ConsoleWrite("Invalid command!");
-        }
-
-        private void ExecuteWorldCommand(string command)
-        {
-            if (command.StartsWith("enable") || command.StartsWith("enable custom"))
-            {
-                CustomWorldEnabled = true;
-                InputWrapper.ConsoleWrite("Enabled Custom World!");
-            }
-
-            else if (command.StartsWith("disable") || command.StartsWith("disable custom"))
-            {
-                CustomWorldEnabled = false;
-                InputWrapper.ConsoleWrite("Disabled Custom World!");
-            }
-
-            else if (command.StartsWith("set "))
-            {
-                command = command.Remove(0, 4);
-
-                #region Weather
-                if (command.StartsWith("weather "))
-                {
-                    command = command.Remove(0, 8);
-
-                    Weather weather;
-                    if (Enum.TryParse(command, true, out weather))
-                    {
-                        World.Weather = weather;
-                        InputWrapper.ConsoleWrite(string.Format("Set Weather to {0}!", weather));
-                    }
-                    else
-                        InputWrapper.ConsoleWrite("Weather not found!");
-                }
-                #endregion Weather
-
-                #region Season
-                else if (command.StartsWith("season "))
-                {
-                    command = command.Remove(0, 7);
-
-                    Season season;
-                    if (Enum.TryParse(command, true, out season))
-                    {
-                        World.Season = season;
-                        InputWrapper.ConsoleWrite(string.Format("Set Season to {0}!", season));
-                    }
-                    else
-                        InputWrapper.ConsoleWrite("Season not found!");
-                }
-                #endregion Season
-
-                #region Time
-                else if (command.StartsWith("time "))
-                {
-                    command = command.Remove(0, 5);
-
-                    TimeSpan time;
-                    if (TimeSpan.TryParseExact(command, "hh\\:mm\\:ss", null, out time))
-                    {
-                        World.CurrentTime = time;
-                        World.UseRealTime = false;
-                        InputWrapper.ConsoleWrite(string.Format("Set time to {0}!", time));
-                        InputWrapper.ConsoleWrite("Disabled Real Time!");
-                    }
-                    else
-                        InputWrapper.ConsoleWrite("Invalid time!");
-                }
-                #endregion Time
-
-                #region DayCycle
-                else if (command.StartsWith("daycycle "))
-                {
-                    command = command.Remove(0, 9);
-
-                    World.DoDayCycle = command.StartsWith("true");
-                    InputWrapper.ConsoleWrite(string.Format("Set Day Cycle to {0}!", World.DoDayCycle));
-                }
-                #endregion DayCycle
-
-                #region Realtime
-                else if (command.StartsWith("realtime "))
-                {
-                    command = command.Remove(0, 9);
-
-                    World.UseRealTime = command.StartsWith("true");
-                    World.DoDayCycle = true;
-                    InputWrapper.ConsoleWrite(string.Format("Set Real Time to {0}!", World.UseRealTime));
-                    InputWrapper.ConsoleWrite("Enabled Day Cycle!");
-                }
-                #endregion Realtime
-
-                #region Location
-                else if (command.StartsWith("location "))
-                {
-                    command = command.Remove(0, 9);
-
-                    World.Location = command;
-                    World.UseLocation = true;
-                    InputWrapper.ConsoleWrite(string.Format("Set Location to {0}!", World.Location));
-                    InputWrapper.ConsoleWrite("Enabled Location!");
-                }
-                #endregion Location
-
-                else
-                    InputWrapper.ConsoleWrite("Invalid command!");
-            }
-
-            else
-                InputWrapper.ConsoleWrite("Invalid command!");
-        }
-
-        private static void ExecuteHelpCommand(string command)
-        {
-
-        }
-
+        
 
         public void Dispose()
         {
@@ -698,71 +550,22 @@ namespace PokeD.Server
             // Do not dispose PlayersToRemove!
 
 
-            if (Players != null)
-                Players.Clear();
+            Players?.Clear();
+            PlayersJoining?.Clear();
+            PlayersToAdd?.Clear();
+            PlayersToRemove?.Clear();
 
-            if (PlayersJoining != null)
-                PlayersJoining.Clear();
-
-            if (PlayersToAdd != null)
-                PlayersToAdd.Clear();
-
-            if (PlayersToRemove != null)
-                PlayersToRemove.Clear();
-           
             if (PacketsToPlayer != null)
                 PacketsToPlayer = null;
 
             if (PacketsToAllPlayers != null)
                 PacketsToAllPlayers = null;
 
-            if (World != null)
-                World.Dispose();
+            World?.Dispose();
 
-            if (NearPlayersList != null)
-                NearPlayersList.Clear();
+            NearPlayers?.Clear();
 
-            if (MutedPlayers != null)
-                MutedPlayers.Clear();
-        }
-
-
-        private struct PlayerPacket
-        {
-            public IClient Player;
-            public IPacket Packet;
-            public int OriginID;
-
-            public PlayerPacket(IClient player, ref IPacket packet, int originID = -1)
-            {
-                Player = player;
-                Packet = packet;
-                OriginID = originID;
-            }
-        }
-        
-        private struct OriginPacket
-        {
-            public IPacket Packet;
-            public int OriginID;
-
-            public OriginPacket(ref IPacket packet, int origin)
-            {
-                Packet = packet;
-                OriginID = origin;
-            }
-        }
-
-        private struct NearPlayers
-        {
-            public string LevelName { get; set; }
-            public Player[] Players { get; set; }
-
-            public NearPlayers(string levelName, Player[] players) : this()
-            {
-                LevelName = levelName;
-                Players = players;
-            }
+            MutedPlayers?.Clear();
         }
     }
 }

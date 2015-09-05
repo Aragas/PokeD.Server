@@ -29,7 +29,7 @@ namespace PokeD.Server.Data
         }
         string CurrentTimeString { get; set; }
 
-        TimeSpan TimeSpanOffset { get { return new TimeSpan(0, 0, 0, TimeOffset); } }
+        TimeSpan TimeSpanOffset => TimeSpan.FromSeconds(TimeOffset);
         int TimeOffset { get; set; }
 
 
@@ -67,7 +67,7 @@ namespace PokeD.Server.Data
                 
                 #region Location
                 if (UseLocation)
-                    if (CurrentWeatherResponse != null || (CurrentWeatherResponse != null && DateTime.Now.Subtract(CurrentWeatherResponse.LastUpdate.Value) > new TimeSpan(0, 20, 0)) || LocationChanged)
+                    if (CurrentWeatherResponse != null || (CurrentWeatherResponse != null && DateTime.Now.Subtract(CurrentWeatherResponse.LastUpdate.Value) > TimeSpan.FromMinutes(20)) || LocationChanged)
                     {
                         var client = new OpenWeatherMapClient();
 

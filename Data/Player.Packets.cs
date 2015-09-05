@@ -15,9 +15,9 @@ namespace PokeD.Server.Data
 {
     public partial class Player
     {
-        [JsonIgnore] public bool IsMovingNew { get { return (Position.X % 1) != 0 || (Position.Z % 1) != 0; } }
+        [JsonIgnore] public bool IsMovingNew => (Position.X % 1) != 0 || (Position.Z % 1) != 0;
 
-        [JsonIgnore] public bool IsMoving { get { return Positions.Count > 0; } }
+        [JsonIgnore] public bool IsMoving => Positions.Count > 0;
         [JsonIgnore] Queue<Vector3> Positions = new Queue<Vector3>();
 
         int MovingUpdateRate { get; set; }
@@ -233,7 +233,7 @@ namespace PokeD.Server.Data
                 _server.SendToPlayer(packet.Origin, new ChatMessagePrivatePacket { DataItems = packet.DataItems }, packet.Origin);
             }
             else
-                _server.SendToPlayer(packet.Origin, new ChatMessagePacket { Message = string.Format("The player with the name \"{0}\" doesn't exist.", packet.DestinationPlayerName) }, -1);
+                _server.SendToPlayer(packet.Origin, new ChatMessagePacket { Message = $"The player with the name \"{packet.DestinationPlayerName}\" doesn't exist." }, -1);
         }
 
         private void HandleGameStateMessage(GameStateMessagePacket packet)
@@ -242,7 +242,7 @@ namespace PokeD.Server.Data
 
             if (!string.IsNullOrEmpty(playerName))
             {
-                var message = string.Format("The player {0} {1}", playerName, packet.EventMessage);
+                var message = $"The player {playerName} {packet.EventMessage}";
 
                 Logger.Log(LogType.Server, message);
                 _server.SendGlobalChatMessageToAll(message);
