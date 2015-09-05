@@ -322,13 +322,15 @@ namespace PokeD.Server.Data
 
         private void HandleServerDataRequest(ServerDataRequestPacket packet)
         {
-            SendPacket(new ServerInfoDataPacket
-            {
-                CurrentPlayers = _server.PlayersCount,
-                MaxPlayers = _server.MaxPlayers,
-                ServerName = _server.ServerName,
-                ServerMessage = _server.ServerMessage
-            }, ID);
+            var spacket = new ServerInfoDataPacket();
+            spacket.CurrentPlayers = _server.PlayersCount;
+            spacket.MaxPlayers = _server.MaxPlayers;
+            spacket.ServerName = _server.ServerName;
+            spacket.ServerMessage = _server.ServerMessage;
+            if (_server.PlayersCount > 0)
+                spacket.PlayerNames = _server.GetPlayerNames();
+            
+            SendPacket(spacket, ID);
 
             _server.RemovePlayer(this);
         }

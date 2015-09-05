@@ -476,6 +476,15 @@ namespace PokeD.Server
         }
 
 
+        public string[] GetPlayerNames()
+        {
+            var list = new List<string>();
+
+            for (var i = 0; i < Players.Count; i++)
+                list.Add(Players[i].Name);
+
+            return list.ToArray();
+        }
 
         /// <summary>
         /// Get Player ID by name.
