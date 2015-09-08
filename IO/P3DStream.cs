@@ -30,7 +30,7 @@ namespace PokeD.Server.IO
         public P3DStream(INetworkTCPClient tcp)
         {
             _tcp = tcp;
-            _reader = new StreamReader(_tcp.GetStream);//, Encoding.UTF8, false, 1024, true);
+            _reader = new StreamReader(_tcp.GetStream());//, Encoding.UTF8, false, 1024, true);
         }
 
 
