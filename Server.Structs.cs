@@ -16,9 +16,9 @@ namespace PokeD.Server
     {
         private struct PlayerPacket
         {
-            public IClient Player { get; }
-            public Packet Packet { get; }
-            public int OriginID { get; }
+            public readonly IClient Player;
+            public readonly Packet Packet;
+            public readonly int OriginID;
 
             public PlayerPacket(IClient player, ref Packet packet, int originID = -1)
             {
@@ -30,8 +30,8 @@ namespace PokeD.Server
         
         private struct OriginPacket
         {
-            public Packet Packet { get; }
-            public int OriginID { get; }
+            public readonly Packet Packet;
+            public readonly int OriginID;
 
             public OriginPacket(ref Packet packet, int origin)
             {
