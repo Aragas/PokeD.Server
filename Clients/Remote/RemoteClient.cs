@@ -2,27 +2,27 @@ using System;
 
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
-using PokeD.Core.IO;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Remote.Authorization;
+using PokeD.Core.Packets.Shared;
 using PokeD.Core.Wrappers;
 
-using PokeD.Server.Clients;
 using PokeD.Server.Exceptions;
 using PokeD.Server.IO;
 
-namespace PokeD.Server.Data
+namespace PokeD.Server.Clients.Remote
 {
     public partial class RemoteClient : IClient
     {
-        public int ID { get; private set; }
+        public int ID { get; set; }
         public string Name { get; private set; }
         public string IP { get; private set; }
         public DateTime ConnectionTime { get; private set; }
         public bool UseCustomWorld { get; private set; }
+        public long GameJoltId { get; }
         public bool IsGameJoltPlayer { get; private set; }
 
-        IPokeStream Stream { get; }
+        IPacketStream Stream { get; }
 
         readonly Server _server;
 
@@ -73,7 +73,7 @@ namespace PokeD.Server.Data
             }
         }
 
-        private void HandlePacket(IPacket packet)
+        private void HandlePacket(Packet packet)
         {
             switch ((RemotePacketTypes) packet.ID)
             {
@@ -92,19 +92,24 @@ namespace PokeD.Server.Data
             }
         }
 
-        public void SendPacket(IPacket packet)
+        public void SendPacket(Packet packet)
         {
             if (Stream.Connected)
                 Stream.SendPacket(ref packet);
         }
 
 
+        public GameDataPacket GetDataPacket()
+        {
+            return null;
+        }
         public DataItems GenerateDataItems()
         {
             throw new NotImplementedException();
         }
 
-        public void SendPacket(IPacket packet, int originID)
+
+        public void SendPacket(Packet packet, int originID)
         {
             throw new NotImplementedException();
         }
@@ -114,8 +119,7 @@ namespace PokeD.Server.Data
         {
             Stream?.Dispose();
 
-
-            _server.RemoveRemoteClient(this);
+            _server.RemovePlayer(this);
         }
     }
 }

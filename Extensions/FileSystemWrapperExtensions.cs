@@ -6,40 +6,40 @@ using PCLStorage;
 
 using PokeD.Core.Wrappers;
 
-using PokeD.Server.Data;
+using PokeD.Server.Clients;
 
 namespace PokeD.Server.Extensions
 {
     public static class FileSystemWrapperExtensions
     {
-        public static bool LoadUserSettings(Player player)
+        public static bool LoadClientSettings(IClient p3DPlayer)
         {
-            if (player.GameJoltId == 0)
+            if (p3DPlayer.GameJoltId == 0)
                 return false;
 
-            var filename = $"{player.GameJoltId}.json";
+            var filename = $"{p3DPlayer.GameJoltId}.json";
             using (var stream = FileSystemWrapper.UsersFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).Result.OpenAsync(FileAccess.ReadAndWrite).Result)
             using (var reader = new StreamReader(stream))
             {
                 var file = reader.ReadToEnd();
                 if (!string.IsNullOrEmpty(file))
-                    try { JsonConvert.PopulateObject(file, player); }
+                    try { JsonConvert.PopulateObject(file, p3DPlayer); }
                     catch (JsonReaderException) { return false; }
             }
 
             return true;
         }
 
-        public static bool SaveUserSettings(Player player)
+        public static bool SaveClientSettings(IClient p3DPlayer)
         {
-            if (player.GameJoltId == 0)
+            if (p3DPlayer.GameJoltId == 0)
                 return false;
 
-            var filename = $"{player.GameJoltId}.json";
+            var filename = $"{p3DPlayer.GameJoltId}.json";
             using (var stream = FileSystemWrapper.UsersFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).Result.OpenAsync(FileAccess.ReadAndWrite).Result)
             using (var writer = new StreamWriter(stream))
             {
-                try { writer.Write(JsonConvert.SerializeObject(player, Formatting.Indented)); }
+                try { writer.Write(JsonConvert.SerializeObject(p3DPlayer, Formatting.Indented)); }
                 catch (JsonWriterException) { return false; }
             }
 

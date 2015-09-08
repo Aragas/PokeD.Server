@@ -36,12 +36,20 @@
   <ItemGroup>
     <Compile Include="ClientList.cs" />
     <Compile Include="Clients\IClient.cs" />
+    <Compile Include="Clients\P3D\P3DPlayer.Battle.cs" />
+    <Compile Include="Clients\Protobuf\ProtobufPlayer.Battle.cs" />
+    <Compile Include="Clients\Protobuf\ProtobufPlayer.Settings.cs" />
+    <Compile Include="Clients\Protobuf\ProtobufPlayer.Packets.cs" />
+    <Compile Include="Clients\Protobuf\ProtobufPlayer.cs" />
+    <Compile Include="Exceptions\P3DPlayerException.cs" />
+    <Compile Include="Exceptions\ProtobufPlayerException.cs" />
+    <Compile Include="Extensions\StreamReaderExtensions.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="PKCS1Signature.cs" />
-    <Compile Include="Data\Player.Settings.cs" />
-    <Compile Include="Data\Player.cs" />
-    <Compile Include="Data\Player.Packets.cs" />
-    <Compile Include="Data\RemoteClient.Packets.cs" />
+    <Compile Include="Clients\P3D\P3DPlayer.Settings.cs" />
+    <Compile Include="Clients\P3D\P3DPlayer.cs" />
+    <Compile Include="Clients\P3D\P3DPlayer.Packets.cs" />
+    <Compile Include="Clients\Remote\RemoteClient.Packets.cs" />
     <Compile Include="Data\Season.cs" />
     <Compile Include="Data\Weather.cs" />
     <Compile Include="Data\World.cs" />
@@ -52,7 +60,7 @@
     <Compile Include="IO\ProtobufStream.cs" />
     <Compile Include="IO\P3DStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Data\RemoteClient.cs" />
+    <Compile Include="Clients\Remote\RemoteClient.cs" />
     <Compile Include="Server.Structs.cs" />
     <Compile Include="Server.Commands.cs" />
     <Compile Include="Server.cs" />

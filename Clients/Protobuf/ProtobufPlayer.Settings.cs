@@ -1,16 +1,18 @@
-using System;
+﻿using System;
 
 using Newtonsoft.Json;
 
 using PokeD.Core.Packets.Chat;
 
-namespace PokeD.Server.Data
+using PokeD.Server.Data;
+
+namespace PokeD.Server.Clients.Protobuf
 {
-    public partial class Player
+    partial class ProtobufPlayer
     {
-        [JsonProperty]
+        [JsonProperty("UseCustomWorld")]
         public bool UseCustomWorld { get; private set; }
-        [JsonProperty]
+        [JsonProperty("CustomWorld")]
         World CustomWorld { get; set; }
 
 
@@ -30,9 +32,6 @@ namespace PokeD.Server.Data
 
             else if (command.StartsWith("unmute "))
                 ExecuteUnmuteCommand(message.Remove(0, 7));
-
-            else if (command.StartsWith("move "))
-                ExecuteMoveCommand(message.Remove(0, 5));
 
             else
                 SendCommandResponse("Invalid command!");
@@ -193,44 +192,6 @@ namespace PokeD.Server.Data
                     SendCommandResponse($"Player {name} not found.");
                     break;
             }
-        }
-
-        private void ExecuteMoveCommand(string command)
-        {
-            if (command.StartsWith("set "))
-            {
-                command = command.Remove(0, 4);
-
-                if (command.StartsWith("updaterate "))
-                {
-                    command = command.Remove(0, 11).Trim();
-
-                    int updateRate;
-                    if (command.StartsWith("normal"))
-                    {
-                        MovingUpdateRate = 60;
-                        SendCommandResponse("Set moving correction updaterate to Normal!");
-                    }
-                    else if (command.StartsWith("fast"))
-                    {
-                        MovingUpdateRate = 30;
-                        SendCommandResponse("Set moving correction updaterate to Fast!");
-                    }
-                    else if (int.TryParse(command, out updateRate) && updateRate >= 0 && updateRate <= 100)
-                    {
-                        MovingUpdateRate = updateRate;
-                        SendCommandResponse($"Set moving correction updaterate to {updateRate}!");
-                    }
-                    else
-                        SendCommandResponse("Number invalid!");
-                }
-
-                else
-                    SendCommandResponse("Invalid command!");
-            }
-
-            else
-                SendCommandResponse("Invalid command!"); 
         }
 
         private void SendCommandResponse(string message)

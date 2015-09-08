@@ -1,5 +1,5 @@
 ﻿using PokeD.Core.Interfaces;
-
+using PokeD.Core.Packets;
 using PokeD.Server.Clients;
 
 namespace PokeD.Server
@@ -17,10 +17,10 @@ namespace PokeD.Server
         private struct PlayerPacket
         {
             public IClient Player { get; }
-            public IPacket Packet { get; }
+            public Packet Packet { get; }
             public int OriginID { get; }
 
-            public PlayerPacket(IClient player, ref IPacket packet, int originID = -1)
+            public PlayerPacket(IClient player, ref Packet packet, int originID = -1)
             {
                 Player = player;
                 Packet = packet;
@@ -30,10 +30,10 @@ namespace PokeD.Server
         
         private struct OriginPacket
         {
-            public IPacket Packet { get; }
+            public Packet Packet { get; }
             public int OriginID { get; }
 
-            public OriginPacket(ref IPacket packet, int origin)
+            public OriginPacket(ref Packet packet, int origin)
             {
                 Packet = packet;
                 OriginID = origin;

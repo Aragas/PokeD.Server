@@ -1,18 +1,22 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Numerics;
 using System.Text;
 
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
-using PokeD.Core.IO;
+using PokeD.Core.Packets;
 using PokeD.Core.Wrappers;
+
+using PokeD.Server.Extensions;
 
 namespace PokeD.Server.IO
 {
-    public sealed class P3DStream : IPokeStream
+    public sealed class P3DStream : IPacketStream
     {
+        public bool IsServer => false;
+
         public bool Connected => _tcp != null && _tcp.Connected;
         public int DataAvailable => _tcp?.DataAvailable ?? 0;
 
@@ -21,12 +25,12 @@ namespace PokeD.Server.IO
 
 
         private readonly INetworkTCPClient _tcp;
-        private Encoding _encoding = Encoding.UTF8;
-
+        private StreamReader _reader;
 
         public P3DStream(INetworkTCPClient tcp)
         {
             _tcp = tcp;
+            _reader = new StreamReader(_tcp.GetStream);//, Encoding.UTF8, false, 1024, true);
         }
 
 
@@ -202,7 +206,7 @@ namespace PokeD.Server.IO
             throw new NotSupportedException();
         }
 
-        public string ReadLine()
+        public string ReadLineOverflow()
         {
             var result = new StringBuilder();
             var lastChar = (char) ReadByte();
@@ -219,23 +223,33 @@ namespace PokeD.Server.IO
             }
         }
 
+        public string ReadLine()
+        {
+            return _reader.ReadLineSingleBreak();
+        }
+
         // -- Read methods
 
+        private void Send(byte[] buffer, int offset, int count)
+        {
+            _tcp.Send(buffer, offset, count);
+        }
 
         private int Receive(byte[] buffer, int offset, int count)
         {
             return _tcp.Receive(buffer, offset, count);
         }
 
-        public void SendPacket(ref IPacket packet)
+
+        public void SendPacket(ref Packet packet)
         {
             var str = CreateData(ref packet);
             var array = Encoding.UTF8.GetBytes(str + "\r\n");
-            _tcp.Send(array, 0, array.Length);
+            Send(array, 0, array.Length);
         }
 
 
-        private static string CreateData(ref IPacket packet)
+        private static string CreateData(ref Packet packet)
         {
             var dataItems = packet.DataItems.ToList();
 
@@ -246,6 +260,13 @@ namespace PokeD.Server.IO
             stringBuilder.Append(packet.ID.ToString());
             stringBuilder.Append("|");
             stringBuilder.Append(packet.Origin.ToString());
+
+            if (dataItems.Count <= 0)
+            {
+                stringBuilder.Append("|0|");
+                return stringBuilder.ToString();
+            }
+
             stringBuilder.Append("|");
             stringBuilder.Append(dataItems.Count.ToString());
             stringBuilder.Append("|0|");
@@ -253,6 +274,9 @@ namespace PokeD.Server.IO
             var num = 0;
             for (var i = 0; i < dataItems.Count - 1; i++)
             {
+                if (dataItems[i] == null)
+                    continue;
+
                 num += dataItems[i].Length;
                 stringBuilder.Append(num);
                 stringBuilder.Append("|");
@@ -260,7 +284,7 @@ namespace PokeD.Server.IO
 
             foreach (var dataItem in dataItems)
                 stringBuilder.Append(dataItem);
-            
+
             return stringBuilder.ToString();
         }
 

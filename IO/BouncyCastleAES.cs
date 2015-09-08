@@ -5,7 +5,7 @@ using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
 
-using PokeD.Core.IO;
+using PokeD.Core.Interfaces;
 using PokeD.Core.Wrappers;
 
 namespace PokeD.Server.IO

@@ -4,16 +4,18 @@ using System.Numerics;
 using System.Text;
 
 using PokeD.Core.Data;
-using PokeD.Core.IO;
+using PokeD.Core.Interfaces;
 using PokeD.Server.Exceptions;
 
 namespace PokeD.Server.IO
 {
-    public sealed class ProtobufDataReader : IPokeDataReader
+    public sealed class ProtobufDataReader : IPacketDataReader
     {
+        public bool IsServer => false;
+
         private readonly Stream _stream;
         private readonly Encoding _encoding = Encoding.UTF8;
-
+        
         public ProtobufDataReader(Stream stream)
         {
             _stream = stream;

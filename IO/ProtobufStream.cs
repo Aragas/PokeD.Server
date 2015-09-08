@@ -9,16 +9,18 @@ using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
-using PokeD.Core.IO;
+using PokeD.Core.Packets;
 using PokeD.Core.Wrappers;
 
 using PokeD.Server.Exceptions;
 
 namespace PokeD.Server.IO
 {
-    public sealed class ProtobufStream : IPokeStream
+    public sealed class ProtobufStream : IPacketStream
     {
         #region Properties
+
+        public bool IsServer => false;
 
         public bool Connected => _tcp != null && _tcp.Connected;
         public int DataAvailable => _tcp?.DataAvailable ?? 0;
@@ -357,7 +359,7 @@ namespace PokeD.Server.IO
                 return _tcp.Receive(buffer, offset, count);
         }
 
-        public void SendPacket(ref IPacket packet)
+        public void SendPacket(ref Packet packet)
         {
             WriteVarInt(packet.ID);
             packet.WritePacket(this);

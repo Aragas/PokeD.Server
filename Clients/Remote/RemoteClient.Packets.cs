@@ -1,6 +1,6 @@
 using PokeD.Core.Packets.Remote.Authorization;
 
-namespace PokeD.Server.Data
+namespace PokeD.Server.Clients.Remote
 {
     public partial class RemoteClient
     {
