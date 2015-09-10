@@ -27,9 +27,9 @@ namespace PokeD.Server
             var type = typeof (T);
             var list = new List<T>();
             foreach (var client in Clients)
-                if(client.GetType() == type)
+                if (client.GetType() == type)
                     list.Add((T) client);
-            
+
             return list.AsEnumerable();
         }
 

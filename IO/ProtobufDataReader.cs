@@ -13,8 +13,9 @@ namespace PokeD.Server.IO
     {
         public bool IsServer => false;
 
+        private Encoding Encoding { get; } = Encoding.UTF8;
+
         private readonly Stream _stream;
-        private readonly Encoding _encoding = Encoding.UTF8;
         
         public ProtobufDataReader(Stream stream)
         {
@@ -33,7 +34,7 @@ namespace PokeD.Server.IO
             length = ReadVarInt();
             var stringBytes = ReadByteArray(length);
 
-            return _encoding.GetString(stringBytes, 0, stringBytes.Length);
+            return Encoding.GetString(stringBytes, 0, stringBytes.Length);
         }
 
         // -- VarInt

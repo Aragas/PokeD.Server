@@ -6,7 +6,7 @@ namespace PokeD.Server.Clients.P3D
 {
     public partial class P3DPlayer
     {
-        public int BattleTurnTime { get; set; }
+        public int BattleTurnTime { get; set; } = 20;
         bool Battling { get; set; }
         int BattleOpponentID { get; set; }
         DateTime BattleLastPacket { get; set; }

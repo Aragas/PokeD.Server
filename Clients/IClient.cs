@@ -1,6 +1,5 @@
 ﻿using System;
 
-using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Shared;

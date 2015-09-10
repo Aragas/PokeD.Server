@@ -22,16 +22,13 @@ namespace PokeD.Server.Clients.P3D
 {
     public partial class P3DPlayer : IClient
     {
-        CultureInfo CultureInfo = CultureInfo.InvariantCulture;
+        CultureInfo CultureInfo { get; } = CultureInfo.InvariantCulture;
 
 
         #region Game Values
 
         [JsonIgnore]
         public int ID { get; set; }
-
-        [JsonIgnore]
-        public bool Initialized { get; private set; }
 
         [JsonIgnore]
         public string GameMode { get; private set; }
@@ -43,11 +40,6 @@ namespace PokeD.Server.Clients.P3D
         private char DecimalSeparator { get; set; }
         [JsonIgnore]
         public string Name { get; private set; }
-        [JsonIgnore]
-        public string IP => Client.IP;
-
-        [JsonIgnore]
-        public DateTime ConnectionTime { get; }
 
         [JsonIgnore]
         public string LevelFile { get; private set; }
@@ -70,13 +62,25 @@ namespace PokeD.Server.Clients.P3D
         [JsonIgnore]
         public int PokemonFacing { get; private set; }
 
+        #endregion Game Values
+
+        #region Other Values
+
+        [JsonIgnore]
+        public bool Initialized { get; private set; }
+
+        [JsonIgnore]
+        public string IP => Client.IP;
+
+        [JsonIgnore]
+        public DateTime ConnectionTime { get; } = DateTime.Now;
+
         [JsonIgnore]
         public DateTime LastMessage { get; private set; }
         [JsonIgnore]
         public DateTime LastPing { get; private set; }
 
-
-        #endregion Game Values
+        #endregion Other Values
 
         INetworkTCPClient Client { get; }
         IPacketStream Stream { get; }
@@ -86,8 +90,8 @@ namespace PokeD.Server.Clients.P3D
 
 #if DEBUG
         // -- Debug -- //
-        List<Packet> _received = new List<Packet>();
-        List<Packet> _sended = new List<Packet>();
+        List<Packet> Received { get; } =  new List<Packet>();
+        List<Packet> Sended { get; } = new List<Packet>();
         // -- Debug -- //
 #endif
 
@@ -97,10 +101,6 @@ namespace PokeD.Server.Clients.P3D
             Client = client;
             Stream = new P3DStream(Client);
             _server = server;
-
-            ConnectionTime = DateTime.Now;
-
-            BattleTurnTime = 20;
         }
 
 
@@ -152,7 +152,7 @@ namespace PokeD.Server.Clients.P3D
                 {
                     HandlePacket(packet);
 #if DEBUG
-                    _received.Add(packet);
+                    Received.Add(packet);
 #endif
                 }
             }
@@ -257,7 +257,7 @@ namespace PokeD.Server.Clients.P3D
                 Stream.SendPacket(ref packet);
 
 #if DEBUG
-                _sended.Add(packet);
+                Sended.Add(packet);
 #endif
             }
         }

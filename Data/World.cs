@@ -16,11 +16,11 @@ namespace PokeD.Server.Data
         string _location;
         CurrentWeatherResponse CurrentWeatherResponse { get; set; }
 
-        public bool UseRealTime { get; set; }
-        public bool DoDayCycle { get; set; }
+        public bool UseRealTime { get; set; } = true;
+        public bool DoDayCycle { get; set; } = true;
 
-        public Season Season { get; set; }
-        public Weather Weather { get; set; }
+        public Season Season { get; set; } = Season.Spring;
+        public Weather Weather { get; set; } = Weather.Sunny;
 
         public TimeSpan CurrentTime
         {
@@ -33,13 +33,7 @@ namespace PokeD.Server.Data
         int TimeOffset { get; set; }
 
 
-        public World()
-        {
-            Season = Season.Spring;
-            Weather = Weather.Sunny;
-            DoDayCycle = true;
-            UseRealTime = true;
-        }
+        public World() { }
 
 
         /// <summary>
@@ -117,9 +111,6 @@ namespace PokeD.Server.Data
         }
 
 
-        public void Dispose()
-        {
-
-        }
+        public void Dispose() { }
     }
 }

@@ -31,13 +31,14 @@ namespace PokeD.Server.IO
         public bool CompressionEnabled => CompressionThreshold > 0;
         public uint CompressionThreshold { get; private set; }
 
+        private Encoding Encoding { get; } = Encoding.UTF8;
+
         #endregion
 
         private readonly INetworkTCPClient _tcp;
 
         private IAesStream _aesStream;
         private byte[] _buffer;
-        private Encoding _encoding = Encoding.UTF8;
 
         public ProtobufStream(INetworkTCPClient tcp)
         {
@@ -78,7 +79,7 @@ namespace PokeD.Server.IO
             var final = new byte[value.Length + lengthBytes.Length];
 
             Buffer.BlockCopy(lengthBytes, 0, final, 0, lengthBytes.Length);
-            Buffer.BlockCopy(_encoding.GetBytes(value), 0, final, lengthBytes.Length, value.Length);
+            Buffer.BlockCopy(Encoding.GetBytes(value), 0, final, lengthBytes.Length, value.Length);
 
             WriteByteArray(final);
         }

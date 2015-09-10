@@ -6,7 +6,7 @@ namespace PokeD.Server.Clients.Protobuf
 {
     public partial class ProtobufPlayer
     {
-        public int BattleTurnTime { get; set; }
+        public int BattleTurnTime { get; set; } = 20;
         bool Battling { get; set; }
         int BattleOpponentID { get; set; }
         DateTime BattleLastPacket { get; set; }

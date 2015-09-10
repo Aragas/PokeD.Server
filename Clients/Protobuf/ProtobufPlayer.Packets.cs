@@ -1,4 +1,5 @@
 ﻿using System;
+
 using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
 using PokeD.Core.Packets.Client;
@@ -46,7 +47,7 @@ namespace PokeD.Server.Clients.Protobuf
             else
             {
                 Logger.LogChatMessage(Name, packet.Message);
-                _server.SendToAllClient(packet, packet.Origin);
+                _server.SendToAllClients(packet, packet.Origin);
             }
         }
         private void HandlePrivateMessage(ChatMessagePrivatePacket packet)
@@ -71,7 +72,7 @@ namespace PokeD.Server.Clients.Protobuf
                 var message = $"The player {playerName} {packet.EventMessage}";
 
                 Logger.Log(LogType.Server, message);
-                _server.SendGlobalChatMessageToAll(message);
+                _server.SendGlobalChatMessageToAllClients(message);
             }
         }
 

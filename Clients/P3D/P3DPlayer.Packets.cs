@@ -1,4 +1,5 @@
 ﻿using System;
+
 using Newtonsoft.Json;
 
 using PokeD.Core.Data;
@@ -129,7 +130,7 @@ namespace PokeD.Server.Clients.P3D
             else
             {
                 Logger.LogChatMessage(Name, packet.Message);
-                _server.SendToAllClient(new ChatMessagePacket { Message = packet.Message }, packet.Origin);
+                _server.SendToAllClients(new ChatMessagePacket { Message = packet.Message }, packet.Origin);
             }
         }
         private void HandlePrivateMessage(ChatMessagePrivatePacket packet)
@@ -154,7 +155,7 @@ namespace PokeD.Server.Clients.P3D
                 var message = $"The player {playerName} {packet.EventMessage}";
 
                 Logger.Log(LogType.Server, message);
-                _server.SendGlobalChatMessageToAll(message);
+                _server.SendGlobalChatMessageToAllClients(message);
             }
         }
 

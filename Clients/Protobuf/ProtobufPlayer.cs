@@ -29,9 +29,6 @@ namespace PokeD.Server.Clients.Protobuf
         public int ID { get; set; }
 
         [JsonIgnore]
-        public bool Initialized { get; private set; }
-
-        [JsonIgnore]
         public string GameMode { get; private set; }
         [JsonIgnore]
         public bool IsGameJoltPlayer { get; private set; }
@@ -41,11 +38,6 @@ namespace PokeD.Server.Clients.Protobuf
         private char DecimalSeparator { get; set; }
         [JsonIgnore]
         public string Name { get; private set; }
-        [JsonIgnore]
-        public string IP => Client.IP;
-
-        [JsonIgnore]
-        public DateTime ConnectionTime { get; }
 
         [JsonIgnore]
         public string LevelFile { get; private set; }
@@ -68,13 +60,25 @@ namespace PokeD.Server.Clients.Protobuf
         [JsonIgnore]
         public int PokemonFacing { get; private set; }
 
+        #endregion Game Values
+
+        #region Other Values
+
+        [JsonIgnore]
+        public bool Initialized { get; private set; }
+
+        [JsonIgnore]
+        public string IP => Client.IP;
+
+        [JsonIgnore]
+        public DateTime ConnectionTime { get; } = DateTime.Now;
+
         [JsonIgnore]
         public DateTime LastMessage { get; private set; }
         [JsonIgnore]
         public DateTime LastPing { get; private set; }
 
-
-        #endregion Game Values
+        #endregion Other Values
 
         INetworkTCPClient Client { get; }
         IPacketStream Stream { get; }
@@ -84,8 +88,8 @@ namespace PokeD.Server.Clients.Protobuf
 
 #if DEBUG
         // -- Debug -- //
-        List<Packet> _received = new List<Packet>();
-        List<Packet> _sended = new List<Packet>();
+        List<Packet> Received { get; } = new List<Packet>();
+        List<Packet> Sended { get; } = new List<Packet>();
         // -- Debug -- //
 #endif
 
@@ -94,8 +98,6 @@ namespace PokeD.Server.Clients.Protobuf
             Client = client;
             Stream = new ProtobufStream(Client);
             _server = server;
-
-            ConnectionTime = DateTime.Now;
         }
 
 
@@ -148,7 +150,7 @@ namespace PokeD.Server.Clients.Protobuf
                 {
                     HandlePacket(packet);
 #if DEBUG
-                    _received.Add(packet);
+                    Received.Add(packet);
 #endif
                 }
             }
@@ -239,7 +241,7 @@ namespace PokeD.Server.Clients.Protobuf
                 Stream.SendPacket(ref packet);
 
 #if DEBUG
-                _sended.Add(packet);
+                Sended.Add(packet);
 #endif
             }
         }

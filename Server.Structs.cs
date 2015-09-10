@@ -1,5 +1,5 @@
-﻿using PokeD.Core.Interfaces;
-using PokeD.Core.Packets;
+﻿using PokeD.Core.Packets;
+
 using PokeD.Server.Clients;
 
 namespace PokeD.Server

@@ -16,7 +16,6 @@ using PokeD.Core.Wrappers;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.P3D;
 using PokeD.Server.Clients.Protobuf;
-using PokeD.Server.Clients.Remote;
 using PokeD.Server.Data;
 using PokeD.Server.Extensions;
 
@@ -40,22 +39,23 @@ namespace PokeD.Server
 
 
         [JsonProperty("ServerName")]
-        public string ServerName { get; private set; }
+        public string ServerName { get; private set; } = "Put name here";
 
         [JsonProperty("ServerMessage")]
-        public string ServerMessage { get; private set; }
+        public string ServerMessage { get; private set; } = "Put description here";
 
         [JsonProperty("MaxPlayers")]
-        public int MaxPlayers { get; private set; }
+        public int MaxPlayers { get; private set; } = 1000;
 
-        
+
         [JsonProperty("MoveCorrectionEnabled")]
-        public bool MoveCorrectionEnabled { get; private set; }
+        bool MoveCorrectionEnabled { get; set; } = true;
 
         [JsonProperty("World")]
-        public World World { get; private set; }
+        World World { get; set; } = new World();
+
         [JsonProperty("CustomWorldEnabled")]
-        public bool CustomWorldEnabled { get; private set; }
+        public bool CustomWorldEnabled { get; private set; } = true;
 
 
         INetworkTCPServer P3DListener { get; set; }
@@ -67,20 +67,20 @@ namespace PokeD.Server
         [JsonIgnore]
         public int PlayersCount => Players.Count;
 
-        ClientList Players { get; }
-        List<IClient> PlayersJoining { get; }
-        List<IClient> PlayersToAdd { get; }
-        List<IClient> PlayersToRemove { get; }
+        ClientList Players { get; } = new ClientList();
+        List<IClient> PlayersJoining { get; } = new List<IClient>();
+        List<IClient> PlayersToAdd { get; } = new List<IClient>();
+        List<IClient> PlayersToRemove { get; } = new List<IClient>();
 
-        ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; }
+        ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; } = new ConcurrentDictionary<string, P3DPlayer[]>();
 
-        ConcurrentQueue<PlayerPacket> PacketsToPlayer { get; set; }
-        ConcurrentQueue<OriginPacket> PacketsToAllPlayers { get; set; }
+        ConcurrentQueue<PlayerPacket> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerPacket>();
+        ConcurrentQueue<OriginPacket> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<OriginPacket>();
 
         [JsonProperty("MutedPlayers")]
-        Dictionary<int, List<int>> MutedPlayers { get; }
+        Dictionary<int, List<int>> MutedPlayers { get; } = new Dictionary<int, List<int>>();
 
-        int FreePlayerID { get; set; }
+        int FreePlayerID { get; set; } = 10;
 
         #endregion Player Stuff
 
@@ -89,36 +89,14 @@ namespace PokeD.Server
         int PlayerWatcherThread { get; set; }
         int PlayerCorrectionThread { get; set; }
 
-        bool IsDisposing { get; set; }
+        private bool IsDisposing { get; set; }
 
 
         public Server(ushort port = 15124, ushort protobufPort = 15125, ushort remotePort = 15126)
         {
-            ServerName = "Put name here";
-            ServerMessage = "Put description here";
-            MaxPlayers = 1000;
-            MoveCorrectionEnabled = true;
-            CustomWorldEnabled = true;
-
             Port = port;
             ProtobufPort = protobufPort;
             ProtobufPort = remotePort;
-
-            Players = new ClientList();
-            PlayersJoining = new List<IClient>();
-            PlayersToAdd = new List<IClient>();
-            PlayersToRemove = new List<IClient>();
-
-            PacketsToPlayer = new ConcurrentQueue<PlayerPacket>();
-            PacketsToAllPlayers = new ConcurrentQueue<OriginPacket>();
-
-            World = new World();
-
-            NearPlayers = new ConcurrentDictionary<string, P3DPlayer[]>();
-
-            MutedPlayers = new Dictionary<int, List<int>>();
-
-            FreePlayerID = 10;
         }
 
 
@@ -286,8 +264,8 @@ namespace PokeD.Server
                 SendToClient(player, Players[i].GetDataPacket(), Players[i].ID);
             }
             // Send to Players player ID
-            SendToAllClient(new CreatePlayerPacket { PlayerID = player.ID }, -1);
-            SendToAllClient(player.GetDataPacket(), player.ID);
+            SendToAllClients(new CreatePlayerPacket { PlayerID = player.ID }, -1);
+            SendToAllClients(player.GetDataPacket(), player.ID);
 
 
             PlayersToAdd.Add(player);
@@ -318,7 +296,7 @@ namespace PokeD.Server
                 PacketsToPlayer.Enqueue(new PlayerPacket(player, ref packet, originID));
         }
 
-        public void SendToAllClient(Packet packet, int originID = -1)
+        public void SendToAllClients(Packet packet, int originID = -1)
         {
             if (originID != -1 && (packet is ChatMessagePacket || packet is ChatMessagePrivatePacket))
                 if (MutedPlayers.ContainsKey(originID) && MutedPlayers[originID].Count > 0)
@@ -353,7 +331,7 @@ namespace PokeD.Server
                 if (playerToAdd.ID != 0)
                 {
                     Logger.Log(LogType.Server, $"The player {playerToAdd.Name} joined the game from IP {playerToAdd.IP}");
-                    SendToAllClient(new ChatMessagePacket { DataItems = new DataItems($"Player {playerToAdd.Name} joined the game!") });
+                    SendToAllClients(new ChatMessagePacket { DataItems = new DataItems($"Player {playerToAdd.Name} joined the game!") });
                 }
             }
 
@@ -367,10 +345,10 @@ namespace PokeD.Server
 
                 if (playerToRemove.ID != 0)
                 {
-                    SendToAllClient(new DestroyPlayerPacket { DataItems = new DataItems(playerToRemove.ID.ToString()) });
+                    SendToAllClients(new DestroyPlayerPacket { DataItems = new DataItems(playerToRemove.ID.ToString()) });
 
                     Logger.Log(LogType.Server, $"The player {playerToRemove.Name} disconnected, playtime was {DateTime.Now - playerToRemove.ConnectionTime:hh\\:mm\\:ss}");
-                    SendToAllClient(new ChatMessagePacket { DataItems = new DataItems($"Player {playerToRemove.Name} disconnected!") });
+                    SendToAllClients(new ChatMessagePacket { DataItems = new DataItems($"Player {playerToRemove.Name} disconnected!") });
                 }
             }
 
@@ -466,13 +444,13 @@ namespace PokeD.Server
         }
 
 
-        public void SendServerMessageToAll(string message)
+        public void SendServerMessageToAllClients(string message)
         {
             for (var i = 0; i < Players.Count; i++)
                 Players[i].SendPacket(new ServerMessagePacket { Message = message }, -1);
         }
 
-        public void SendGlobalChatMessageToAll(string message)
+        public void SendGlobalChatMessageToAllClients(string message)
         {
             for (var i = 0; i < Players.Count; i++)
                 Players[i].SendPacket(new ChatMessagePacket { Message = message }, -1);
