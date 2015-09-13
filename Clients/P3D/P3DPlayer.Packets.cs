@@ -21,6 +21,8 @@ namespace PokeD.Server.Clients.P3D
 
         private void ParseGameData(GameDataPacket packet)
         {
+            try
+            {
             var strArray = packet.DataItems.ToArray();
             if(strArray.Length < 14)
                 return;
@@ -104,6 +106,9 @@ namespace PokeD.Server.Clients.P3D
                         break;
                 }
             }
+            }
+            // TODO: Fix later
+            catch (NullReferenceException) { }
         }
         
 
