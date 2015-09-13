@@ -143,8 +143,8 @@ namespace PokeD.Server.Clients.P3D
             var destinationPlayerID = _server.GetClientID(packet.DestinationPlayerName);
             if (destinationPlayerID != -1)
             {
-                _server.SendToClient(destinationPlayerID, new ChatMessagePrivatePacket { Message = packet.Message }, packet.Origin);
-                _server.SendToClient(packet.Origin, new ChatMessagePrivatePacket { Message = packet.Message }, packet.Origin);
+                _server.SendToClient(destinationPlayerID, new ChatMessagePrivatePacket { DataItems = new DataItems(packet.Message) }, packet.Origin);
+                _server.SendToClient(packet.Origin, new ChatMessagePrivatePacket { DataItems  = new DataItems(packet.Message) }, packet.Origin);
             }
             else
                 _server.SendToClient(packet.Origin, new ChatMessagePacket { Message = $"The player with the name \"{packet.DestinationPlayerName}\" doesn't exist." }, -1);
