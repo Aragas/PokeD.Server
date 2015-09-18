@@ -486,20 +486,30 @@ namespace PokeD.Server
         }
 
         /// <summary>
+        /// Get Player class by name.
+        /// </summary>
+        /// <param name="id">Player name.</param>
+        /// <returns>Returns null is player is not found.</returns>
+        public IClient GetClient(string name)
+        {
+            for (var i = 0; i < Players.Count; i++)
+            {
+                var player = Players[i];
+                if (player.Name == name)
+                    return player;
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Get Player name by ID.
         /// </summary>
         /// <param name="name">Player name.</param>
         /// <returns>Returns string.Empty is player is not found.</returns>
         public int GetClientID(string name)
         {
-            for (var i = 0; i < Players.Count; i++)
-            {
-                var player = Players[i];
-                if (player.Name == name)
-                    return player.ID;
-            }
-
-            return -1;
+            return GetClient(name)?.ID ?? -1;
         }
 
         /// <summary>
@@ -509,8 +519,7 @@ namespace PokeD.Server
         /// <returns>Returns -1 is player is not found.</returns>
         public string GetClientName(int id)
         {
-            var player = GetClient(id);
-            return player != null ? player.Name : string.Empty;
+            return GetClient(id)?.Name ?? string.Empty;
         }
 
 

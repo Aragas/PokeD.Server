@@ -17,8 +17,9 @@ namespace PokeD.Server.Clients.P3D
             if (!Battling)
                 return;
 
-            if(DateTime.UtcNow - BattleLastPacket > TimeSpan.FromSeconds(BattleTurnTime))
-                _server.SendToClient(BattleOpponentID, new BattleQuitPacket(), ID);
+            // Not working
+            //if(DateTime.UtcNow - BattleLastPacket > TimeSpan.FromSeconds(BattleTurnTime))
+            //    _server.SendToClient(BattleOpponentID, new BattleQuitPacket(), ID);
         }
     }
 }

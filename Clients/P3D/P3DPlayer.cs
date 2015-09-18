@@ -22,8 +22,7 @@ namespace PokeD.Server.Clients.P3D
 {
     public partial class P3DPlayer : IClient
     {
-        CultureInfo CultureInfo { get; } = CultureInfo.InvariantCulture;
-
+        CultureInfo CultureInfo => CultureInfo.InvariantCulture;
 
         #region Game Values
 
