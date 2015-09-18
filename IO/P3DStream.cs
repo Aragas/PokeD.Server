@@ -223,9 +223,14 @@ namespace PokeD.Server.IO
             }
         }
 
-        public string ReadLine()
+        public string ReadLineNope()
         {
             return _reader.ReadLineSingleBreak();
+        }
+
+        public string ReadLine()
+        {
+            return _reader.ReadLine();
         }
 
         // -- Read methods
