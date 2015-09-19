@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;

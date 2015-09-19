@@ -2,9 +2,9 @@ using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
 using PokeD.Core.Packets.SCON.Status;
 
-namespace PokeD.Server.Clients.Remote
+namespace PokeD.Server.Clients.SCON
 {
-    public partial class RemoteClient
+    public partial class SCONClient
     {
         AuthorizationStatus AuthorizationStatus = AuthorizationStatus.RemoteClientEnabled;
         bool CompressionEnabled => CompressionTreshold > 0;

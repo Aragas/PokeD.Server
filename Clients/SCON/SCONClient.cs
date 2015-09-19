@@ -12,9 +12,9 @@ using PokeD.Core.Wrappers;
 using PokeD.Server.Exceptions;
 using PokeD.Server.IO;
 
-namespace PokeD.Server.Clients.Remote
+namespace PokeD.Server.Clients.SCON
 {
-    public partial class RemoteClient : IClient
+    public partial class SCONClient : IClient
     {
         public int ID { get; set; }
         public string Name { get; private set; }
@@ -28,7 +28,7 @@ namespace PokeD.Server.Clients.Remote
 
         readonly Server _server;
 
-        public RemoteClient(INetworkTCPClient client, Server server)
+        public SCONClient(INetworkTCPClient client, Server server)
         {
             Stream = new P3DStream(client);
             _server = server;
