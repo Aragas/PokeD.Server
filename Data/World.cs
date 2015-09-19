@@ -29,9 +29,6 @@ namespace PokeD.Server.Data
         int TimeOffset { get; set; }
 
 
-        public World() { }
-
-
         /// <summary>
         /// Call it one per second.
         /// </summary>
@@ -58,7 +55,7 @@ namespace PokeD.Server.Data
             else
                 CurrentTimeString = "12,0,0";
             
-            return new DataItems(new [] { ((int)Season).ToString(), ((int)Weather).ToString(), CurrentTimeString });
+            return new DataItems(((int) Season).ToString(), ((int) Weather).ToString(), CurrentTimeString);
         }
 
 

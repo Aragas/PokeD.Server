@@ -23,6 +23,8 @@ namespace PokeD.Server.IO
         public bool EncryptionEnabled => false;
         public uint CompressionThreshold => 0;
 
+        private static CultureInfo CultureInfo => CultureInfo.InvariantCulture;
+
 
         private readonly INetworkTCPClient _tcp;
         private StreamReader _reader;
@@ -156,28 +158,28 @@ namespace PokeD.Server.IO
 
         // -- StringArray
 
-        public void WriteStringArray(string[] value)
+        public void WriteStringArray(params string[] value)
         {
             throw new NotSupportedException();
         }
 
         // -- VarIntArray
 
-        public void WriteVarIntArray(int[] value)
+        public void WriteVarIntArray(params int[] value)
         {
             throw new NotSupportedException();
         }
 
         // -- IntArray
 
-        public void WriteIntArray(int[] value)
+        public void WriteIntArray(params int[] value)
         {
             throw new NotSupportedException();
         }
 
         // -- ByteArray
 
-        public void WriteByteArray(byte[] value)
+        public void WriteByteArray(params byte[] value)
         {
             throw new NotSupportedException();
         }
@@ -256,32 +258,29 @@ namespace PokeD.Server.IO
 
         private static string CreateData(ref Packet packet)
         {
-            var dataItems = packet.DataItems.ToList();
+            var dataItems = packet.DataItems.ToArray();
 
             var stringBuilder = new StringBuilder();
 
-            stringBuilder.Append(packet.ProtocolVersion.ToString(CultureInfo.InvariantCulture));
+            stringBuilder.Append(packet.ProtocolVersion.ToString(CultureInfo));
             stringBuilder.Append("|");
             stringBuilder.Append(packet.ID.ToString());
             stringBuilder.Append("|");
             stringBuilder.Append(packet.Origin.ToString());
 
-            if (dataItems.Count <= 0)
+            if (dataItems.Length <= 0)
             {
                 stringBuilder.Append("|0|");
                 return stringBuilder.ToString();
             }
 
             stringBuilder.Append("|");
-            stringBuilder.Append(dataItems.Count.ToString());
+            stringBuilder.Append(dataItems.Length.ToString());
             stringBuilder.Append("|0|");
 
             var num = 0;
-            for (var i = 0; i < dataItems.Count - 1; i++)
+            for (var i = 0; i < dataItems.Length - 1; i++)
             {
-                if (dataItems[i] == null)
-                    continue;
-
                 num += dataItems[i].Length;
                 stringBuilder.Append(num);
                 stringBuilder.Append("|");
@@ -296,11 +295,7 @@ namespace PokeD.Server.IO
 
         public void Dispose()
         {
-            if (_tcp != null)
-            {
-                _tcp.Disconnect();
-                _tcp.Dispose();
-            }
+            _tcp?.Disconnect().Dispose();
         }
     }
 }

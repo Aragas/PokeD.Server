@@ -243,7 +243,7 @@ namespace PokeD.Server.IO
 
         // -- StringArray
 
-        public void WriteStringArray(string[] value)
+        public void WriteStringArray(params string[] value)
         {
             var length = value.Length;
 
@@ -253,7 +253,7 @@ namespace PokeD.Server.IO
 
         // -- VarIntArray
 
-        public void WriteVarIntArray(int[] value)
+        public void WriteVarIntArray(params int[] value)
         {
             var length = value.Length;
 
@@ -263,7 +263,7 @@ namespace PokeD.Server.IO
 
         // -- IntArray
 
-        public void WriteIntArray(int[] value)
+        public void WriteIntArray(params int[] value)
         {
             var length = value.Length;
 
@@ -273,7 +273,7 @@ namespace PokeD.Server.IO
 
         // -- ByteArray
 
-        public void WriteByteArray(byte[] value)
+        public void WriteByteArray(params byte[] value)
         {
             if (_buffer != null)
             {
@@ -338,7 +338,7 @@ namespace PokeD.Server.IO
 
         public string ReadLine()
         {
-            throw new NotSupportedException();
+            throw new NotImplementedException();
         }
 
         // -- Read methods
@@ -394,8 +394,8 @@ namespace PokeD.Server.IO
 
         private void PurgeModernWithCompression()
         {
-            int packetLength = 0; // -- data.Length + GetVarIntBytes(data.Length).Length
-            int dataLength = 0; // -- UncompressedData.Length
+            var packetLength = 0; // -- data.Length + GetVarIntBytes(data.Length).Length
+            var dataLength = 0; // -- UncompressedData.Length
             var data = _buffer;
 
             packetLength = _buffer.Length + GetVarIntBytes(_buffer.Length).Length; // -- Get first Packet length
@@ -434,12 +434,7 @@ namespace PokeD.Server.IO
 
         public void Dispose()
         {
-            // Do not dispose it.
-            if (_tcp != null)
-            {
-                _tcp.Disconnect();
-                _tcp.Dispose();
-            }
+            _tcp?.Disconnect().Dispose();
 
             _aesStream?.Dispose();
 

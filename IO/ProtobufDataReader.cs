@@ -56,7 +56,7 @@ namespace PokeD.Server.IO
                 if ((current & 0x80) != 128)
                     break;
             }
-            return (int)result;
+            return (int) result;
         }
 
         public VarInt ReadVarInt(out int length)
@@ -75,7 +75,7 @@ namespace PokeD.Server.IO
                 if ((current & 0x80) != 128)
                     break;
             }
-            return (int)result;
+            return (int) result;
         }
 
 

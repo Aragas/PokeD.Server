@@ -111,7 +111,7 @@ namespace PokeD.Server.Clients.Protobuf
             {
                 var dataLength = Stream.ReadVarInt();
                 if (dataLength == 0)
-                    throw new ServerException("Reading error: Packet Length size is 0");
+                    throw new ProtobufPlayerException("Reading error: Packet Length size is 0");
 
                 var id = Stream.ReadVarInt();
                 var data = Stream.ReadByteArray(dataLength);
@@ -132,6 +132,8 @@ namespace PokeD.Server.Clients.Protobuf
                 SendPacket(new WorldDataPacket { DataItems = CustomWorld.GenerateDataItems() }, -1);
             }
 
+            BattleUpdate();
+
             UpdateWatch.Reset();
             UpdateWatch.Start();
         }
@@ -146,13 +148,11 @@ namespace PokeD.Server.Clients.Protobuf
             {
                 var packet = PlayerResponse.Packets[id]().ReadPacket(reader);
 
-                if (packet != null)
-                {
-                    HandlePacket(packet);
+
+                HandlePacket(packet);
 #if DEBUG
-                    Received.Add(packet);
+                Received.Add(packet);
 #endif
-                }
             }
         }
 

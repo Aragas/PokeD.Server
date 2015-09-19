@@ -7,8 +7,6 @@ namespace PokeD.Server.Clients.SCON
     public partial class SCONClient
     {
         AuthorizationStatus AuthorizationStatus = AuthorizationStatus.RemoteClientEnabled;
-        bool CompressionEnabled => CompressionTreshold > 0;
-        uint CompressionTreshold => Stream.CompressionThreshold;
 
         private void HandleAuthorizationRequest(AuthorizationRequestPacket packet)
         {
@@ -27,12 +25,12 @@ namespace PokeD.Server.Clients.SCON
         private void HandleEncryptionRequest(EncryptionRequestPacket packet)
         {
             if ((AuthorizationStatus & AuthorizationStatus.EncryprionEnabled) != AuthorizationStatus.EncryprionEnabled)
-                SendPacket(new AuthorizationDisconnectPacket {Reason = "Encryption not enabled!"});
+                SendPacket(new AuthorizationDisconnectPacket { Reason = "Encryption not enabled!"} );
             else
             {
                 SendPacket(new EncryptionResponsePacket());
 
-                var request = (EncryptionRequestPacket)packet;
+                var request = (EncryptionRequestPacket) packet;
                 var sharedKey = PKCS1Signature.CreateSecretKey();
 
                 //var hash = ;

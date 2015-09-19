@@ -1,6 +1,6 @@
 ﻿namespace PokeD.Server.Data
 {
-    public enum Season
+    public enum Season : int
     {
         Winter,
         Spring,

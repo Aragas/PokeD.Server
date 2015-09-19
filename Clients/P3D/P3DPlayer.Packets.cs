@@ -241,7 +241,7 @@ namespace PokeD.Server.Clients.P3D
             spacket.ServerMessage = _server.ServerMessage;
             if (_server.PlayersCount > 0)
                 spacket.PlayerNames = _server.GetConnectedClientNames();
-            
+
             SendPacket(spacket, ID);
 
             _server.RemovePlayer(this);

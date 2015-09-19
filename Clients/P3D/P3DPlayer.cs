@@ -268,8 +268,7 @@ namespace PokeD.Server.Clients.P3D
         }
         private DataItems GenerateDataItems()
         {
-            var list = new List<string>
-            {
+            return new DataItems(
                 GameMode,
                 IsGameJoltPlayer ? "1" : "0",
                 GameJoltId.ToString(CultureInfo),
@@ -284,9 +283,7 @@ namespace PokeD.Server.Clients.P3D
                 PokemonVisible ? "1" : "0",
                 PokemonPosition.ToPokeString(DecimalSeparator, CultureInfo),
                 PokemonSkin,
-                PokemonFacing.ToString(CultureInfo)
-            };
-            return new DataItems(list);
+                PokemonFacing.ToString(CultureInfo));
         }
 
 

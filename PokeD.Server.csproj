@@ -42,6 +42,7 @@
     <Compile Include="Clients\Protobuf\ProtobufPlayer.Packets.cs" />
     <Compile Include="Clients\Protobuf\ProtobufPlayer.cs" />
     <Compile Include="Exceptions\P3DPlayerException.cs" />
+    <Compile Include="Exceptions\SCONException.cs" />
     <Compile Include="Exceptions\ProtobufPlayerException.cs" />
     <Compile Include="Extensions\StreamReaderExtensions.cs" />
     <Compile Include="Logger.cs" />

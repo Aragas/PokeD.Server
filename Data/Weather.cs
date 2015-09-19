@@ -1,6 +1,6 @@
 ﻿namespace PokeD.Server.Data
 {
-    public enum Weather
+    public enum Weather : int
     {
         Clear,
         Rain,

@@ -17,8 +17,8 @@ namespace PokeD.Server.Clients.Protobuf
             if (!Battling)
                 return;
 
-            if(DateTime.Now - BattleLastPacket > TimeSpan.FromSeconds(BattleTurnTime))
-                _server.SendToClient(BattleOpponentID, new BattleQuitPacket(), ID);
+            //if(DateTime.Now - BattleLastPacket > TimeSpan.FromSeconds(BattleTurnTime))
+            //    _server.SendToClient(BattleOpponentID, new BattleQuitPacket(), ID);
         }
     }
 }

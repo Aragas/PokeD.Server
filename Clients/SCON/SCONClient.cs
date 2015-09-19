@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+
+using Newtonsoft.Json;
 
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
@@ -16,21 +19,47 @@ namespace PokeD.Server.Clients.SCON
 {
     public partial class SCONClient : IClient
     {
-        public int ID { get; set; }
-        public string Name { get; private set; }
-        public string IP { get; private set; }
-        public DateTime ConnectionTime { get; private set; }
-        public bool UseCustomWorld { get; private set; }
-        public long GameJoltId { get; }
-        public bool IsGameJoltPlayer { get; private set; }
+        #region Values
 
+        [JsonIgnore]
+        public int ID { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
+
+        [JsonIgnore]
+        public string Name { get { throw new NotImplementedException(); } }
+
+        [JsonIgnore]
+        public string IP => Client.IP;
+
+        [JsonIgnore]
+        public DateTime ConnectionTime { get; } = DateTime.Now;
+
+        [JsonIgnore]
+        public bool UseCustomWorld { get { throw new NotImplementedException(); } }
+
+        [JsonIgnore]
+        public long GameJoltId { get { throw new NotImplementedException(); } }
+
+        [JsonIgnore]
+        public bool IsGameJoltPlayer { get { throw new NotImplementedException(); } }
+
+        #endregion Values
+
+        INetworkTCPClient Client { get; }
         IPacketStream Stream { get; }
 
         readonly Server _server;
 
+#if DEBUG
+        // -- Debug -- //
+        List<Packet> Received { get; } = new List<Packet>();
+        List<Packet> Sended { get; } = new List<Packet>();
+        // -- Debug -- //
+#endif
+
         public SCONClient(INetworkTCPClient client, Server server)
         {
-            Stream = new P3DStream(client);
+            Client = client;
+            Stream = new P3DStream(Client);
             _server = server;
         }
 
@@ -38,43 +67,48 @@ namespace PokeD.Server.Clients.SCON
         {
             if (Stream.Connected && Stream.DataAvailable > 0)
             {
-                int packetId = 0;
-                byte[] data = null;
+                var packetLength = Stream.ReadVarInt();
+                if (packetLength == 0)
+                    throw new SCONException("Reading error: Packet Length size is 0.");
+
+                var packetId = Stream.ReadVarInt();
+
+                var data = Stream.ReadByteArray(packetLength - 1);
 
 
-                if (!CompressionEnabled)
-                {
-                    var packetLength = Stream.ReadVarInt();
-                    if (packetLength == 0)
-                        throw new ServerException("Remote Client reading error: Packet Length size is 0");
-
-                    packetId = Stream.ReadVarInt();
-
-                    data = Stream.ReadByteArray(packetLength - 1);
-                }
-
-                HandlePacket(packetId, data);
+                HandleData(packetId, data);
             }
         }
 
         /// <summary>
-        /// Packets are handled here. Compression and encryption are handled here too
+        /// Data is handled here.
         /// </summary>
         /// <param name="id">Packet ID</param>
         /// <param name="data">Packet byte[] data</param>
-        private void HandlePacket(int id, byte[] data)
+        private void HandleData(int id, byte[] data)
         {
+            if (data == null)
+                return;
+
             using (var reader = new ProtobufDataReader(data))
             {
                 if (SCONResponse.Packets[id] == null)
-                    throw new ServerException("RemoteClient eeading error: Wrong packet ID.");
+                    throw new SCONException("Reading error: Wrong packet ID.");
 
                 var packet = SCONResponse.Packets[id]().ReadPacket(reader);
 
+
                 HandlePacket(packet);
+#if DEBUG
+                Received.Add(packet);
+#endif
             }
         }
 
+        /// <summary>
+        /// Packets are handled here.
+        /// </summary>
+        /// <param name="packet">Packet</param>
         private void HandlePacket(Packet packet)
         {
             switch ((SCONPacketTypes) packet.ID)
@@ -100,12 +134,6 @@ namespace PokeD.Server.Clients.SCON
             }
         }
 
-        public void SendPacket(Packet packet)
-        {
-            if (Stream.Connected)
-                Stream.SendPacket(ref packet);
-        }
-
 
         public GameDataPacket GetDataPacket()
         {
@@ -117,9 +145,16 @@ namespace PokeD.Server.Clients.SCON
         }
 
 
-        public void SendPacket(Packet packet, int originID)
+        public void SendPacket(Packet packet, int originID = 0)
         {
-            throw new NotImplementedException();
+            if (Stream.Connected)
+            {
+                Stream.SendPacket(ref packet);
+
+#if DEBUG
+                Sended.Add(packet);
+#endif
+            }
         }
 
 
