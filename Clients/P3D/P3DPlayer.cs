@@ -15,7 +15,7 @@ using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
 using PokeD.Core.Wrappers;
-
+using PokeD.Server.Exceptions;
 using PokeD.Server.IO;
 
 namespace PokeD.Server.Clients.P3D
@@ -148,7 +148,16 @@ namespace PokeD.Server.Clients.P3D
             int id;
             if (P3DPacket.TryParseID(data, out id))
             {
+                if(id >= PlayerResponse.Packets.Length)
+                    throw new P3DPlayerException($"ID {id} >= Packets.Length");
+
                 var packet = PlayerResponse.Packets[id]();
+                if (packet == null)
+                {
+                    //Logger.Log(LogType.Warning, $"Packet with ID {id} is null");
+                    throw new P3DPlayerException($"Packet with ID {id} is null");
+                    //return;
+                }
 
                 if (packet.TryParseData(data))
                 {
