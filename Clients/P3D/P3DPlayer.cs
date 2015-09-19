@@ -79,6 +79,9 @@ namespace PokeD.Server.Clients.P3D
         [JsonIgnore]
         public DateTime LastPing { get; private set; }
 
+        [JsonProperty("ChatReceiving")]
+        public bool ChatReceiving => true;
+
         #endregion Other Values
 
         INetworkTCPClient Client { get; }

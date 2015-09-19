@@ -98,7 +98,7 @@ namespace PokeD.Server
         int PlayerWatcherThread { get; set; }
         int PlayerCorrectionThread { get; set; }
 
-        private bool IsDisposing { get; set; }
+        bool IsDisposing { get; set; }
 
 
         public Server(ushort port = 15124, ushort protobufPort = 15125, ushort sconPort = 15126)
@@ -476,7 +476,11 @@ namespace PokeD.Server
         public void SendGlobalChatMessageToAllClients(string message)
         {
             for (var i = 0; i < Players.Count; i++)
-                Players[i].SendPacket(new ChatMessagePacket { Message = message }, -1);
+            {
+                var player = Players[i];
+                if(player.ChatReceiving)
+                    player.SendPacket(new ChatMessagePacket { Message = message }, -1);
+            }
         }
 
 

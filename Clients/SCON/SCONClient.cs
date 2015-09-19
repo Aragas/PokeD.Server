@@ -8,6 +8,7 @@ using PokeD.Core.Interfaces;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
+using PokeD.Core.Packets.SCON.Chat;
 using PokeD.Core.Packets.SCON.Status;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Wrappers;
@@ -41,6 +42,15 @@ namespace PokeD.Server.Clients.SCON
 
         [JsonIgnore]
         public bool IsGameJoltPlayer { get { throw new NotImplementedException(); } }
+
+        [JsonIgnore]
+        public string LevelFile { get { throw new NotImplementedException(); } }
+
+        [JsonIgnore]
+        public Vector3 Position { get { throw new NotImplementedException(); } }
+
+        [JsonProperty("ChatReceiving")]
+        public bool ChatReceiving { get; private set; }
 
         #endregion Values
 
@@ -121,20 +131,34 @@ namespace PokeD.Server.Clients.SCON
                 case SCONPacketTypes.EncryptionRequest:
                     HandleEncryptionRequest((EncryptionRequestPacket) packet);
                     break;
-
+                    
 
                 case SCONPacketTypes.AuthorizationPassword:
                     HandleAuthorizationPassword((AuthorizationPasswordPacket) packet);
                     break;
 
-
+                    
                 case SCONPacketTypes.ExecuteCommand:
                     HandleExecuteCommand((ExecuteCommandPacket) packet);
                     break;
-
+                    
 
                 case SCONPacketTypes.PlayerListRequest:
                     HandlePlayerListRequest((PlayerListRequestPacket) packet);
+                    break;
+                    
+
+                case SCONPacketTypes.StartChatReceiving:
+                    HandleStartChatReceiving((StartChatReceivingPacket) packet);
+                    break;
+
+                case SCONPacketTypes.StopChatReceiving:
+                    HandleStopChatReceiving((StopChatReceivingPacket) packet);
+                    break;
+                    
+
+                case SCONPacketTypes.PlayerLocationRequest:
+                    HandlePlayerLocationRequest((PlayerLocationRequestPacket) packet);
                     break;
             }
         }
@@ -163,7 +187,17 @@ namespace PokeD.Server.Clients.SCON
         }
         public void SendPacket(P3DPacket packet, int originID = 0)
         {
-            throw new NotImplementedException();
+            // TODO: Nope.
+            if (Stream.Connected)
+            {
+                var messagePacket = packet as Core.Packets.Chat.ChatMessagePacket;
+                if (messagePacket != null)
+                    SendPacket(new ChatMessagePacket { Player = _server.GetClientName(messagePacket.Origin), Message = messagePacket.Message });
+                
+#if DEBUG
+                Sended.Add(packet);
+#endif
+            }
         }
 
 
