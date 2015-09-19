@@ -51,15 +51,15 @@ namespace PokeD.Server.Clients.SCON
 
 #if DEBUG
         // -- Debug -- //
-        List<Packet> Received { get; } = new List<Packet>();
-        List<Packet> Sended { get; } = new List<Packet>();
+        List<ProtobufPacket> Received { get; } = new List<ProtobufPacket>();
+        List<ProtobufPacket> Sended { get; } = new List<ProtobufPacket>();
         // -- Debug -- //
 #endif
 
         public SCONClient(INetworkTCPClient client, Server server)
         {
             Client = client;
-            Stream = new P3DStream(Client);
+            Stream = new ProtobufStream(Client);
             _server = server;
         }
 
@@ -109,7 +109,7 @@ namespace PokeD.Server.Clients.SCON
         /// Packets are handled here.
         /// </summary>
         /// <param name="packet">Packet</param>
-        private void HandlePacket(Packet packet)
+        private void HandlePacket(ProtobufPacket packet)
         {
             switch ((SCONPacketTypes) packet.ID)
             {
@@ -120,6 +120,11 @@ namespace PokeD.Server.Clients.SCON
 
                 case SCONPacketTypes.EncryptionRequest:
                     HandleEncryptionRequest((EncryptionRequestPacket) packet);
+                    break;
+
+
+                case SCONPacketTypes.AuthorizationPassword:
+                    HandleAuthorizationPassword((AuthorizationPasswordPacket) packet);
                     break;
 
 
@@ -145,7 +150,7 @@ namespace PokeD.Server.Clients.SCON
         }
 
 
-        public void SendPacket(Packet packet, int originID = 0)
+        public void SendPacket(ProtobufPacket packet, int originID = 0)
         {
             if (Stream.Connected)
             {
@@ -155,6 +160,10 @@ namespace PokeD.Server.Clients.SCON
                 Sended.Add(packet);
 #endif
             }
+        }
+        public void SendPacket(P3DPacket packet, int originID = 0)
+        {
+            throw new NotImplementedException();
         }
 
 

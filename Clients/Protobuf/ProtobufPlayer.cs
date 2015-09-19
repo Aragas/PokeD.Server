@@ -88,8 +88,8 @@ namespace PokeD.Server.Clients.Protobuf
 
 #if DEBUG
         // -- Debug -- //
-        List<Packet> Received { get; } = new List<Packet>();
-        List<Packet> Sended { get; } = new List<Packet>();
+        List<ProtobufPacket> Received { get; } = new List<ProtobufPacket>();
+        List<ProtobufPacket> Sended { get; } = new List<ProtobufPacket>();
         // -- Debug -- //
 #endif
 
@@ -156,7 +156,7 @@ namespace PokeD.Server.Clients.Protobuf
             }
         }
 
-        private void HandlePacket(Packet packet)
+        private void HandlePacket(ProtobufPacket packet)
         {
             switch ((PlayerPacketTypes) packet.ID)
             {
@@ -234,7 +234,7 @@ namespace PokeD.Server.Clients.Protobuf
         }
 
 
-        public void SendPacket(Packet packet, int originID)
+        public void SendPacket(ProtobufPacket packet, int originID)
         {
             if (Stream.Connected)
             {
@@ -244,6 +244,10 @@ namespace PokeD.Server.Clients.Protobuf
                 Sended.Add(packet);
 #endif
             }
+        }
+        public void SendPacket(P3DPacket packet, int originID)
+        {
+            throw new NotImplementedException();
         }
 
 

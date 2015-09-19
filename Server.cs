@@ -16,6 +16,7 @@ using PokeD.Core.Wrappers;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.P3D;
 using PokeD.Server.Clients.Protobuf;
+using PokeD.Server.Clients.SCON;
 using PokeD.Server.Data;
 using PokeD.Server.Extensions;
 
@@ -59,6 +60,9 @@ namespace PokeD.Server
 
         [JsonProperty("CustomWorldEnabled")]
         public bool CustomWorldEnabled { get; private set; } = true;
+
+        [JsonProperty("SCON_Password")]
+        public string SCON_Password { get; private set; } = "password";
 
 
         INetworkTCPServer P3DListener { get; set; }
@@ -172,7 +176,7 @@ namespace PokeD.Server
 
                 if (SCONListener != null && SCONListener.AvailableClients)
                     if (SCONListener.AvailableClients)
-                        SCONClients.Add(new ProtobufPlayer(SCONListener.AcceptNetworkTCPClient(), this));
+                        SCONClients.Add(new SCONClient(SCONListener.AcceptNetworkTCPClient(), this));
 
 
 
@@ -300,18 +304,18 @@ namespace PokeD.Server
         }
 
 
-        public void SendToClient(int destinationID, Packet packet, int originID)
+        public void SendToClient(int destinationID, P3DPacket packet, int originID)
         {
             SendToClient(GetClient(destinationID), packet, originID);
         }
 
-        public void SendToClient(IClient player, Packet packet, int originID)
+        public void SendToClient(IClient player, P3DPacket packet, int originID)
         {
             if (player != null)
                 PacketsToPlayer.Enqueue(new PlayerPacket(player, ref packet, originID));
         }
 
-        public void SendToAllClients(Packet packet, int originID = -1)
+        public void SendToAllClients(P3DPacket packet, int originID = -1)
         {
             if (originID != -1 && (packet is ChatMessagePacket || packet is ChatMessagePrivatePacket))
                 if (MutedPlayers.ContainsKey(originID) && MutedPlayers[originID].Count > 0)

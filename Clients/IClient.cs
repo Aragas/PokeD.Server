@@ -16,6 +16,7 @@ namespace PokeD.Server.Clients
         bool IsGameJoltPlayer { get; }
         long GameJoltId { get; }
         GameDataPacket GetDataPacket();
-        void SendPacket(Packet packet, int originID);
+        void SendPacket(ProtobufPacket packet, int originID);
+        void SendPacket(P3DPacket packet, int originID);
     }
 }

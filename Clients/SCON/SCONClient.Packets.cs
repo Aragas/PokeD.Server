@@ -6,16 +6,11 @@ namespace PokeD.Server.Clients.SCON
 {
     public partial class SCONClient
     {
-        AuthorizationStatus AuthorizationStatus = AuthorizationStatus.RemoteClientEnabled;
+        AuthorizationStatus AuthorizationStatus { get; set; } = AuthorizationStatus.RemoteClientEnabled;
 
         private void HandleAuthorizationRequest(AuthorizationRequestPacket packet)
         {
             SendPacket(new AuthorizationResponsePacket { AuthorizationStatus = AuthorizationStatus });
-
-            if (AuthorizationStatus == AuthorizationStatus.RemoteClientEnabled)
-                SendPacket(new AuthorizationCompletePacket());
-            else
-                SendPacket(new AuthorizationDisconnectPacket {Reason = "Remote Client not enabled!"});
         }
 
         /// <summary>
@@ -28,25 +23,21 @@ namespace PokeD.Server.Clients.SCON
                 SendPacket(new AuthorizationDisconnectPacket { Reason = "Encryption not enabled!"} );
             else
             {
-                SendPacket(new EncryptionResponsePacket());
 
-                var request = (EncryptionRequestPacket) packet;
-                var sharedKey = PKCS1Signature.CreateSecretKey();
-
-                //var hash = ;
-
-                var pkcs = new PKCS1Signature(request.PublicKey);
-                var signedSecret = pkcs.SignData(sharedKey);
-                var signedVerify = pkcs.SignData(request.VerificationToken);
-
-                SendPacket(new EncryptionResponsePacket
-                {
-                    SharedSecret = signedSecret,
-                    VerificationToken = signedVerify
-                });
-
-                Stream.InitializeEncryption(sharedKey);
             }
+        }
+
+        private void HandleAuthorizationPassword(AuthorizationPasswordPacket packet)
+        {
+            if (AuthorizationStatus == AuthorizationStatus.RemoteClientEnabled)
+            {
+                if (_server.SCON_Password == packet.Password)
+                    SendPacket(new AuthorizationCompletePacket());
+                else
+                    SendPacket(new AuthorizationDisconnectPacket { Reason = "Password not correct!" });
+            }
+            else
+                SendPacket(new AuthorizationDisconnectPacket {Reason = "Remote Client not enabled!"});
         }
 
         private void HandleExecuteCommand(ExecuteCommandPacket packet)

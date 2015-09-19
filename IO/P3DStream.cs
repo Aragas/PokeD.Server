@@ -248,7 +248,11 @@ namespace PokeD.Server.IO
         }
 
 
-        public void SendPacket(ref Packet packet)
+        public void SendPacket(ref ProtobufPacket packet)
+        {
+            throw new NotImplementedException();
+        }
+        public void SendPacket(ref P3DPacket packet)
         {
             var str = CreateData(ref packet);
             var array = Encoding.UTF8.GetBytes(str + "\r\n");
@@ -256,7 +260,7 @@ namespace PokeD.Server.IO
         }
 
 
-        private static string CreateData(ref Packet packet)
+        private static string CreateData(ref P3DPacket packet)
         {
             var dataItems = packet.DataItems.ToArray();
 

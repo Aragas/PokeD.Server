@@ -360,11 +360,15 @@ namespace PokeD.Server.IO
                 return _tcp.Receive(buffer, offset, count);
         }
 
-        public void SendPacket(ref Packet packet)
+        public void SendPacket(ref ProtobufPacket packet)
         {
             WriteVarInt(packet.ID);
             packet.WritePacket(this);
             Purge();
+        }
+        public void SendPacket(ref P3DPacket packet)
+        {
+            throw new NotImplementedException();
         }
 
 

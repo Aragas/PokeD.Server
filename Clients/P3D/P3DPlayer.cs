@@ -89,8 +89,8 @@ namespace PokeD.Server.Clients.P3D
 
 #if DEBUG
         // -- Debug -- //
-        List<Packet> Received { get; } =  new List<Packet>();
-        List<Packet> Sended { get; } = new List<Packet>();
+        List<P3DPacket> Received { get; } =  new List<P3DPacket>();
+        List<P3DPacket> Sended { get; } = new List<P3DPacket>();
         // -- Debug -- //
 #endif
 
@@ -143,7 +143,7 @@ namespace PokeD.Server.Clients.P3D
             
 
             int id;
-            if (Packet.TryParseID(data, out id))
+            if (P3DPacket.TryParseID(data, out id))
             {
                 var packet = PlayerResponse.Packets[id]();
 
@@ -157,7 +157,7 @@ namespace PokeD.Server.Clients.P3D
             }
         }
 
-        private void HandlePacket(Packet packet)
+        private void HandlePacket(P3DPacket packet)
         {
             switch ((PlayerPacketTypes) packet.ID)
             {
@@ -245,8 +245,11 @@ namespace PokeD.Server.Clients.P3D
             }
         }
 
-
-        public void SendPacket(Packet packet, int originID)
+        public void SendPacket(ProtobufPacket packet, int originID)
+        {
+            throw new NotImplementedException();
+        }
+        public void SendPacket(P3DPacket packet, int originID)
         {
             if (Stream.Connected)
             {
