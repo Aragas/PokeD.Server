@@ -3,7 +3,9 @@ using System;
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
 using PokeD.Core.Packets;
-using PokeD.Core.Packets.Remote.Authorization;
+using PokeD.Core.Packets.SCON;
+using PokeD.Core.Packets.SCON.Authorization;
+using PokeD.Core.Packets.SCON.Status;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Wrappers;
 
@@ -64,10 +66,10 @@ namespace PokeD.Server.Clients.Remote
         {
             using (var reader = new ProtobufDataReader(data))
             {
-                if (RemoteResponse.Packets[id] == null)
+                if (SCONResponse.Packets[id] == null)
                     throw new ServerException("RemoteClient eeading error: Wrong packet ID.");
 
-                var packet = RemoteResponse.Packets[id]().ReadPacket(reader);
+                var packet = SCONResponse.Packets[id]().ReadPacket(reader);
 
                 HandlePacket(packet);
             }
@@ -75,20 +77,26 @@ namespace PokeD.Server.Clients.Remote
 
         private void HandlePacket(Packet packet)
         {
-            switch ((RemotePacketTypes) packet.ID)
+            switch ((SCONPacketTypes) packet.ID)
             {
-                case RemotePacketTypes.AuthorizationRequestPacket:
+                case SCONPacketTypes.AuthorizationRequest:
                     HandleAuthorizationRequest((AuthorizationRequestPacket) packet);
                     break;
 
-                case RemotePacketTypes.EncryptionRequestPacket:
+
+                case SCONPacketTypes.EncryptionRequest:
                     HandleEncryptionRequest((EncryptionRequestPacket) packet);
                     break;
 
-                case RemotePacketTypes.CompressionRequestPacket:
-                    HandleCompressionRequest((CompressionRequestPacket) packet);
+
+                case SCONPacketTypes.ExecuteCommand:
+                    HandleExecuteCommand((ExecuteCommandPacket) packet);
                     break;
 
+
+                case SCONPacketTypes.PlayerListRequest:
+                    HandlePlayerListRequest((PlayerListRequestPacket) packet);
+                    break;
             }
         }
 
@@ -101,7 +109,7 @@ namespace PokeD.Server.Clients.Remote
 
         public GameDataPacket GetDataPacket()
         {
-            return null;
+            throw new NotImplementedException();
         }
         public DataItems GenerateDataItems()
         {

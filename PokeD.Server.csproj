@@ -127,12 +127,6 @@
     </When>
   </Choose>
   <ItemGroup>
-    <ProjectReference Include="OpenWeatherMap\OpenWeatherMap.csproj">
-      <Project>{88ce0793-0612-44ba-81f1-0ce7a248b66f}</Project>
-      <Name>OpenWeatherMap</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,4 +1,6 @@
-using PokeD.Core.Packets.Remote.Authorization;
+using PokeD.Core.Packets.SCON;
+using PokeD.Core.Packets.SCON.Authorization;
+using PokeD.Core.Packets.SCON.Status;
 
 namespace PokeD.Server.Clients.Remote
 {
@@ -12,10 +14,10 @@ namespace PokeD.Server.Clients.Remote
         {
             SendPacket(new AuthorizationResponsePacket { AuthorizationStatus = AuthorizationStatus });
 
-            if(AuthorizationStatus == AuthorizationStatus.RemoteClientEnabled)
+            if (AuthorizationStatus == AuthorizationStatus.RemoteClientEnabled)
                 SendPacket(new AuthorizationCompletePacket());
             else
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Remote Client not enabled!"});
+                SendPacket(new AuthorizationDisconnectPacket {Reason = "Remote Client not enabled!"});
         }
 
         /// <summary>
@@ -49,30 +51,14 @@ namespace PokeD.Server.Clients.Remote
             }
         }
 
-        /// <summary>
-        /// Not implemented.
-        /// </summary>
-        /// <param name="packet"></param>
-        private void HandleCompressionRequest(CompressionRequestPacket packet)
+        private void HandleExecuteCommand(ExecuteCommandPacket packet)
         {
-            if ((AuthorizationStatus & AuthorizationStatus.CompressionEnabled) != AuthorizationStatus.CompressionEnabled)
-                SendPacket(new AuthorizationDisconnectPacket {Reason = "Compression not enabled!"});
-            else
-            {
-                if (packet.Threshold > 0)
-                {
-                    if (packet.Threshold <= CompressionTreshold)
-                    {
-                        SendPacket(new CompressionResponsePacket {Threshold = packet.Threshold});
+            _server.ExecuteCommand(packet.Command);
+        }
 
-                        Stream.SetCompression(packet.Threshold);
-                    }
-                    else
-                        SendPacket(new AuthorizationDisconnectPacket {Reason = "Compression threshold too big!"});
-                }
-                else
-                    SendPacket(new CompressionResponsePacket {Threshold = packet.Threshold});
-            }
+        private void HandlePlayerListRequest(PlayerListRequestPacket packet)
+        {
+            SendPacket(new PlayerListResponsePacket { Players = _server.GetConnectedClientNames() });
         }
     }
 }

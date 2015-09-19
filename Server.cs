@@ -37,6 +37,9 @@ namespace PokeD.Server
         [JsonProperty("ProtobufPort")]
         public ushort ProtobufPort { get; private set; }
 
+        [JsonProperty("SCONPort")]
+        public ushort SCONPort { get; private set; }
+
 
         [JsonProperty("ServerName")]
         public string ServerName { get; private set; } = "Put name here";
@@ -60,6 +63,7 @@ namespace PokeD.Server
 
         INetworkTCPServer P3DListener { get; set; }
         INetworkTCPServer ProtobufListener { get; set; }
+        INetworkTCPServer SCONListener { get; set; }
 
 
         #region Player Stuff
@@ -71,6 +75,7 @@ namespace PokeD.Server
         List<IClient> PlayersJoining { get; } = new List<IClient>();
         List<IClient> PlayersToAdd { get; } = new List<IClient>();
         List<IClient> PlayersToRemove { get; } = new List<IClient>();
+        List<IClient> SCONClients { get; } = new List<IClient>();
 
         ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; } = new ConcurrentDictionary<string, P3DPlayer[]>();
 
@@ -92,11 +97,11 @@ namespace PokeD.Server
         private bool IsDisposing { get; set; }
 
 
-        public Server(ushort port = 15124, ushort protobufPort = 15125, ushort remotePort = 15126)
+        public Server(ushort port = 15124, ushort protobufPort = 15125, ushort sconPort = 15126)
         {
             Port = port;
             ProtobufPort = protobufPort;
-            ProtobufPort = remotePort;
+            SCONPort = sconPort;
         }
 
 
@@ -149,6 +154,12 @@ namespace PokeD.Server
                 ProtobufListener.Start();
             }
 
+            if (SCONPort != 0)
+            {
+                SCONListener = NetworkTCPServerWrapper.NewInstance(SCONPort);
+                SCONListener.Start();
+            }
+
             var watch = Stopwatch.StartNew();
             while (!IsDisposing)
             {
@@ -158,6 +169,10 @@ namespace PokeD.Server
                 if (ProtobufListener != null && ProtobufListener.AvailableClients)
                     if (ProtobufListener.AvailableClients)
                         PlayersJoining.Add(new ProtobufPlayer(ProtobufListener.AcceptNetworkTCPClient(), this));
+
+                if (SCONListener != null && SCONListener.AvailableClients)
+                    if (SCONListener.AvailableClients)
+                        SCONClients.Add(new ProtobufPlayer(SCONListener.AcceptNetworkTCPClient(), this));
 
 
 
@@ -358,13 +373,17 @@ namespace PokeD.Server
 
             #region Player Updating
 
-            // Add actual players
+            // Update actual players
             for (var i = 0; i < Players.Count; i++)
                 Players[i].Update();
 
-            // Add joining players
+            // Update joining players
             for (var i = 0; i < PlayersJoining.Count; i++)
                 PlayersJoining[i].Update();
+
+            // Update SCON clients
+            for (var i = 0; i < SCONClients.Count; i++)
+                SCONClients[i].Update();
             
             #endregion Player Updating
 
