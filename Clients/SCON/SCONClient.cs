@@ -129,8 +129,8 @@ namespace PokeD.Server.Clients.SCON
                     break;
 
 
-                case SCONPacketTypes.EncryptionRequest:
-                    HandleEncryptionRequest((EncryptionRequestPacket) packet);
+                case SCONPacketTypes.EncryptionResponse:
+                    HandleEncryptionResponse((EncryptionResponsePacket) packet);
                     break;
                     
 

@@ -1,7 +1,10 @@
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.X509;
+
 using PCLStorage;
+
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
 using PokeD.Core.Packets.SCON.Chat;
@@ -13,8 +16,9 @@ namespace PokeD.Server.Clients.SCON
 {
     public partial class SCONClient
     {
-        AuthorizationStatus AuthorizationStatus { get; set; } = AuthorizationStatus.RemoteClientEnabled;
+        AuthorizationStatus AuthorizationStatus { get; set; } = AuthorizationStatus.RemoteClientEnabled | AuthorizationStatus.EncryprionEnabled;
 
+        byte[] VerificationToken { get; set; }
         bool Authorized { get; set; }
 
         private void HandleAuthorizationRequest(AuthorizationRequestPacket packet)
@@ -23,13 +27,25 @@ namespace PokeD.Server.Clients.SCON
                 return;
 
             SendPacket(new AuthorizationResponsePacket { AuthorizationStatus = AuthorizationStatus });
+
+            if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
+            {
+                var publicKeyInfo = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(_server.RSAKeyPair.Public);
+                var publicKey = publicKeyInfo.ToAsn1Object().GetDerEncoded();
+
+                VerificationToken = new byte[4];
+                var csp = new SecureRandom();
+                csp.NextBytes(VerificationToken);
+
+                SendPacket(new EncryptionRequestPacket { PublicKey = publicKey, VerificationToken = VerificationToken });
+            }
         }
 
         /// <summary>
         /// Not implemented.
         /// </summary>
         /// <param name="packet"></param>
-        private void HandleEncryptionRequest(EncryptionRequestPacket packet)
+        private void HandleEncryptionResponse(EncryptionResponsePacket packet)
         {
             if (Authorized)
                 return;
@@ -37,10 +53,20 @@ namespace PokeD.Server.Clients.SCON
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.RemoteClientEnabled))
             {
                 if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
-                {
-                    SendPacket(new AuthorizationDisconnectPacket { Reason = "Encryption isn't working! Hahaha!!!" });
+                {                 
+                    var pkcs = new PKCS1Signature(_server.RSAKeyPair);
 
+                    var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
+                    for (int i = 0; i < decryptedToken.Length; i++)
+                        if (decryptedToken[i] != VerificationToken[i])
+                        {
+                            SendPacket(new AuthorizationDisconnectPacket { Reason = "Unable to authenticate." });
+                            return;
+                        }
+                    
+                    var sharedKey = pkcs.DeSignData(packet.SharedSecret);
 
+                    Stream.InitializeEncryption(sharedKey);
                 }
                 else
                     SendPacket(new AuthorizationDisconnectPacket { Reason = "Encryption not enabled!" });

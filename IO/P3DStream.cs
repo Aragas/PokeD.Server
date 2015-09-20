@@ -262,7 +262,7 @@ namespace PokeD.Server.IO
 
         private static string CreateData(ref P3DPacket packet)
         {
-            var dataItems = packet.DataItems.ToArray() ?? new string[0];
+            var dataItems = packet.DataItems.ToArray();
 
             var stringBuilder = new StringBuilder();
 

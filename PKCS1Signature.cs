@@ -17,16 +17,23 @@ namespace PokeD.Server
         }
 
 
-        private readonly AsymmetricKeyParameter _publicKey;
-        public PKCS1Signature(byte[] publicKey)
+        public AsymmetricCipherKeyPair RSAKeyPair { get; set; }
+        public PKCS1Signature(AsymmetricCipherKeyPair rsaKeyPair)
         {
-            _publicKey = PublicKeyFactory.CreateKey(publicKey);
+            RSAKeyPair = rsaKeyPair;
         }
 
         public byte[] SignData(byte[] data)
         {
             var eng = new Pkcs1Encoding(new RsaEngine());
-            eng.Init(true, _publicKey);
+            eng.Init(true, RSAKeyPair.Public);
+            return eng.ProcessBlock(data, 0, data.Length);
+        }
+
+        public byte[] DeSignData(byte[] data)
+        {
+            var eng = new Pkcs1Encoding(new RsaEngine());
+            eng.Init(false, RSAKeyPair.Private);
             return eng.ProcessBlock(data, 0, data.Length);
         }
     }

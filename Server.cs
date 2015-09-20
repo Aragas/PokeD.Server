@@ -5,7 +5,13 @@ using System.Diagnostics;
 using System.Linq;
 
 using Newtonsoft.Json;
-
+using Org.BouncyCastle.Asn1.Pkcs;
+using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Pkcs;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.X509;
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
 using PokeD.Core.Packets;
@@ -83,8 +89,8 @@ namespace PokeD.Server
 
         ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; } = new ConcurrentDictionary<string, P3DPlayer[]>();
 
-        ConcurrentQueue<PlayerPacket> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerPacket>();
-        ConcurrentQueue<OriginPacket> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<OriginPacket>();
+        ConcurrentQueue<PlayerP3DPacket> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerP3DPacket>();
+        ConcurrentQueue<OriginP3DPacket> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<OriginP3DPacket>();
 
         [JsonProperty("MutedPlayers")]
         Dictionary<int, List<int>> MutedPlayers { get; } = new Dictionary<int, List<int>>();
@@ -101,12 +107,30 @@ namespace PokeD.Server
         [JsonIgnore]
         public bool IsDisposing { get; private set; }
 
+        const int RsaKeySize = 1024;
+
+        [JsonIgnore]
+        public AsymmetricCipherKeyPair RSAKeyPair { get; set; }
+
 
         public Server(ushort port = 15124, ushort protobufPort = 15125, ushort sconPort = 15126)
         {
             Port = port;
             ProtobufPort = protobufPort;
             SCONPort = sconPort;
+
+
+            RSAKeyPair = GenerateKeyPair();
+        }
+
+        private static AsymmetricCipherKeyPair GenerateKeyPair()
+        {
+            var secureRandom = new SecureRandom();
+            var keyGenerationParameters = new KeyGenerationParameters(secureRandom, RsaKeySize);
+
+            var keyPairGenerator = new RsaKeyPairGenerator();
+            keyPairGenerator.Init(keyGenerationParameters);
+            return keyPairGenerator.GenerateKeyPair();
         }
 
 
@@ -313,7 +337,7 @@ namespace PokeD.Server
         public void SendToClient(IClient player, P3DPacket packet, int originID)
         {
             if (player != null)
-                PacketsToPlayer.Enqueue(new PlayerPacket(player, ref packet, originID));
+                PacketsToPlayer.Enqueue(new PlayerP3DPacket(player, ref packet, originID));
         }
 
         public void SendToAllClients(P3DPacket packet, int originID = -1)
@@ -325,13 +349,13 @@ namespace PokeD.Server
                     {
                         var player = Players[i];
                         if (!MutedPlayers[originID].Contains(player.ID))
-                            PacketsToPlayer.Enqueue(new PlayerPacket(player , ref packet, originID));
+                            PacketsToPlayer.Enqueue(new PlayerP3DPacket(player , ref packet, originID));
                     }
 
                     return;
                 }
 
-            PacketsToAllPlayers.Enqueue(new OriginPacket(ref packet, originID));
+            PacketsToAllPlayers.Enqueue(new OriginP3DPacket(ref packet, originID));
         }
 
 
@@ -396,14 +420,14 @@ namespace PokeD.Server
 
             #region Packet Sending
 
-            PlayerPacket playerPacket;
-            while (!IsDisposing && PacketsToPlayer.TryDequeue(out playerPacket))
-                playerPacket.Player.SendPacket(playerPacket.Packet, playerPacket.OriginID);
+            PlayerP3DPacket playerP3DPacket;
+            while (!IsDisposing && PacketsToPlayer.TryDequeue(out playerP3DPacket))
+                playerP3DPacket.Player.SendPacket(playerP3DPacket.Packet, playerP3DPacket.OriginID);
 
-            OriginPacket originPacket;
-            while (!IsDisposing && PacketsToAllPlayers.TryDequeue(out originPacket))
+            OriginP3DPacket originP3DPacket;
+            while (!IsDisposing && PacketsToAllPlayers.TryDequeue(out originP3DPacket))
                 for (var i = 0; i < Players.Count; i++)
-                    Players[i].SendPacket(originPacket.Packet, originPacket.OriginID);
+                    Players[i].SendPacket(originP3DPacket.Packet, originP3DPacket.OriginID);
 
             #endregion Packet Sending
 
