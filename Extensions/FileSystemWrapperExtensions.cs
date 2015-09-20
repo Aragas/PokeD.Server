@@ -24,7 +24,7 @@ namespace PokeD.Server.Extensions
             {
                 var file = reader.ReadToEnd();
                 if (!string.IsNullOrEmpty(file))
-                    try { JsonConvert.PopulateObject(file, p3DPlayer); writer.Write(JsonConvert.SerializeObject(p3DPlayer, Formatting.Indented)); }
+                    try { JsonConvert.PopulateObject(file, p3DPlayer); stream.Seek(0, SeekOrigin.Begin); writer.Write(JsonConvert.SerializeObject(p3DPlayer, Formatting.Indented)); }
                     catch (JsonReaderException) { return false; }
             }
 
