@@ -148,17 +148,14 @@ namespace PokeD.Server.Clients.P3D
             int id;
             if (P3DPacket.TryParseID(data, out id))
             {
-                if(id >= PlayerResponse.Packets.Length)
-                    throw new P3DPlayerException($"ID {id} >= Packets.Length");
+                P3DPacket packet = null;
+                try { packet = PlayerResponse.Packets[id](); }
+                catch (Exception) { }
 
-                var packet = PlayerResponse.Packets[id]();
                 if (packet == null)
-                {
-                    //Logger.Log(LogType.Warning, $"Packet with ID {id} is null");
-                    throw new P3DPlayerException($"Packet with ID {id} is null");
-                    //return;
-                }
+                    return;
 
+                //packet = PlayerResponse.Packets[id]();
                 if (packet.TryParseData(data))
                 {
                     HandlePacket(packet);

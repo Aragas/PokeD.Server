@@ -1,7 +1,13 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using PCLStorage;
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
 using PokeD.Core.Packets.SCON.Chat;
+using PokeD.Core.Packets.SCON.Logs;
 using PokeD.Core.Packets.SCON.Status;
+using PokeD.Core.Wrappers;
 
 namespace PokeD.Server.Clients.SCON
 {
@@ -93,6 +99,52 @@ namespace PokeD.Server.Clients.SCON
             var player = _server.GetClient(packet.Player);
 
             SendPacket(new PlayerLocationResponsePacket { Player = player.Name, Position = player.Position, LevelFile = player.LevelFile });
+        }
+
+        private void HandleLogListRequest(LogListRequestPacket packet)
+        {
+            var list = FileSystemWrapper.LogFolder.GetFilesAsync().Result;
+
+            var strings = new List<string>();
+            foreach (var file in list)
+                strings.Add(file.Name);
+            
+            SendPacket(new LogListResponsePacket { LogFileList = strings.ToArray() });
+        }
+
+        private void HandleLogFileRequest(LogFileRequestPacket packet)
+        {
+            if (FileSystemWrapper.LogFolder.CheckExistsAsync(packet.LogFilename).Result == ExistenceCheckResult.FileExists)
+            {
+                var logText = FileSystemWrapper.LogFolder.GetFileAsync(packet.LogFilename).Result.ReadAllTextAsync().Result;
+
+                SendPacket(new LogFileResponsePacket { LogFile = logText });
+            }
+        }
+
+        private void HandleCrashLogListRequest(CrashLogListRequestPacket packet)
+        {
+            if (FileSystemWrapper.LogFolder.CheckExistsAsync("Crash").Result == ExistenceCheckResult.FolderExists)
+            {
+                var list = FileSystemWrapper.LogFolder.GetFolderAsync("Crash").Result.GetFilesAsync().Result;
+
+                var strings = new List<string>();
+                foreach (var file in list)
+                    strings.Add(file.Name);
+
+                SendPacket(new CrashLogListResponsePacket {CrashLogFileList = strings.ToArray()});
+            }
+        }
+
+        private void HandleCrashLogFileRequest(CrashLogFileRequestPacket packet)
+        {
+            if (FileSystemWrapper.LogFolder.CheckExistsAsync("Crash").Result == ExistenceCheckResult.FolderExists)
+                if (FileSystemWrapper.LogFolder.GetFolderAsync("Crash").Result.CheckExistsAsync(packet.CrashLogFilename).Result == ExistenceCheckResult.FileExists)
+                {
+                    var crashLogText = FileSystemWrapper.LogFolder.GetFileAsync(packet.CrashLogFilename).Result.ReadAllTextAsync().Result;
+
+                    SendPacket(new CrashLogFileResponsePacket {CrashLogFile = crashLogText});
+                }
         }
     }
 }

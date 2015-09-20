@@ -20,10 +20,11 @@ namespace PokeD.Server.Extensions
             var filename = $"{p3DPlayer.GameJoltId}.json";
             using (var stream = FileSystemWrapper.UsersFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).Result.OpenAsync(FileAccess.ReadAndWrite).Result)
             using (var reader = new StreamReader(stream))
+            using (var writer = new StreamWriter(stream))
             {
                 var file = reader.ReadToEnd();
                 if (!string.IsNullOrEmpty(file))
-                    try { JsonConvert.PopulateObject(file, p3DPlayer); }
+                    try { JsonConvert.PopulateObject(file, p3DPlayer); writer.Write(JsonConvert.SerializeObject(p3DPlayer, Formatting.Indented)); }
                     catch (JsonReaderException) { return false; }
             }
 

@@ -42,10 +42,10 @@ namespace PokeD.Server
         public ushort SCONPort { get; private set; }
 
 
-        [JsonProperty("ServerName")]
+        [JsonProperty("ServerName", NullValueHandling = NullValueHandling.Ignore)]
         public string ServerName { get; private set; } = "Put name here";
 
-        [JsonProperty("ServerMessage")]
+        [JsonProperty("ServerMessage", NullValueHandling = NullValueHandling.Ignore)]
         public string ServerMessage { get; private set; } = "Put description here";
 
         [JsonProperty("MaxPlayers")]
@@ -61,8 +61,8 @@ namespace PokeD.Server
         [JsonProperty("CustomWorldEnabled")]
         public bool CustomWorldEnabled { get; private set; } = true;
 
-        [JsonProperty("SCON_Password")]
-        public string SCON_Password { get; private set; } = "password";
+        [JsonProperty("SCON_Password", NullValueHandling = NullValueHandling.Ignore)]
+        public string SCON_Password { get; private set; } = "PUT_PASSWORD_HERE";
 
 
         INetworkTCPServer P3DListener { get; set; }
@@ -98,7 +98,8 @@ namespace PokeD.Server
         int PlayerWatcherThread { get; set; }
         int PlayerCorrectionThread { get; set; }
 
-        bool IsDisposing { get; set; }
+        [JsonIgnore]
+        public bool IsDisposing { get; private set; }
 
 
         public Server(ushort port = 15124, ushort protobufPort = 15125, ushort sconPort = 15126)

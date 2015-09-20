@@ -9,6 +9,7 @@ using PokeD.Core.Packets;
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
 using PokeD.Core.Packets.SCON.Chat;
+using PokeD.Core.Packets.SCON.Logs;
 using PokeD.Core.Packets.SCON.Status;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Wrappers;
@@ -159,6 +160,24 @@ namespace PokeD.Server.Clients.SCON
 
                 case SCONPacketTypes.PlayerLocationRequest:
                     HandlePlayerLocationRequest((PlayerLocationRequestPacket) packet);
+                    break;
+
+
+                case SCONPacketTypes.LogListRequest:
+                    HandleLogListRequest((LogListRequestPacket) packet);
+                    break;
+
+                case SCONPacketTypes.LogFileRequest:
+                    HandleLogFileRequest((LogFileRequestPacket) packet);
+                    break;
+
+
+                case SCONPacketTypes.CrashLogListRequest:
+                    HandleCrashLogListRequest((CrashLogListRequestPacket) packet);
+                    break;
+
+                case SCONPacketTypes.CrashLogFileRequest:
+                    HandleCrashLogFileRequest((CrashLogFileRequestPacket) packet);
                     break;
             }
         }
