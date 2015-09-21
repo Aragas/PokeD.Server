@@ -5,13 +5,13 @@ using System.Diagnostics;
 using System.Linq;
 
 using Newtonsoft.Json;
-using Org.BouncyCastle.Asn1.Pkcs;
-using Org.BouncyCastle.Asn1.X509;
+
 using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Generators;
-using Org.BouncyCastle.Pkcs;
+using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
-using Org.BouncyCastle.X509;
+
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
 using PokeD.Core.Packets;
@@ -34,8 +34,6 @@ namespace PokeD.Server
 
         [JsonIgnore]
         public float P3DProtocolVersion => 0.5f;
-        [JsonIgnore]
-        public int ProtobufProtocolVersion => 1;
 
 
         [JsonProperty("Port")]
@@ -107,10 +105,9 @@ namespace PokeD.Server
         [JsonIgnore]
         public bool IsDisposing { get; private set; }
 
-        const int RsaKeySize = 1024;
-
         [JsonIgnore]
-        public AsymmetricCipherKeyPair RSAKeyPair { get; set; }
+        public AsymmetricCipherKeyPair RSAKeyPair { get; }
+        const int RsaKeySize = 1024;
 
 
         public Server(ushort port = 15124, ushort protobufPort = 15125, ushort sconPort = 15126)
@@ -125,7 +122,7 @@ namespace PokeD.Server
 
         private static AsymmetricCipherKeyPair GenerateKeyPair()
         {
-            var secureRandom = new SecureRandom();
+            var secureRandom = new SecureRandom(new DigestRandomGenerator(new Sha512Digest()));
             var keyGenerationParameters = new KeyGenerationParameters(secureRandom, RsaKeySize);
 
             var keyPairGenerator = new RsaKeyPairGenerator();
@@ -137,8 +134,11 @@ namespace PokeD.Server
         public bool Start()
         {
             var status = FileSystemWrapper.LoadSettings(FileName, this);
+            if(!status)
+                Logger.Log(LogType.Warning, "Failed to load Server settings!");
 
             Logger.Log(LogType.Info, $"Starting {ServerName}");
+
 
             ListenToConnectionsThread = ThreadWrapper.StartThread(ListenToConnectionsCycle, true, "ListenToConnectionsThread");
             if (MoveCorrectionEnabled)
@@ -153,10 +153,13 @@ namespace PokeD.Server
         public bool Stop()
         {
             var status = FileSystemWrapper.SaveSettings(FileName, this);
+            if (!status)
+                Logger.Log(LogType.Warning, "Failed to save Server settings!");
 
             Logger.Log(LogType.Info, $"Stopping {ServerName}");
 
-            if(ThreadWrapper.IsRunning(ListenToConnectionsThread))
+
+            if (ThreadWrapper.IsRunning(ListenToConnectionsThread))
                 ThreadWrapper.AbortThread(ListenToConnectionsThread);
 
             if (ThreadWrapper.IsRunning(PlayerWatcherThread))
@@ -289,12 +292,6 @@ namespace PokeD.Server
         {
             FileSystemWrapperExtensions.LoadClientSettings(player);
 
-            //if (player is P3DPlayer)
-            //    FileSystemWrapperExtensions.LoadUserSettings((P3DPlayer) player);
-            //else if (player is ProtobufPlayer)
-            //    FileSystemWrapperExtensions.LoadUserSettings((ProtobufPlayer) player);
-            
-
             player.ID = GenerateClientID();
             SendToClient(player, new IDPacket { PlayerID = player.ID }, -1);
             SendToClient(player, new WorldDataPacket { DataItems = World.GenerateDataItems() }, -1);
@@ -320,11 +317,6 @@ namespace PokeD.Server
         {
             FileSystemWrapperExtensions.SaveClientSettings(player);
 
-            //if (player is P3DPlayer)
-            //    FileSystemWrapperExtensions.SaveUserSettings((P3DPlayer)player);
-            //else if (player is ProtobufPlayer)
-            //    FileSystemWrapperExtensions.SaveUserSettings((ProtobufPlayer) player);
-            
             PlayersToRemove.Add(player);
         }
 
@@ -509,22 +501,11 @@ namespace PokeD.Server
         }
 
 
-        public string[] GetConnectedClientNames()
-        {
-            var list = new List<string>();
-
-            for (var i = 0; i < Players.Count; i++)
-                list.Add(Players[i].Name);
-
-            return list.ToArray();
-        }
-            
-
         /// <summary>
-        /// Get Player class by ID.
+        /// Get IClient by ID.
         /// </summary>
-        /// <param name="id">Player ID.</param>
-        /// <returns>Returns null is player is not found.</returns>
+        /// <param name="id">IClient ID.</param>
+        /// <returns>Returns null if IClient is not found.</returns>
         public IClient GetClient(int id)
         {
             for (var i = 0; i < Players.Count; i++)
@@ -538,10 +519,10 @@ namespace PokeD.Server
         }
 
         /// <summary>
-        /// Get Player class by name.
+        /// Get IClient by name.
         /// </summary>
-        /// <param name="id">Player name.</param>
-        /// <returns>Returns null is player is not found.</returns>
+        /// <param name="name">IClient Name.</param>
+        /// <returns>Returns null if IClient is not found.</returns>
         public IClient GetClient(string name)
         {
             for (var i = 0; i < Players.Count; i++)
@@ -555,23 +536,37 @@ namespace PokeD.Server
         }
 
         /// <summary>
-        /// Get Player name by ID.
+        /// Get IClient Name by ID.
         /// </summary>
-        /// <param name="name">Player name.</param>
-        /// <returns>Returns string.Empty is player is not found.</returns>
+        /// <param name="name">IClient Name.</param>
+        /// <returns>Returns String.Empty if IClient is not found.</returns>
         public int GetClientID(string name)
         {
             return GetClient(name)?.ID ?? -1;
         }
 
         /// <summary>
-        /// Get Player ID by name.
+        /// Get IClient ID by Name.
         /// </summary>
-        /// <param name="id">Player ID.</param>
-        /// <returns>Returns -1 is player is not found.</returns>
+        /// <param name="id">IClient ID.</param>
+        /// <returns>Returns -1 if IClient is not found.</returns>
         public string GetClientName(int id)
         {
             return GetClient(id)?.Name ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Get all connected IClient Names.
+        /// </summary>
+        /// <returns>Returns null if there are no IClient connected.</returns>
+        public string[] GetClientNames()
+        {
+            var list = new List<string>();
+
+            for (var i = 0; i < Players.Count; i++)
+                list.Add(Players[i].Name);
+
+            return list.ToArray();
         }
 
 

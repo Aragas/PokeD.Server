@@ -15,7 +15,7 @@ using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
 using PokeD.Core.Wrappers;
-using PokeD.Server.Exceptions;
+
 using PokeD.Server.IO;
 
 namespace PokeD.Server.Clients.P3D

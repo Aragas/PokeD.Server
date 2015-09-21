@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 
-using Org.BouncyCastle.Security;
-using Org.BouncyCastle.X509;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Prng;
 
 using PCLStorage;
 
+using PokeD.Core;
+using PokeD.Core.Extensions;
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
 using PokeD.Core.Packets.SCON.Chat;
@@ -30,21 +32,15 @@ namespace PokeD.Server.Clients.SCON
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                var publicKeyInfo = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(_server.RSAKeyPair.Public);
-                var publicKey = publicKeyInfo.ToAsn1Object().GetDerEncoded();
+                var publicKey = _server.RSAKeyPair.PublicKeyToByteArray();
 
                 VerificationToken = new byte[4];
-                var csp = new SecureRandom();
-                csp.NextBytes(VerificationToken);
+                var drg = new DigestRandomGenerator(new Sha512Digest());
+                drg.NextBytes(VerificationToken);
 
                 SendPacket(new EncryptionRequestPacket { PublicKey = publicKey, VerificationToken = VerificationToken });
             }
         }
-
-        /// <summary>
-        /// Not implemented.
-        /// </summary>
-        /// <param name="packet"></param>
         private void HandleEncryptionResponse(EncryptionResponsePacket packet)
         {
             if (Authorized)
@@ -54,9 +50,10 @@ namespace PokeD.Server.Clients.SCON
             {
                 if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
                 {                 
-                    var pkcs = new PKCS1Signature(_server.RSAKeyPair);
+                    var pkcs = new PKCS1Signer(_server.RSAKeyPair);
 
                     var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
+
                     for (int i = 0; i < decryptedToken.Length; i++)
                         if (decryptedToken[i] != VerificationToken[i])
                         {
@@ -74,7 +71,6 @@ namespace PokeD.Server.Clients.SCON
             else
                 SendPacket(new AuthorizationDisconnectPacket { Reason = "Remote Client not enabled!" });
         }
-
         private void HandleAuthorizationPassword(AuthorizationPasswordPacket packet)
         {
             if(Authorized)
@@ -113,7 +109,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            SendPacket(new PlayerListResponsePacket {Players = _server.GetConnectedClientNames()});
+            SendPacket(new PlayerListResponsePacket {Players = _server.GetClientNames()});
         }
 
         private void HandleStartChatReceiving(StartChatReceivingPacket packet)
@@ -126,7 +122,6 @@ namespace PokeD.Server.Clients.SCON
 
             ChatReceiving = true;
         }
-
         private void HandleStopChatReceiving(StopChatReceivingPacket packet)
         {
             if (!Authorized)
@@ -167,7 +162,6 @@ namespace PokeD.Server.Clients.SCON
             
             SendPacket(new LogListResponsePacket { LogFileList = strings.ToArray() });
         }
-
         private void HandleLogFileRequest(LogFileRequestPacket packet)
         {
             if (!Authorized)
@@ -203,7 +197,6 @@ namespace PokeD.Server.Clients.SCON
                 SendPacket(new CrashLogListResponsePacket {CrashLogFileList = strings.ToArray()});
             }
         }
-
         private void HandleCrashLogFileRequest(CrashLogFileRequestPacket packet)
         {
             if (!Authorized)

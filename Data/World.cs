@@ -1,5 +1,8 @@
 ﻿using System;
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
 
@@ -7,17 +10,27 @@ namespace PokeD.Server.Data
 {
     public class World : IUpdatable, IDisposable
     {
+        [JsonProperty("UseLocation")]
         public bool UseLocation { get; set; }
         bool LocationChanged { get; set; }
+
+        [JsonProperty("Location", NullValueHandling = NullValueHandling.Ignore)]
         public string Location { get { return _location; } set { LocationChanged = _location != value; _location = value; } }
         string _location;
 
+        [JsonProperty("UseRealTime")]
         public bool UseRealTime { get; set; } = true;
+
+        [JsonProperty("DoDayCycle")]
         public bool DoDayCycle { get; set; } = true;
 
+        [JsonProperty("Season"), JsonConverter(typeof(StringEnumConverter))]
         public Season Season { get; set; } = Season.Spring;
+
+        [JsonProperty("Weather"), JsonConverter(typeof(StringEnumConverter))]
         public Weather Weather { get; set; } = Weather.Sunny;
 
+        [JsonProperty("CurrentTime")]
         public TimeSpan CurrentTime
         {
             get { TimeSpan timeSpan; return TimeSpan.TryParseExact(CurrentTimeString, "HH\\,mm\\,ss", null, out timeSpan) ? timeSpan : TimeSpan.Zero; }
