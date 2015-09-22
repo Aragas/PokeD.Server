@@ -186,7 +186,7 @@ namespace PokeD.Server.Clients.Protobuf
                 HandlePacket(packet);
 
 
-                if (id == (int) PlayerPacketTypes.ServerDataRequest && _server.EncryptionEnabled && VerificationToken == null)
+                if (packet is ServerDataRequestPacket)
                     SendEncryptionRequest();
                 
 #if DEBUG
