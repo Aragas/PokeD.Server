@@ -187,15 +187,7 @@ namespace PokeD.Server.Clients.Protobuf
 
 
                 if (id == (int) PlayerPacketTypes.ServerDataRequest && _server.EncryptionEnabled && VerificationToken == null)
-                {
-                    var publicKey = _server.RSAKeyPair.PublicKeyToByteArray();
-
-                    VerificationToken = new byte[4];
-                    var drg = new DigestRandomGenerator(new Sha512Digest());
-                    drg.NextBytes(VerificationToken);
-
-                    SendPacket(new EncryptionRequestPacket {PublicKey = publicKey, VerificationToken = VerificationToken}, -1);
-                }
+                    SendEncryptionRequest();
                 
 #if DEBUG
                 Received.Add(packet);
@@ -285,11 +277,24 @@ namespace PokeD.Server.Clients.Protobuf
             }
         }
 
+        private void SendEncryptionRequest()
+        {
+            var publicKey = _server.RSAKeyPair.PublicKeyToByteArray();
+
+            VerificationToken = new byte[4];
+            var drg = new DigestRandomGenerator(new Sha512Digest());
+            drg.NextBytes(VerificationToken);
+
+            SendPacket(new EncryptionRequestPacket { PublicKey = publicKey, VerificationToken = VerificationToken }, -1);
+        }
+
 
         public void SendPacket(ProtobufPacket packet, int originID)
         {
             if (Stream.Connected)
             {
+                packet.Origin = originID;
+
                 Stream.SendPacket(ref packet);
 
 #if DEBUG
