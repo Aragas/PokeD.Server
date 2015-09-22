@@ -130,6 +130,7 @@ namespace PokeD.Server.Clients.Protobuf
                     if (dataLength == 0)
                     {
                         Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Length size is 0. Disconnecting IClient {Name}.");
+                        SendPacket(new KickedPacket { Reason = "Packet Length size is 0!" }, -1);
                         _server.RemovePlayer(this);
                         return;
                     }
@@ -176,6 +177,7 @@ namespace PokeD.Server.Clients.Protobuf
                 if (id >= PlayerResponse.Packets.Length)
                 {
                     Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
+                    SendPacket(new KickedPacket { Reason = $"Packet ID {id} is not correct!" }, -1);
                     _server.RemovePlayer(this);
                     return;
                 }

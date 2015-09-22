@@ -39,11 +39,20 @@ namespace PokeD.Server.Clients.Protobuf
             var sharedKey = pkcs.DeSignData(packet.SharedSecret);
 
             Stream.InitializeEncryption(sharedKey);
+
+            Authorized = true;
         }
 
 
         private void HandleGameData(GameDataPacket packet)
         {
+            if (_server.EncryptionEnabled && !Authorized)
+            {
+                SendPacket(new KickedPacket { Reason = "You haven't enabled encryption!" }, -1);
+                _server.RemovePlayer(this);
+                return;
+            }
+
             /*
             try { GameMode = packet.GameMode; }
             catch (Exception) { }
