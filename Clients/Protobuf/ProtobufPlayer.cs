@@ -124,8 +124,8 @@ namespace PokeD.Server.Clients.Protobuf
 
             if (Stream.Connected && Stream.DataAvailable > 0)
             {
-                try
-                {
+                //try
+                //{
                     var dataLength = Stream.ReadVarInt();
                     if (dataLength == 0)
                     {
@@ -139,8 +139,8 @@ namespace PokeD.Server.Clients.Protobuf
 
                     LastMessage = DateTime.UtcNow;
                     HandleData(data);
-                }
-                catch (ProtobufReadingException ex) { Logger.Log(LogType.GlobalError, $"Protobuf Reading Exeption: {ex.Message}. Disconnecting IClient {Name}."); }
+                //}
+                //catch (ProtobufReadingException ex) { Logger.Log(LogType.GlobalError, $"Protobuf Reading Exeption: {ex.Message}. Disconnecting IClient {Name}."); }
             }
 
 
