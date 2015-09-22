@@ -114,8 +114,6 @@ namespace PokeD.Server.Clients.P3D
                 }
             }
         }
-
-
         private void HandleGameData(GameDataPacket packet)
         {
             ParseGameData(packet);

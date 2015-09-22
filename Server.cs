@@ -90,7 +90,7 @@ namespace PokeD.Server
         List<IClient> PlayersToRemove { get; } = new List<IClient>();
         List<IClient> SCONClients { get; } = new List<IClient>();
 
-        ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; } = new ConcurrentDictionary<string, P3DPlayer[]>();
+        ConcurrentDictionary<string, IClient[]> NearPlayers { get; } = new ConcurrentDictionary<string, IClient[]>();
 
         ConcurrentQueue<PlayerP3DPacket> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerP3DPacket>();
         ConcurrentQueue<OriginP3DPacket> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<OriginP3DPacket>();
@@ -156,7 +156,6 @@ namespace PokeD.Server
 
             return status;
         }
-
         public bool Stop()
         {
             var status = FileSystemWrapper.SaveSettings(FileName, this);
@@ -236,14 +235,14 @@ namespace PokeD.Server
             var watch = Stopwatch.StartNew();
             while (!IsDisposing)
             {
-                var players = new List<P3DPlayer>(Players.GetConcreteTypeEnumerator<P3DPlayer>());
+                var players = new List<IClient>(Players.GetConcreteTypeEnumerator<P3DPlayer, ProtobufPlayer>());
 
                 foreach (var player in players.Where(player => player.LevelFile != null && !NearPlayers.ContainsKey(player.LevelFile)))
                     NearPlayers.TryAdd(player.LevelFile, null);
 
                 foreach (var level in NearPlayers.Keys)
                 {
-                    var playerList = new List<P3DPlayer>();
+                    var playerList = new List<IClient>();
                     foreach (var player in players.Where(player => level == player.LevelFile))
                         playerList.Add(player);
 

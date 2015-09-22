@@ -6,7 +6,7 @@ using PokeD.Server.Clients;
 
 namespace PokeD.Server
 {
-    public class ClientList : IEnumerable
+    public class ClientList
     {
         public int Count => Clients.Count;
 
@@ -17,9 +17,9 @@ namespace PokeD.Server
             Clients = new List<IClient>();
         }
 
-        public IEnumerator GetEnumerator()
+        public IEnumerable<IClient> GetEnumerator()
         {
-            return Clients.GetEnumerator();
+            return Clients.AsEnumerable();
         }
 
         public IEnumerable<T> GetConcreteTypeEnumerator<T>() where T : IClient
@@ -29,6 +29,39 @@ namespace PokeD.Server
             foreach (var client in Clients)
                 if (client.GetType() == type)
                     list.Add((T) client);
+
+            return list.AsEnumerable();
+        }
+
+        public IEnumerable<IClient> GetConcreteTypeEnumerator<T1, T2>() where T1 : IClient where T2 : IClient
+        {
+            var type1 = typeof(T1);
+            var type2 = typeof(T2);
+
+            var list = new List<IClient>();
+            foreach (var client in Clients)
+            {
+                var type = client.GetType();
+                if (type == type1 || type == type2)
+                    list.Add(client);
+            }
+            
+            return list.AsEnumerable();
+        }
+
+        public IEnumerable<IClient> GetConcreteTypeEnumerator<T1, T2, T3>() where T1 : IClient where T2 : IClient where T3 : IClient
+        {
+            var type1 = typeof(T1);
+            var type2 = typeof(T2);
+            var type3 = typeof(T3);
+
+            var list = new List<IClient>();
+            foreach (var client in Clients)
+            {
+                var type = client.GetType();
+                if (type == type1 || type == type2 || type == type3)
+                    list.Add(client);
+            }
 
             return list.AsEnumerable();
         }

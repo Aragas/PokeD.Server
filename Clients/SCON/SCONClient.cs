@@ -53,6 +53,9 @@ namespace PokeD.Server.Clients.SCON
         [JsonProperty("ChatReceiving")]
         public bool ChatReceiving { get; private set; }
 
+        [JsonIgnore]
+        public bool IsMoving { get; private set; }
+
         #endregion Values
 
         INetworkTCPClient Client { get; }

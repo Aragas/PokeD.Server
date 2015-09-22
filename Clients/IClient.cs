@@ -20,6 +20,7 @@ namespace PokeD.Server.Clients
         DateTime ConnectionTime { get; }
         bool UseCustomWorld { get; }
         bool ChatReceiving { get; }
+        bool IsMoving { get; }
 
 
         GameDataPacket GetDataPacket();

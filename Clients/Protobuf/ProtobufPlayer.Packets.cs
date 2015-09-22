@@ -1,6 +1,9 @@
 ﻿using System;
 
+using Newtonsoft.Json;
+
 using PokeD.Core;
+using PokeD.Core.Data;
 using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
 using PokeD.Core.Packets.Client;
@@ -16,6 +19,10 @@ namespace PokeD.Server.Clients.Protobuf
         byte[] VerificationToken { get; set; }
         bool Authorized { get; set; }
 
+
+        [JsonIgnore]
+        public bool IsMoving { get; private set; }
+        Vector3 LastPosition { get; set; }
 
         private void HandleJoiningGameRequest(JoiningGameRequestPacket packet)
         {
@@ -51,59 +58,103 @@ namespace PokeD.Server.Clients.Protobuf
             Authorized = true;
         }
 
+        private void ParseGameData(GameDataPacket packet)
+        {
+            if (packet.DataItems == null)
+            {
+                Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: ParseGameData DataItems is null.");
+                return;
+            }
 
+            var strArray = packet.DataItems.ToArray();
+            if (strArray.Length < 14)
+            {
+                Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: ParseGameData DataItems < 14. Packet DataItems {packet.DataItems}.");
+                return;
+            }
+
+            for (var index = 0; index < strArray.Length; index++)
+            {
+                var dataItem = strArray[index];
+
+                if (string.IsNullOrEmpty(dataItem))
+                    continue;
+
+                switch (index)
+                {
+                    case 0:
+                        GameMode = packet.GameMode;
+                        break;
+
+                    case 1:
+                        IsGameJoltPlayer = packet.IsGameJoltPlayer;
+                        break;
+
+                    case 2:
+                        GameJoltId = packet.GameJoltId;
+                        break;
+
+                    case 3:
+                        DecimalSeparator = packet.DecimalSeparator;
+                        break;
+
+                    case 4:
+                        Name = packet.Name;
+                        break;
+
+                    case 5:
+                        LevelFile = packet.LevelFile;
+                        break;
+
+                    case 6:
+                        if (packet.GetPokemonPosition(DecimalSeparator) != Vector3.Zero)
+                        {
+                            LastPosition = Position;
+
+                            Position = packet.GetPosition(DecimalSeparator);
+
+                            IsMoving = LastPosition != Position;
+                        }
+                        break;
+
+                    case 7:
+                        Facing = packet.Facing;
+                        break;
+
+                    case 8:
+                        Moving = packet.Moving;
+                        break;
+
+                    case 9:
+                        Skin = packet.Skin;
+                        break;
+
+                    case 10:
+                        BusyType = packet.BusyType;
+                        break;
+
+                    case 11:
+                        PokemonVisible = packet.PokemonVisible;
+                        break;
+
+                    case 12:
+                        if (packet.GetPokemonPosition(DecimalSeparator) != Vector3.Zero)
+                            PokemonPosition = packet.GetPokemonPosition(DecimalSeparator);
+                        break;
+
+                    case 13:
+                        PokemonSkin = packet.PokemonSkin;
+                        break;
+
+                    case 14:
+                        PokemonFacing = packet.PokemonFacing;
+                        break;
+                }
+            }
+        }
         private void HandleGameData(GameDataPacket packet)
         {
             /*
-            try { GameMode = packet.GameMode; }
-            catch (Exception) { }
-
-            try { IsGameJoltPlayer = packet.IsGameJoltPlayer; }
-            catch (Exception) { }
-
-            try { GameJoltId = packet.GameJoltId; }
-            catch (Exception) { }
-
-            try { GameJoltId = packet.GameJoltId; }
-            catch (Exception) { }
-
-            try { DecimalSeparator = packet.DecimalSeparator; }
-            catch (Exception) { }
-
-            try { Name = packet.Name; }
-            catch (Exception) { }
-
-            try { LevelFile = packet.LevelFile; }
-            catch (Exception) { }
-
-            try { Position = packet.GetPosition(DecimalSeparator); }
-            catch (Exception) { }
-
-            try { Facing = packet.Facing; }
-            catch (Exception) { }
-
-            try { Moving = packet.Moving; }
-            catch (Exception) { }
-
-            try { Skin = packet.Skin; }
-            catch (Exception) { }
-
-            try { BusyType = packet.BusyType; }
-            catch (Exception) { }
-
-            try { PokemonVisible = packet.PokemonVisible; }
-            catch (Exception) { }
-
-            try { PokemonPosition = packet.GetPokemonPosition(DecimalSeparator); }
-            catch (Exception) { }
-
-            try { PokemonSkin = packet.PokemonSkin; }
-            catch (Exception) { }
-
-            try { PokemonFacing = packet.PokemonFacing; }
-            catch (Exception) { }
-            */
-
             try
             {
                 GameMode = packet.GameMode;
@@ -123,6 +174,9 @@ namespace PokeD.Server.Clients.Protobuf
                 PokemonFacing = packet.PokemonFacing;
             }
             catch (Exception) { }
+            */
+
+            ParseGameData(packet);
 
             if (!Initialized)
             {
