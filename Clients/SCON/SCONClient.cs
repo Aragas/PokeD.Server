@@ -191,10 +191,6 @@ namespace PokeD.Server.Clients.SCON
         {
             throw new NotImplementedException();
         }
-        public DataItems GenerateDataItems()
-        {
-            throw new NotImplementedException();
-        }
 
 
         public void SendPacket(ProtobufPacket packet, int originID = 0)
