@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 using Org.BouncyCastle.Crypto.Digests;
@@ -18,7 +19,7 @@ namespace PokeD.Server.Clients.SCON
 {
     public partial class SCONClient
     {
-        AuthorizationStatus AuthorizationStatus { get; set; } = AuthorizationStatus.RemoteClientEnabled | AuthorizationStatus.EncryprionEnabled;
+        AuthorizationStatus AuthorizationStatus { get; set; }
 
         byte[] VerificationToken { get; set; }
         bool Authorized { get; set; }
@@ -53,14 +54,13 @@ namespace PokeD.Server.Clients.SCON
                     var pkcs = new PKCS1Signer(_server.RSAKeyPair);
 
                     var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
+                    if (decryptedToken != VerificationToken)
+                    {
+                        SendPacket(new AuthorizationDisconnectPacket {Reason = "Unable to authenticate."});
+                        return;
+                    }
+                    Array.Clear(VerificationToken, 0, VerificationToken.Length);
 
-                    for (int i = 0; i < decryptedToken.Length; i++)
-                        if (decryptedToken[i] != VerificationToken[i])
-                        {
-                            SendPacket(new AuthorizationDisconnectPacket { Reason = "Unable to authenticate." });
-                            return;
-                        }
-                    
                     var sharedKey = pkcs.DeSignData(packet.SharedSecret);
 
                     Stream.InitializeEncryption(sharedKey);

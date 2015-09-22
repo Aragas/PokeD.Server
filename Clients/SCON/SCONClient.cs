@@ -72,6 +72,10 @@ namespace PokeD.Server.Clients.SCON
             Client = client;
             Stream = new ProtobufStream(Client);
             _server = server;
+
+            AuthorizationStatus = 
+                (_server.SCONEnabled ? AuthorizationStatus.RemoteClientEnabled : 0)     | 
+                (_server.EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0);
         }
 
         public void Update()

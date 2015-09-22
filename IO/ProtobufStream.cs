@@ -77,10 +77,10 @@ namespace PokeD.Server.IO
         {
             var lengthBytes = GetVarIntBytes(value.Length);
             var final = new byte[value.Length + lengthBytes.Length];
-
+            
             Buffer.BlockCopy(lengthBytes, 0, final, 0, lengthBytes.Length);
             Buffer.BlockCopy(Encoding.GetBytes(value), 0, final, lengthBytes.Length, value.Length);
-
+            
             WriteByteArray(final);
         }
 
@@ -363,6 +363,7 @@ namespace PokeD.Server.IO
         public void SendPacket(ref ProtobufPacket packet)
         {
             WriteVarInt(packet.ID);
+            WriteVarInt(packet.Origin);
             packet.WritePacket(this);
             Purge();
         }
@@ -385,7 +386,6 @@ namespace PokeD.Server.IO
         private void PurgeModernWithoutCompression()
         {
             var lenBytes = GetVarIntBytes(_buffer.Length);
-
             var tempBuff = new byte[_buffer.Length + lenBytes.Length];
 
             Buffer.BlockCopy(lenBytes, 0, tempBuff, 0, lenBytes.Length);

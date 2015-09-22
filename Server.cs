@@ -37,13 +37,13 @@ namespace PokeD.Server
 
 
         [JsonProperty("Port")]
-        public ushort Port { get; private set; }
+        public ushort Port { get; private set; } = 15124;
 
         [JsonProperty("ProtobufPort")]
-        public ushort ProtobufPort { get; private set; }
+        public ushort ProtobufPort { get; private set; } = 15125;
 
         [JsonProperty("SCONPort")]
-        public ushort SCONPort { get; private set; }
+        public ushort SCONPort { get; private set; } = 15126;
 
 
         [JsonProperty("ServerName", NullValueHandling = NullValueHandling.Ignore)]
@@ -55,6 +55,11 @@ namespace PokeD.Server
         [JsonProperty("MaxPlayers")]
         public int MaxPlayers { get; private set; } = 1000;
 
+        [JsonProperty("SCONEnabled")]
+        public bool SCONEnabled { get; set; } = true;
+
+        [JsonProperty("EncryptionEnabled")]
+        public bool EncryptionEnabled { get; set; } = true;
 
         [JsonProperty("MoveCorrectionEnabled")]
         bool MoveCorrectionEnabled { get; set; } = true;
@@ -106,18 +111,17 @@ namespace PokeD.Server
         public bool IsDisposing { get; private set; }
 
         [JsonIgnore]
-        public AsymmetricCipherKeyPair RSAKeyPair { get; }
+        public AsymmetricCipherKeyPair RSAKeyPair { get; private set; }
         const int RsaKeySize = 1024;
 
+        public Server() { }
 
-        public Server(ushort port = 15124, ushort protobufPort = 15125, ushort sconPort = 15126)
+
+        public Server(ushort port = 15124, ushort protobufPort = 15125, ushort sconPort = 15126) : this()
         {
             Port = port;
             ProtobufPort = protobufPort;
             SCONPort = sconPort;
-
-
-            RSAKeyPair = GenerateKeyPair();
         }
 
         private static AsymmetricCipherKeyPair GenerateKeyPair()
@@ -136,6 +140,9 @@ namespace PokeD.Server
             var status = FileSystemWrapper.LoadSettings(FileName, this);
             if(!status)
                 Logger.Log(LogType.Warning, "Failed to load Server settings!");
+
+            if(EncryptionEnabled)
+                RSAKeyPair = GenerateKeyPair();
 
             Logger.Log(LogType.Info, $"Starting {ServerName}");
 
@@ -186,7 +193,7 @@ namespace PokeD.Server
                 ProtobufListener.Start();
             }
 
-            if (SCONPort != 0)
+            if (SCONEnabled && SCONPort != 0)
             {
                 SCONListener = NetworkTCPServerWrapper.NewInstance(SCONPort);
                 SCONListener.Start();

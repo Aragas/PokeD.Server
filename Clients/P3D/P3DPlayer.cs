@@ -170,9 +170,6 @@ namespace PokeD.Server.Clients.P3D
         {
             switch ((PlayerPacketTypes) packet.ID)
             {
-                case PlayerPacketTypes.Unknown:
-                    break;
-
                 case PlayerPacketTypes.GameData:
                     HandleGameData((GameDataPacket) packet);
                     break;

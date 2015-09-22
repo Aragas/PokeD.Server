@@ -4,12 +4,17 @@ using System.Diagnostics;
 
 using Newtonsoft.Json;
 
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Prng;
+
 using PokeD.Core.Data;
+using PokeD.Core.Extensions;
 using PokeD.Core.Interfaces;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
 using PokeD.Core.Packets.Client;
+using PokeD.Core.Packets.Encryption;
 using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
@@ -68,6 +73,9 @@ namespace PokeD.Server.Clients.Protobuf
         public bool Initialized { get; private set; }
 
         [JsonIgnore]
+        public bool EncryptionEnabled { get; set; } = true;
+
+        [JsonIgnore]
         public string IP => Client.IP;
 
         [JsonIgnore]
@@ -116,12 +124,11 @@ namespace PokeD.Server.Clients.Protobuf
                 var dataLength = Stream.ReadVarInt();
                 if (dataLength == 0)
                     throw new ProtobufPlayerException("Reading error: Packet Length size is 0");
-
-                var id = Stream.ReadVarInt();
+                
                 var data = Stream.ReadByteArray(dataLength);
 
                 LastMessage = DateTime.UtcNow;
-                HandleData(id, data);
+                HandleData(data);
             }
 
 
@@ -142,18 +149,33 @@ namespace PokeD.Server.Clients.Protobuf
             UpdateWatch.Start();
         }
 
-
-        private void HandleData(int id, byte[] data)
+        private void HandleData(byte[] data)
         {
             if (data == null)
                 return;
 
             using (var reader = new ProtobufDataReader(data))
             {
+                var id = reader.ReadVarInt();
+                var origin = reader.ReadVarInt();
                 var packet = PlayerResponse.Packets[id]().ReadPacket(reader);
-
+                packet.Origin = origin;
 
                 HandlePacket(packet);
+
+
+                if (id == (int) PlayerPacketTypes.ServerDataRequest && _server.EncryptionEnabled && VerificationToken == null)
+                {
+                    var publicKey = _server.RSAKeyPair.PublicKeyToByteArray();
+
+                    VerificationToken = new byte[4];
+                    var drg = new DigestRandomGenerator(new Sha512Digest());
+                    drg.NextBytes(VerificationToken);
+
+                    SendPacket(
+                        new EncryptionRequestPacket {PublicKey = publicKey, VerificationToken = VerificationToken}, -1);
+                }
+                
 #if DEBUG
                 Received.Add(packet);
 #endif
@@ -166,6 +188,12 @@ namespace PokeD.Server.Clients.Protobuf
             {
                 case PlayerPacketTypes.Unknown:
                     break;
+
+
+                case PlayerPacketTypes.EncryptionResponse:
+                    HandleEncryptionResponse((EncryptionResponsePacket) packet);
+                    break;
+
 
                 case PlayerPacketTypes.GameData:
                     HandleGameData((GameDataPacket) packet);
@@ -251,7 +279,7 @@ namespace PokeD.Server.Clients.Protobuf
         }
         public void SendPacket(P3DPacket packet, int originID)
         {
-            throw new NotImplementedException();
+            SendPacket(packet as ProtobufPacket, originID);
         }
 
 

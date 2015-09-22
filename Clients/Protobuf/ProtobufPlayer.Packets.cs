@@ -1,8 +1,10 @@
 ﻿using System;
 
+using PokeD.Core;
 using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
 using PokeD.Core.Packets.Client;
+using PokeD.Core.Packets.Encryption;
 using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
@@ -11,23 +13,106 @@ namespace PokeD.Server.Clients.Protobuf
 {
     partial class ProtobufPlayer
     {
+        byte[] VerificationToken { get; set; }
+        bool Authorized { get; set; }
+
+
+        private void HandleEncryptionResponse(EncryptionResponsePacket packet)
+        {
+            if (Authorized)
+                return;
+
+
+            var pkcs = new PKCS1Signer(_server.RSAKeyPair);
+
+            var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
+            for (int i = 0; i < VerificationToken.Length; i++)
+            {
+                if (decryptedToken[i] != VerificationToken[i])
+                {
+                    SendPacket(new KickedPacket { Reason = "Unable to authenticate." }, -1);
+                    return;
+                }
+            }
+            Array.Clear(VerificationToken, 0, VerificationToken.Length);
+
+            var sharedKey = pkcs.DeSignData(packet.SharedSecret);
+
+            Stream.InitializeEncryption(sharedKey);
+        }
+
+
         private void HandleGameData(GameDataPacket packet)
         {
-            GameMode = packet.GameMode;
-            IsGameJoltPlayer = packet.IsGameJoltPlayer;
-            GameJoltId = packet.GameJoltId;
-            DecimalSeparator = packet.DecimalSeparator;
-            Name = packet.Name;
-            LevelFile = packet.LevelFile;
-            Position = packet.GetPosition(DecimalSeparator);
-            Facing = packet.Facing;
-            Moving = packet.Moving;
-            Skin = packet.Skin;
-            BusyType = packet.BusyType;
-            PokemonVisible = packet.PokemonVisible;
-            PokemonPosition = packet.GetPokemonPosition(DecimalSeparator);
-            PokemonSkin = packet.PokemonSkin;
-            PokemonFacing = packet.PokemonFacing;
+            /*
+            try { GameMode = packet.GameMode; }
+            catch (Exception) { }
+
+            try { IsGameJoltPlayer = packet.IsGameJoltPlayer; }
+            catch (Exception) { }
+
+            try { GameJoltId = packet.GameJoltId; }
+            catch (Exception) { }
+
+            try { GameJoltId = packet.GameJoltId; }
+            catch (Exception) { }
+
+            try { DecimalSeparator = packet.DecimalSeparator; }
+            catch (Exception) { }
+
+            try { Name = packet.Name; }
+            catch (Exception) { }
+
+            try { LevelFile = packet.LevelFile; }
+            catch (Exception) { }
+
+            try { Position = packet.GetPosition(DecimalSeparator); }
+            catch (Exception) { }
+
+            try { Facing = packet.Facing; }
+            catch (Exception) { }
+
+            try { Moving = packet.Moving; }
+            catch (Exception) { }
+
+            try { Skin = packet.Skin; }
+            catch (Exception) { }
+
+            try { BusyType = packet.BusyType; }
+            catch (Exception) { }
+
+            try { PokemonVisible = packet.PokemonVisible; }
+            catch (Exception) { }
+
+            try { PokemonPosition = packet.GetPokemonPosition(DecimalSeparator); }
+            catch (Exception) { }
+
+            try { PokemonSkin = packet.PokemonSkin; }
+            catch (Exception) { }
+
+            try { PokemonFacing = packet.PokemonFacing; }
+            catch (Exception) { }
+            */
+
+            try
+            {
+                GameMode = packet.GameMode;
+                IsGameJoltPlayer = packet.IsGameJoltPlayer;
+                GameJoltId = packet.GameJoltId;
+                DecimalSeparator = packet.DecimalSeparator;
+                Name = packet.Name;
+                LevelFile = packet.LevelFile;
+                Position = packet.GetPosition(DecimalSeparator);
+                Facing = packet.Facing;
+                Moving = packet.Moving;
+                Skin = packet.Skin;
+                BusyType = packet.BusyType;
+                PokemonVisible = packet.PokemonVisible;
+                PokemonPosition = packet.GetPokemonPosition(DecimalSeparator);
+                PokemonSkin = packet.PokemonSkin;
+                PokemonFacing = packet.PokemonFacing;
+            }
+            catch (Exception) { }
 
             if (!Initialized)
             {
