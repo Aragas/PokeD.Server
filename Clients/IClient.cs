@@ -26,5 +26,7 @@ namespace PokeD.Server.Clients
 
         void SendPacket(ProtobufPacket packet, int originID);
         void SendPacket(P3DPacket packet, int originID);
+
+        void Disconnect();
     }
 }

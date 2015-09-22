@@ -229,6 +229,12 @@ namespace PokeD.Server.Clients.SCON
         }
 
 
+        public void Disconnect()
+        {
+            Stream.Disconnect();
+        }
+
+
         public void Dispose()
         {
             Stream?.Dispose();

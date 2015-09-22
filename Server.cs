@@ -390,6 +390,8 @@ namespace PokeD.Server
                     Logger.Log(LogType.Server, $"The player {playerToRemove.Name} disconnected, playtime was {DateTime.Now - playerToRemove.ConnectionTime:hh\\:mm\\:ss}");
                     SendToAllClients(new ChatMessagePacket { DataItems = new DataItems($"Player {playerToRemove.Name} disconnected!") });
                 }
+
+                playerToRemove.Disconnect();
             }
 
             #endregion Player Filtration

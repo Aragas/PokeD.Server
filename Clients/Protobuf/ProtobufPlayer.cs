@@ -73,7 +73,7 @@ namespace PokeD.Server.Clients.Protobuf
         public bool Initialized { get; private set; }
 
         [JsonIgnore]
-        public bool EncryptionEnabled { get; set; } = true;
+        public bool EncryptionEnabled => _server.EncryptionEnabled;
 
         [JsonIgnore]
         public string IP => Client.IP;
@@ -186,10 +186,6 @@ namespace PokeD.Server.Clients.Protobuf
                 packet.Origin = origin;
 
                 HandlePacket(packet);
-
-
-                if (packet is ServerDataRequestPacket)
-                    SendEncryptionRequest();
                 
 #if DEBUG
                 Received.Add(packet);
@@ -201,6 +197,10 @@ namespace PokeD.Server.Clients.Protobuf
             switch ((PlayerPacketTypes) packet.ID)
             {
                 case PlayerPacketTypes.Unknown:
+                    break;
+
+                case PlayerPacketTypes.JoiningGameRequest:
+                    HandleJoiningGameRequest((JoiningGameRequestPacket) packet);
                     break;
 
 
@@ -334,6 +334,12 @@ namespace PokeD.Server.Clients.Protobuf
             packet.SetPokemonPosition(PokemonPosition, DecimalSeparator);
 
             return packet;
+        }
+
+
+        public void Disconnect()
+        {
+            Stream?.Disconnect();
         }
 
 

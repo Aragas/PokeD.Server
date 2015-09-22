@@ -310,6 +310,12 @@ namespace PokeD.Server.Clients.P3D
         }
 
 
+        public void Disconnect()
+        {
+            Stream.Disconnect();
+        }
+
+
         public void Dispose()
         {
             Stream?.Dispose();

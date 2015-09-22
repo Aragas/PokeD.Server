@@ -17,6 +17,14 @@ namespace PokeD.Server.Clients.Protobuf
         bool Authorized { get; set; }
 
 
+        private void HandleJoiningGameRequest(JoiningGameRequestPacket packet)
+        {
+            SendPacket(new JoiningGameResponsePacket { EncryptionEnabled = EncryptionEnabled }, -1);
+
+            if (EncryptionEnabled)
+                SendEncryptionRequest();
+        }
+
         private void HandleEncryptionResponse(EncryptionResponsePacket packet)
         {
             if (Authorized)
@@ -46,13 +54,6 @@ namespace PokeD.Server.Clients.Protobuf
 
         private void HandleGameData(GameDataPacket packet)
         {
-            if (_server.EncryptionEnabled && !Authorized)
-            {
-                SendPacket(new KickedPacket { Reason = "You haven't enabled encryption!" }, -1);
-                _server.RemovePlayer(this);
-                return;
-            }
-
             /*
             try { GameMode = packet.GameMode; }
             catch (Exception) { }
