@@ -109,7 +109,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            SendPacket(new PlayerListResponsePacket {Players = _server.GetClientNames()});
+            SendPacket(new PlayerListResponsePacket {Players = _server.GetAllClientsNames()});
         }
 
         private void HandleStartChatReceiving(StartChatReceivingPacket packet)

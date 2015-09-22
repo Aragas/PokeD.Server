@@ -561,14 +561,9 @@ namespace PokeD.Server
         /// Get all connected IClient Names.
         /// </summary>
         /// <returns>Returns null if there are no IClient connected.</returns>
-        public string[] GetClientNames()
+        public string[] GetAllClientsNames()
         {
-            var list = new List<string>();
-
-            for (var i = 0; i < Players.Count; i++)
-                list.Add(Players[i].Name);
-
-            return list.ToArray();
+            return Players.GetAllClientsName();
         }
 
 

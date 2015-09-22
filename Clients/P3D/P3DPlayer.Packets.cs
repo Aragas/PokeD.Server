@@ -246,7 +246,7 @@ namespace PokeD.Server.Clients.P3D
             spacket.ServerName = _server.ServerName;
             spacket.ServerMessage = _server.ServerMessage;
             if (_server.PlayersCount > 0)
-                spacket.PlayerNames = _server.GetClientNames();
+                spacket.PlayerNames = _server.GetAllClientsNames();
 
             SendPacket(spacket, ID);
 

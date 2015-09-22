@@ -45,6 +45,11 @@ namespace PokeD.Server
             Clients.Remove(client);
         }
 
+        public string[] GetAllClientsName()
+        {
+            return Clients.Select(client => client.Name).ToArray();
+        }
+
         public void Clear()
         {
             Clients.Clear();

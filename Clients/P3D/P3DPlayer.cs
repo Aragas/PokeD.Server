@@ -274,7 +274,6 @@ namespace PokeD.Server.Clients.P3D
         {
             if (Stream.Connected)
             {
-                packet.ProtocolVersion = _server.P3DProtocolVersion;
                 packet.Origin = originID;
 
                 Stream.SendPacket(ref packet);
