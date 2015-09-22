@@ -314,7 +314,7 @@ namespace PokeD.Server.IO
                 result |= (current & 0x7Fu) << length++ * 7;
 
                 if (length > 5)
-                    throw new ServerException("Remote Client Stream reading error: VarInt may not be longer than 28 bits.");
+                    throw new ProtobufReadingException("Remote Client Stream reading error: VarInt may not be longer than 28 bits.");
 
                 if ((current & 0x80) != 128)
                     break;

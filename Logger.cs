@@ -53,6 +53,11 @@ namespace PokeD.Server
         /// Command Log Type.
         /// </summary>
         Command,
+
+        /// <summary>
+        /// Should be reported.
+        /// </summary>
+        GlobalError
     }
 
     public static class Logger

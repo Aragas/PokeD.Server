@@ -21,12 +21,18 @@ namespace PokeD.Server.Clients.P3D
 
         private void ParseGameData(GameDataPacket packet)
         {
-            if(packet.DataItems == null)
+            if (packet.DataItems == null)
+            {
+                Logger.Log(LogType.GlobalError, $"P3D Reading Error: ParseGameData DataItems is null.");
                 return;
+            }
 
             var strArray = packet.DataItems.ToArray();
             if (strArray.Length < 14)
+            {
+                Logger.Log(LogType.GlobalError, $"P3D Reading Error: ParseGameData DataItems < 14. Packet DataItems {packet.DataItems}.");
                 return;
+            }
 
             for (var index = 0; index < strArray.Length; index++)
             {

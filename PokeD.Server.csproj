@@ -41,9 +41,6 @@
     <Compile Include="Clients\Protobuf\ProtobufPlayer.Settings.cs" />
     <Compile Include="Clients\Protobuf\ProtobufPlayer.Packets.cs" />
     <Compile Include="Clients\Protobuf\ProtobufPlayer.cs" />
-    <Compile Include="Exceptions\P3DPlayerException.cs" />
-    <Compile Include="Exceptions\SCONException.cs" />
-    <Compile Include="Exceptions\ProtobufPlayerException.cs" />
     <Compile Include="Extensions\StreamReaderExtensions.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Clients\P3D\P3DPlayer.Settings.cs" />
@@ -53,7 +50,7 @@
     <Compile Include="Data\Season.cs" />
     <Compile Include="Data\Weather.cs" />
     <Compile Include="Data\World.cs" />
-    <Compile Include="Exceptions\ServerException.cs" />
+    <Compile Include="Exceptions\ProtobufReadingException.cs" />
     <Compile Include="Extensions\FileSystemWrapperExtensions.cs" />
     <Compile Include="IO\BouncyCastleAES.cs" />
     <Compile Include="IO\ProtobufDataReader.cs" />

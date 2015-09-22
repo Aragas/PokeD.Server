@@ -80,37 +80,51 @@ namespace PokeD.Server.Clients.SCON
 
         public void Update()
         {
+            if (!Stream.Connected)
+            {
+                _server.RemovePlayer(this);
+                return;
+            }
+
             if (Stream.Connected && Stream.DataAvailable > 0)
             {
-                var packetLength = Stream.ReadVarInt();
-                if (packetLength == 0)
-                    throw new SCONException("Reading error: Packet Length size is 0.");
+                try
+                {
+                    var packetLength = Stream.ReadVarInt();
+                    if (packetLength == 0)
+                    {
+                        Logger.Log(LogType.GlobalError, $"SCON Reading Error: Packet Length size is 0. Disconnecting.");
+                        _server.RemovePlayer(this);
+                        return;
+                    }
 
-                var packetId = Stream.ReadVarInt();
+                    var data = Stream.ReadByteArray(packetLength - 1);
 
-                var data = Stream.ReadByteArray(packetLength - 1);
-
-
-                HandleData(packetId, data);
+                    HandleData(data);
+                }
+                catch (ProtobufReadingException ex) { Logger.Log(LogType.GlobalError, $"Protobuf Reading Exeption: {ex.Message}. Disconnecting."); }
             }
         }
 
-        /// <summary>
-        /// Data is handled here.
-        /// </summary>
-        /// <param name="id">Packet ID</param>
-        /// <param name="data">Packet byte[] data</param>
-        private void HandleData(int id, byte[] data)
+        private void HandleData(byte[] data)
         {
             if (data == null)
                 return;
 
             using (var reader = new ProtobufDataReader(data))
             {
-                if (SCONResponse.Packets[id] == null)
-                    throw new SCONException("Reading error: Wrong packet ID.");
+                var id = reader.ReadVarInt();
+                var origin = reader.ReadVarInt();
+
+                if (id >= PlayerResponse.Packets.Length)
+                {
+                    Logger.Log(LogType.GlobalError, $"SCON Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting.");
+                    _server.RemovePlayer(this);
+                    return;
+                }
 
                 var packet = SCONResponse.Packets[id]().ReadPacket(reader);
+                packet.Origin = origin;
 
 
                 HandlePacket(packet);
@@ -119,11 +133,6 @@ namespace PokeD.Server.Clients.SCON
 #endif
             }
         }
-
-        /// <summary>
-        /// Packets are handled here.
-        /// </summary>
-        /// <param name="packet">Packet</param>
         private void HandlePacket(ProtobufPacket packet)
         {
             switch ((SCONPacketTypes) packet.ID)

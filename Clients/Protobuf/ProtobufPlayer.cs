@@ -117,18 +117,29 @@ namespace PokeD.Server.Clients.Protobuf
         public void Update()
         {
             if (!Stream.Connected)
+            {
                 _server.RemovePlayer(this);
+                return;
+            }
 
             if (Stream.Connected && Stream.DataAvailable > 0)
             {
-                var dataLength = Stream.ReadVarInt();
-                if (dataLength == 0)
-                    throw new ProtobufPlayerException("Reading error: Packet Length size is 0");
-                
-                var data = Stream.ReadByteArray(dataLength);
+                try
+                {
+                    var dataLength = Stream.ReadVarInt();
+                    if (dataLength == 0)
+                    {
+                        Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Length size is 0. Disconnecting IClient {Name}.");
+                        _server.RemovePlayer(this);
+                        return;
+                    }
 
-                LastMessage = DateTime.UtcNow;
-                HandleData(data);
+                    var data = Stream.ReadByteArray(dataLength);
+
+                    LastMessage = DateTime.UtcNow;
+                    HandleData(data);
+                }
+                catch (ProtobufReadingException ex) { Logger.Log(LogType.GlobalError, $"Protobuf Reading Exeption: {ex.Message}. Disconnecting IClient {Name}."); }
             }
 
 
@@ -152,12 +163,23 @@ namespace PokeD.Server.Clients.Protobuf
         private void HandleData(byte[] data)
         {
             if (data == null)
+            {
+                Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Data is null.");
                 return;
+            }
 
             using (var reader = new ProtobufDataReader(data))
             {
                 var id = reader.ReadVarInt();
                 var origin = reader.ReadVarInt();
+
+                if (id >= PlayerResponse.Packets.Length)
+                {
+                    Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
+                    _server.RemovePlayer(this);
+                    return;
+                }
+
                 var packet = PlayerResponse.Packets[id]().ReadPacket(reader);
                 packet.Origin = origin;
 
@@ -172,8 +194,7 @@ namespace PokeD.Server.Clients.Protobuf
                     var drg = new DigestRandomGenerator(new Sha512Digest());
                     drg.NextBytes(VerificationToken);
 
-                    SendPacket(
-                        new EncryptionRequestPacket {PublicKey = publicKey, VerificationToken = VerificationToken}, -1);
+                    SendPacket(new EncryptionRequestPacket {PublicKey = publicKey, VerificationToken = VerificationToken}, -1);
                 }
                 
 #if DEBUG
@@ -181,7 +202,6 @@ namespace PokeD.Server.Clients.Protobuf
 #endif
             }
         }
-
         private void HandlePacket(ProtobufPacket packet)
         {
             switch ((PlayerPacketTypes) packet.ID)
