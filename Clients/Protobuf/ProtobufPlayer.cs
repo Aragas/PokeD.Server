@@ -137,13 +137,13 @@ namespace PokeD.Server.Clients.Protobuf
             if (UpdateWatch.ElapsedMilliseconds < 1000)
                 return;
 
-            if (_server.CustomWorldEnabled && UseCustomWorld)
+            BattleUpdate();
+
+            if (!Battling && _server.CustomWorldEnabled && UseCustomWorld)
             {
                 CustomWorld.Update();
                 SendPacket(new WorldDataPacket { DataItems = CustomWorld.GenerateDataItems() }, -1);
             }
-
-            BattleUpdate();
 
             UpdateWatch.Reset();
             UpdateWatch.Start();

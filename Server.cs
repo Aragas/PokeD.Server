@@ -319,7 +319,6 @@ namespace PokeD.Server
             PlayersToAdd.Add(player);
             PlayersJoining.Remove(player);
         }
-
         public void RemovePlayer(IClient player)
         {
             FileSystemWrapperExtensions.SaveClientSettings(player);
@@ -332,13 +331,11 @@ namespace PokeD.Server
         {
             SendToClient(GetClient(destinationID), packet, originID);
         }
-
         public void SendToClient(IClient player, P3DPacket packet, int originID)
         {
             if (player != null)
                 PacketsToPlayer.Enqueue(new PlayerP3DPacket(player, ref packet, originID));
         }
-
         public void SendToAllClients(P3DPacket packet, int originID = -1)
         {
             if (originID != -1 && (packet is ChatMessagePacket || packet is ChatMessagePrivatePacket))
@@ -471,7 +468,6 @@ namespace PokeD.Server
 
             return MuteStatus.PlayerNotFound;
         }
-
         public MuteStatus UnMutePlayer(int id, string muteName)
         {
             if (!MutedPlayers.ContainsKey(id))
@@ -496,7 +492,6 @@ namespace PokeD.Server
             for (var i = 0; i < Players.Count; i++)
                 Players[i].SendPacket(new ServerMessagePacket { Message = message }, -1);
         }
-
         public void SendGlobalChatMessageToAllClients(string message)
         {
             for (var i = 0; i < Players.Count; i++)
