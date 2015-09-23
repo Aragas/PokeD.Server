@@ -210,7 +210,7 @@ namespace PokeD.Server
 
                 if (SCONListener != null && SCONListener.AvailableClients)
                     if (SCONListener.AvailableClients)
-                        SCONClients.Add(new SCONClient(SCONListener.AcceptNetworkTCPClient(), this));
+                        AddSCONClient(new SCONClient(SCONListener.AcceptNetworkTCPClient(), this));
 
 
 
@@ -323,6 +323,15 @@ namespace PokeD.Server
             FileSystemWrapperExtensions.SaveClientSettings(player);
 
             PlayersToRemove.Add(player);
+        }
+
+        public void AddSCONClient(SCONClient scon)
+        {
+            SCONClients.Add(scon);
+        }
+        public void RemoveSCONClient(SCONClient scon)
+        {
+            SCONClients.Remove(scon);
         }
 
 

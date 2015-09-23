@@ -1,18 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Numerics;
 using System.Text;
-
-using ICSharpCode.SharpZipLib.Zip.Compression;
-using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 
 using PokeD.Core.Data;
 using PokeD.Core.Interfaces;
 using PokeD.Core.Packets;
 using PokeD.Core.Wrappers;
-
-using PokeD.Server.Exceptions;
 
 namespace PokeD.Server.IO
 {
@@ -27,9 +21,6 @@ namespace PokeD.Server.IO
 
 
         public bool EncryptionEnabled { get; private set; }
-
-        public bool CompressionEnabled => CompressionThreshold > 0;
-        public uint CompressionThreshold { get; private set; }
 
         private Encoding Encoding { get; } = Encoding.UTF8;
 
@@ -61,11 +52,6 @@ namespace PokeD.Server.IO
             _aesStream = new BouncyCastleAES(_tcp, key);
 
             EncryptionEnabled = true;
-        }
-
-        public void SetCompression(uint threshold)
-        {
-            CompressionThreshold = threshold;
         }
 
 
@@ -377,19 +363,10 @@ namespace PokeD.Server.IO
         }
 
 
-        #region Purge
-
         private void Purge()
         {
-            if (CompressionEnabled)
-                PurgeModernWithCompression();
-            else
-                PurgeModernWithoutCompression();
-        }
-
-        private void PurgeModernWithoutCompression()
-        {
             var lenBytes = GetVarIntBytes(_buffer.Length);
+
             var tempBuff = new byte[_buffer.Length + lenBytes.Length];
 
             Buffer.BlockCopy(lenBytes, 0, tempBuff, 0, lenBytes.Length);
@@ -400,45 +377,6 @@ namespace PokeD.Server.IO
             _buffer = null;
         }
 
-        private void PurgeModernWithCompression()
-        {
-            var packetLength = 0; // -- data.Length + GetVarIntBytes(data.Length).Length
-            var dataLength = 0; // -- UncompressedData.Length
-            var data = _buffer;
-
-            packetLength = _buffer.Length + GetVarIntBytes(_buffer.Length).Length; // -- Get first Packet length
-
-            if (packetLength >= CompressionThreshold) // -- if Packet length > threshold, compress
-            {
-                using (var outputStream = new MemoryStream())
-                using (var inputStream = new DeflaterOutputStream(outputStream, new Deflater(0)))
-                {
-                    inputStream.Write(_buffer, 0, _buffer.Length);
-                    inputStream.Finish();
-
-                    data = outputStream.ToArray();
-                }
-
-                dataLength = data.Length;
-                packetLength = dataLength + GetVarIntBytes(data.Length).Length; // -- Calculate new packet length
-            }
-
-
-            var packetLengthByteLength = GetVarIntBytes(packetLength);
-            var dataLengthByteLength = GetVarIntBytes(dataLength);
-
-            var tempBuff = new byte[data.Length + packetLengthByteLength.Length + dataLengthByteLength.Length];
-
-            Buffer.BlockCopy(packetLengthByteLength, 0, tempBuff, 0, packetLengthByteLength.Length);
-            Buffer.BlockCopy(dataLengthByteLength, 0, tempBuff, packetLengthByteLength.Length, dataLengthByteLength.Length);
-            Buffer.BlockCopy(data, 0, tempBuff, packetLengthByteLength.Length + dataLengthByteLength.Length, data.Length);
-
-            Send(tempBuff, 0, tempBuff.Length);
-
-            _buffer = null;
-        }
-
-        #endregion
 
         public void Dispose()
         {

@@ -42,13 +42,12 @@ namespace PokeD.Server.Clients.Protobuf
 
             var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
             for (int i = 0; i < VerificationToken.Length; i++)
-            {
                 if (decryptedToken[i] != VerificationToken[i])
                 {
                     SendPacket(new KickedPacket { Reason = "Unable to authenticate." }, -1);
                     return;
                 }
-            }
+            
             Array.Clear(VerificationToken, 0, VerificationToken.Length);
 
             var sharedKey = pkcs.DeSignData(packet.SharedSecret);

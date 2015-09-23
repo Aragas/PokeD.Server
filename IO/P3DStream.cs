@@ -21,7 +21,6 @@ namespace PokeD.Server.IO
         public int DataAvailable => _tcp?.DataAvailable ?? 0;
 
         public bool EncryptionEnabled => false;
-        public uint CompressionThreshold => 0;
 
         private static CultureInfo CultureInfo => CultureInfo.InvariantCulture;
 
