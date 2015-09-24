@@ -79,7 +79,7 @@ namespace PokeD.Server.Clients.SCON
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.RemoteClientEnabled))
             {
-                if (_server.SCON_Password == packet.Password)
+                if (_server.SCON_Password.Hash == packet.PasswordHash)
                 {
                     Authorized = true;
                     SendPacket(new AuthorizationCompletePacket());

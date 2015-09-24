@@ -45,7 +45,6 @@ namespace PokeD.Server
         [JsonProperty("SCONPort")]
         public ushort SCONPort { get; private set; } = 15126;
 
-
         [JsonProperty("ServerName", NullValueHandling = NullValueHandling.Ignore)]
         public string ServerName { get; private set; } = "Put name here";
 
@@ -55,14 +54,14 @@ namespace PokeD.Server
         [JsonProperty("MaxPlayers")]
         public int MaxPlayers { get; private set; } = 1000;
 
-        [JsonProperty("SCONEnabled")]
-        public bool SCONEnabled { get; set; } = true;
-
         [JsonProperty("EncryptionEnabled")]
         public bool EncryptionEnabled { get; set; } = true;
 
-        [JsonProperty("MoveCorrectionEnabled")]
-        bool MoveCorrectionEnabled { get; set; } = true;
+        [JsonProperty("SCON_Enabled")]
+        public bool SCON_Enabled { get; set; } = true;
+
+        [JsonProperty("SCON_Password"), JsonConverter(typeof(PasswordHandler))]
+        public PasswordStorage SCON_Password { get; private set; } = new PasswordStorage();
 
         [JsonProperty("World")]
         World World { get; set; } = new World();
@@ -70,8 +69,8 @@ namespace PokeD.Server
         [JsonProperty("CustomWorldEnabled")]
         public bool CustomWorldEnabled { get; private set; } = true;
 
-        [JsonProperty("SCON_Password", NullValueHandling = NullValueHandling.Ignore)]
-        public string SCON_Password { get; private set; } = "PUT_PASSWORD_HERE";
+        [JsonProperty("MoveCorrectionEnabled")]
+        bool MoveCorrectionEnabled { get; set; } = true;
 
 
         INetworkTCPServer P3DListener { get; set; }
@@ -192,7 +191,7 @@ namespace PokeD.Server
                 ProtobufListener.Start();
             }
 
-            if (SCONEnabled && SCONPort != 0)
+            if (SCON_Enabled && SCONPort != 0)
             {
                 SCONListener = NetworkTCPServerWrapper.NewInstance(SCONPort);
                 SCONListener.Start();

@@ -77,7 +77,7 @@ namespace PokeD.Server.Clients.SCON
             _server = server;
 
             AuthorizationStatus = 
-                (_server.SCONEnabled ? AuthorizationStatus.RemoteClientEnabled : 0)     | 
+                (_server.SCON_Enabled ? AuthorizationStatus.RemoteClientEnabled : 0)     | 
                 (_server.EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0);
         }
 
