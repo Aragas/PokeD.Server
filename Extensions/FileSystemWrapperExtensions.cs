@@ -14,10 +14,10 @@ namespace PokeD.Server.Extensions
     {
         public static bool LoadClientSettings(IClient p3DPlayer)
         {
-            if (p3DPlayer.GameJoltId == 0)
+            if (p3DPlayer.GameJoltID == 0)
                 return false;
 
-            var filename = $"{p3DPlayer.GameJoltId}.json";
+            var filename = $"{p3DPlayer.GameJoltID}.json";
             using (var stream = FileSystemWrapper.UsersFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).Result.OpenAsync(FileAccess.ReadAndWrite).Result)
             using (var reader = new StreamReader(stream))
             using (var writer = new StreamWriter(stream))
@@ -41,10 +41,10 @@ namespace PokeD.Server.Extensions
         }
         public static bool SaveClientSettings(IClient p3DPlayer)
         {
-            if (p3DPlayer.GameJoltId == 0)
+            if (p3DPlayer.GameJoltID == 0)
                 return false;
 
-            var filename = $"{p3DPlayer.GameJoltId}.json";
+            var filename = $"{p3DPlayer.GameJoltID}.json";
             using (var stream = FileSystemWrapper.UsersFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).Result.OpenAsync(FileAccess.ReadAndWrite).Result)
             using (var writer = new StreamWriter(stream))
             {

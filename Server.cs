@@ -13,6 +13,7 @@ using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
 
 using PokeD.Core.Data;
+using PokeD.Core.Data.Structs;
 using PokeD.Core.Interfaces;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Chat;
@@ -31,9 +32,6 @@ namespace PokeD.Server
     public partial class Server : IUpdatable, IDisposable
     {
         public const string FileName = "Server.json";
-
-        [JsonIgnore]
-        public float P3DProtocolVersion => 0.5f;
 
 
         [JsonProperty("Port")]
@@ -80,6 +78,8 @@ namespace PokeD.Server
 
         #region Player Stuff
 
+        int FreePlayerID { get; set; } = 10;
+
         [JsonIgnore]
         public int PlayersCount => Players.Count;
 
@@ -97,8 +97,6 @@ namespace PokeD.Server
         [JsonProperty("MutedPlayers")]
         Dictionary<int, List<int>> MutedPlayers { get; } = new Dictionary<int, List<int>>();
 
-        int FreePlayerID { get; set; } = 10;
-
         #endregion Player Stuff
 
 
@@ -115,13 +113,6 @@ namespace PokeD.Server
 
         public Server() { }
 
-
-        public Server(ushort port = 15124, ushort protobufPort = 15125, ushort sconPort = 15126) : this()
-        {
-            Port = port;
-            ProtobufPort = protobufPort;
-            SCONPort = sconPort;
-        }
 
         private static AsymmetricCipherKeyPair GenerateKeyPair()
         {
@@ -570,9 +561,9 @@ namespace PokeD.Server
         /// Get all connected IClient Names.
         /// </summary>
         /// <returns>Returns null if there are no IClient connected.</returns>
-        public string[] GetAllClientsNames()
+        public PlayerInfo[] GetAllClientsInfo()
         {
-            return Players.GetAllClientsName();
+            return Players.GetAllClientsInfo();
         }
 
 

@@ -39,7 +39,7 @@ namespace PokeD.Server.Clients.SCON
         public bool UseCustomWorld { get { throw new NotImplementedException(); } }
 
         [JsonIgnore]
-        public long GameJoltId { get { throw new NotImplementedException(); } }
+        public ulong GameJoltID { get { throw new NotImplementedException(); } }
 
         [JsonIgnore]
         public bool IsGameJoltPlayer { get { throw new NotImplementedException(); } }
@@ -163,12 +163,7 @@ namespace PokeD.Server.Clients.SCON
                 case SCONPacketTypes.ExecuteCommand:
                     HandleExecuteCommand((ExecuteCommandPacket) packet);
                     break;
-                    
-
-                case SCONPacketTypes.PlayerListRequest:
-                    HandlePlayerListRequest((PlayerListRequestPacket) packet);
-                    break;
-                    
+                   
 
                 case SCONPacketTypes.StartChatReceiving:
                     HandleStartChatReceiving((StartChatReceivingPacket) packet);
@@ -177,10 +172,10 @@ namespace PokeD.Server.Clients.SCON
                 case SCONPacketTypes.StopChatReceiving:
                     HandleStopChatReceiving((StopChatReceivingPacket) packet);
                     break;
-                    
 
-                case SCONPacketTypes.PlayerLocationRequest:
-                    HandlePlayerLocationRequest((PlayerLocationRequestPacket) packet);
+
+                case SCONPacketTypes.PlayerInfoListRequest:
+                    HandlePlayerInfoListRequest((PlayerInfoListRequestPacket) packet);
                     break;
 
 
@@ -199,6 +194,15 @@ namespace PokeD.Server.Clients.SCON
 
                 case SCONPacketTypes.CrashLogFileRequest:
                     HandleCrashLogFileRequest((CrashLogFileRequestPacket) packet);
+                    break;
+
+                case SCONPacketTypes.PlayerDatabaseListRequest:
+                    HandlePlayerDatabaseListRequest((PlayerDatabaseListRequestPacket) packet);
+                    break;
+
+
+                case SCONPacketTypes.BanListRequest:
+                    HandleBanListRequest((BanListRequestPacket) packet);
                     break;
             }
         }

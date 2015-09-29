@@ -34,7 +34,7 @@ namespace PokeD.Server.Clients.P3D
         [JsonIgnore]
         public bool IsGameJoltPlayer { get; private set; }
         [JsonIgnore]
-        public long GameJoltId { get; private set; }
+        public ulong GameJoltID { get; private set; }
         [JsonIgnore]
         private char DecimalSeparator { get; set; }
         [JsonIgnore]
@@ -294,7 +294,7 @@ namespace PokeD.Server.Clients.P3D
             return new DataItems(
                 GameMode,
                 IsGameJoltPlayer ? "1" : "0",
-                GameJoltId.ToString(CultureInfo),
+                GameJoltID.ToString(CultureInfo),
                 DecimalSeparator.ToString(),
                 Name,
                 LevelFile,

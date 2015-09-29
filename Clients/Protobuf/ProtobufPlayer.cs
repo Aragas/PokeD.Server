@@ -38,7 +38,7 @@ namespace PokeD.Server.Clients.Protobuf
         [JsonIgnore]
         public bool IsGameJoltPlayer { get; private set; }
         [JsonIgnore]
-        public long GameJoltId { get; private set; }
+        public ulong GameJoltID { get; private set; }
         [JsonIgnore]
         private char DecimalSeparator { get; set; }
         [JsonIgnore]
@@ -316,7 +316,7 @@ namespace PokeD.Server.Clients.Protobuf
             {
                 GameMode = GameMode,
                 IsGameJoltPlayer = IsGameJoltPlayer,
-                GameJoltId = GameJoltId,
+                GameJoltID = GameJoltID,
                 DecimalSeparator = DecimalSeparator,
                 Name = Name,
                 LevelFile = LevelFile,

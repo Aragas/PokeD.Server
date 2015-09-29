@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 using Newtonsoft.Json;
 
@@ -90,7 +91,7 @@ namespace PokeD.Server.Clients.Protobuf
                         break;
 
                     case 2:
-                        GameJoltId = packet.GameJoltId;
+                        GameJoltID = packet.GameJoltID;
                         break;
 
                     case 3:
@@ -303,7 +304,7 @@ namespace PokeD.Server.Clients.Protobuf
             spacket.ServerName = _server.ServerName;
             spacket.ServerMessage = _server.ServerMessage;
             if (_server.PlayersCount > 0)
-                spacket.PlayerNames = _server.GetAllClientsNames();
+                spacket.PlayerNames = _server.GetAllClientsInfo().Select(client => client.Name).ToArray();
 
             SendPacket(spacket, ID);
 

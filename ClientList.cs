@@ -1,7 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
+using PokeD.Core.Data.Structs;
 using PokeD.Server.Clients;
 
 namespace PokeD.Server
@@ -78,9 +78,20 @@ namespace PokeD.Server
             Clients.Remove(client);
         }
 
-        public string[] GetAllClientsName()
+        public PlayerInfo[] GetAllClientsInfo()
         {
-            return Clients.Select(client => client.Name).ToArray();
+            var list = new List<PlayerInfo>();
+            foreach (var c in Clients)
+                list.Add(new PlayerInfo
+                {
+                    Name = c.Name,
+                    GameJoltID = c.GameJoltID,
+                    IP = c.IP,
+                    Ping = 0,
+                    Position = c.Position,
+                    LevelFile = c.LevelFile
+                });
+            return list.ToArray();
         }
 
         public void Clear()

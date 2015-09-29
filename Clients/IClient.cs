@@ -12,7 +12,7 @@ namespace PokeD.Server.Clients
         int ID { get; set; }
         string Name { get; }
         bool IsGameJoltPlayer { get; }
-        long GameJoltId { get; }
+        ulong GameJoltID { get; }
         Vector3 Position { get; }
         string LevelFile { get; }
 

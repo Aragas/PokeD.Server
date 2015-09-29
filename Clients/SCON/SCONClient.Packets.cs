@@ -7,6 +7,7 @@ using Org.BouncyCastle.Crypto.Prng;
 using PCLStorage;
 
 using PokeD.Core;
+using PokeD.Core.Data.Structs;
 using PokeD.Core.Extensions;
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
@@ -102,17 +103,6 @@ namespace PokeD.Server.Clients.SCON
             _server.ExecuteCommand(packet.Command);
         }
 
-        private void HandlePlayerListRequest(PlayerListRequestPacket packet)
-        {
-            if (!Authorized)
-            {
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
-                return;
-            }
-
-            SendPacket(new PlayerListResponsePacket {Players = _server.GetAllClientsNames()});
-        }
-
         private void HandleStartChatReceiving(StartChatReceivingPacket packet)
         {
             if (!Authorized)
@@ -134,7 +124,7 @@ namespace PokeD.Server.Clients.SCON
             ChatReceiving = false;
         }
 
-        private void HandlePlayerLocationRequest(PlayerLocationRequestPacket packet)
+        private void HandlePlayerInfoListRequest(PlayerInfoListRequestPacket packet)
         {
             if (!Authorized)
             {
@@ -142,9 +132,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            var player = _server.GetClient(packet.Player);
-
-            SendPacket(new PlayerLocationResponsePacket { Player = player.Name, Position = player.Position, LevelFile = player.LevelFile });
+            SendPacket(new PlayerInfoListResponsePacket { PlayerInfoList = new PlayerInfoList(_server.GetAllClientsInfo()) });
         }
 
         private void HandleLogListRequest(LogListRequestPacket packet)
@@ -157,11 +145,11 @@ namespace PokeD.Server.Clients.SCON
 
             var list = FileSystemWrapper.LogFolder.GetFilesAsync().Result;
 
-            var strings = new List<string>();
+            var logs = new List<Log>();
             foreach (var file in list)
-                strings.Add(file.Name);
+                logs.Add(new Log { LogFileName = file.Name });
             
-            SendPacket(new LogListResponsePacket { LogFileList = strings.ToArray() });
+            SendPacket(new LogListResponsePacket { LogList = new LogList(logs.ToArray()) });
         }
         private void HandleLogFileRequest(LogFileRequestPacket packet)
         {
@@ -175,7 +163,7 @@ namespace PokeD.Server.Clients.SCON
             {
                 var logText = FileSystemWrapper.LogFolder.GetFileAsync(packet.LogFilename).Result.ReadAllTextAsync().Result;
 
-                SendPacket(new LogFileResponsePacket { LogFile = logText });
+                SendPacket(new LogFileResponsePacket { LogFilename = packet.LogFilename, LogFile = logText });
             }
         }
 
@@ -191,11 +179,11 @@ namespace PokeD.Server.Clients.SCON
             {
                 var list = FileSystemWrapper.LogFolder.GetFolderAsync("Crash").Result.GetFilesAsync().Result;
 
-                var strings = new List<string>();
+                var crashLogs = new List<Log>();
                 foreach (var file in list)
-                    strings.Add(file.Name);
+                    crashLogs.Add(new Log { LogFileName = file.Name });
 
-                SendPacket(new CrashLogListResponsePacket {CrashLogFileList = strings.ToArray()});
+                SendPacket(new CrashLogListResponsePacket { CrashLogList = new LogList(crashLogs.ToArray()) });
             }
         }
         private void HandleCrashLogFileRequest(CrashLogFileRequestPacket packet)
@@ -211,8 +199,30 @@ namespace PokeD.Server.Clients.SCON
                 {
                     var crashLogText = FileSystemWrapper.LogFolder.GetFolderAsync("Crash").Result.GetFileAsync(packet.CrashLogFilename).Result.ReadAllTextAsync().Result;
 
-                    SendPacket(new CrashLogFileResponsePacket {CrashLogFile = crashLogText});
+                    SendPacket(new CrashLogFileResponsePacket { CrashLogFilename = packet.CrashLogFilename, CrashLogFile = crashLogText });
                 }
+        }
+
+        private void HandlePlayerDatabaseListRequest(PlayerDatabaseListRequestPacket packet)
+        {
+            if (!Authorized)
+            {
+                SendPacket(new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
+                return;
+            }
+
+            SendPacket(new PlayerDatabaseListResponsePacket { PlayerDatabaseList = new PlayerDatabaseList() });
+        }
+
+        private void HandleBanListRequest(BanListRequestPacket packet)
+        {
+            if (!Authorized)
+            {
+                SendPacket(new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
+                return;
+            }
+
+            SendPacket(new BanListResponsePacket { BanList = new BanList() });
         }
     }
 }
