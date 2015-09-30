@@ -190,7 +190,7 @@ namespace PokeD.Server.Clients.SCON
         {
             if (!Authorized)
             {
-                SendPacket(new AuthorizationDisconnectPacket {Reason = "Not authorized!"});
+                SendPacket(new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
                 return;
             }
 

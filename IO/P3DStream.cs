@@ -26,7 +26,7 @@ namespace PokeD.Server.IO
 
 
         private readonly INetworkTCPClient _tcp;
-        private StreamReader _reader;
+        private readonly StreamReader _reader;
 
         public P3DStream(INetworkTCPClient tcp)
         {
@@ -231,7 +231,8 @@ namespace PokeD.Server.IO
 
         public string ReadLine()
         {
-            return _reader.ReadLine();
+            try { return _reader.ReadLine(); }
+            catch (IOException) { return string.Empty; }
         }
 
         // -- Read methods

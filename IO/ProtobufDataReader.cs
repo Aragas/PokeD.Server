@@ -130,10 +130,10 @@ namespace PokeD.Server.IO
         public uint ReadUInt()
         {
             return (uint)(
-                (ReadUShort() << 24) |
-                (ReadUShort() << 16) |
-                (ReadUShort() << 8) |
-                 ReadUShort());
+                (ReadByte() << 24) |
+                (ReadByte() << 16) |
+                (ReadByte() << 8) |
+                 ReadByte());
         }
 
         // -- Long & ULong
@@ -149,14 +149,14 @@ namespace PokeD.Server.IO
         public ulong ReadULong()
         {
             return unchecked(
-                   ((ulong)ReadUShort() << 56) |
-                   ((ulong)ReadUShort() << 48) |
-                   ((ulong)ReadUShort() << 40) |
-                   ((ulong)ReadUShort() << 32) |
-                   ((ulong)ReadUShort() << 24) |
-                   ((ulong)ReadUShort() << 16) |
-                   ((ulong)ReadUShort() << 8) |
-                    (ulong)ReadUShort());
+                   ((ulong) ReadByte() << 56) |
+                   ((ulong) ReadByte() << 48) |
+                   ((ulong) ReadByte() << 40) |
+                   ((ulong) ReadByte() << 32) |
+                   ((ulong) ReadByte() << 24) |
+                   ((ulong) ReadByte() << 16) |
+                   ((ulong) ReadByte() << 8) |
+                    (ulong) ReadByte());
         }
 
         // -- BigInt & UBigInt

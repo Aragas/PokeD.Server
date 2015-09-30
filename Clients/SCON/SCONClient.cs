@@ -14,7 +14,6 @@ using PokeD.Core.Packets.SCON.Status;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Wrappers;
 
-using PokeD.Server.Exceptions;
 using PokeD.Server.IO;
 
 namespace PokeD.Server.Clients.SCON
@@ -195,6 +194,7 @@ namespace PokeD.Server.Clients.SCON
                 case SCONPacketTypes.CrashLogFileRequest:
                     HandleCrashLogFileRequest((CrashLogFileRequestPacket) packet);
                     break;
+
 
                 case SCONPacketTypes.PlayerDatabaseListRequest:
                     HandlePlayerDatabaseListRequest((PlayerDatabaseListRequestPacket) packet);
