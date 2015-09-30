@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 using PokeD.Core.Data.Structs;
@@ -89,7 +90,8 @@ namespace PokeD.Server
                     IP = c.IP,
                     Ping = 0,
                     Position = c.Position,
-                    LevelFile = c.LevelFile
+                    LevelFile = c.LevelFile,
+                    PlayTime = DateTime.Now - c.ConnectionTime
                 });
             return list.ToArray();
         }
