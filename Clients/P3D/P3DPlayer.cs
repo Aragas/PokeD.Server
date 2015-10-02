@@ -6,6 +6,7 @@ using System.Globalization;
 using Newtonsoft.Json;
 
 using PokeD.Core.Data;
+using PokeD.Core.Extensions;
 using PokeD.Core.Interfaces;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Battle;

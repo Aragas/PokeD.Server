@@ -9,8 +9,6 @@ using PokeD.Core.Interfaces;
 using PokeD.Core.Packets;
 using PokeD.Core.Wrappers;
 
-using PokeD.Server.Extensions;
-
 namespace PokeD.Server.IO
 {
     public sealed class P3DStream : IPacketStream
@@ -40,17 +38,11 @@ namespace PokeD.Server.IO
             throw new NotSupportedException();
         }
 
-        public void SetCompression(uint threshold)
-        {
-            throw new NotSupportedException();
-        }
-
 
         public void Connect(string ip, ushort port)
         {
             _tcp.Connect(ip, port);
         }
-
         public void Disconnect()
         {
             _tcp.Disconnect();
@@ -60,124 +52,104 @@ namespace PokeD.Server.IO
         #region Vars
 
         // -- String
-
         public void WriteString(string value, int length = 0)
         {
             throw new NotSupportedException();
         }
 
         // -- VarInt
-
         public void WriteVarInt(VarInt value)
         {
             throw new NotSupportedException();
         }
 
         // -- Boolean
-
         public void WriteBoolean(bool value)
         {
             throw new NotSupportedException();
         }
 
         // -- SByte & Byte
-
         public void WriteSByte(sbyte value)
         {
             throw new NotSupportedException();
         }
-
         public void WriteByte(byte value)
         {
             throw new NotSupportedException();
         }
 
         // -- Short & UShort
-
         public void WriteShort(short value)
         {
             throw new NotSupportedException();
         }
-
         public void WriteUShort(ushort value)
         {
             throw new NotSupportedException();
         }
 
         // -- Int & UInt
-
         public void WriteInt(int value)
         {
             throw new NotSupportedException();
         }
-
         public void WriteUInt(uint value)
         {
             throw new NotSupportedException();
         }
 
         // -- Long & ULong
-
         public void WriteLong(long value)
         {
             throw new NotSupportedException();
         }
-
         public void WriteULong(ulong value)
         {
             throw new NotSupportedException();
         }
 
         // -- BigInt & UBigInt
-
         public void WriteBigInteger(BigInteger value)
         {
             throw new NotSupportedException();
         }
-
         public void WriteUBigInteger(BigInteger value)
         {
             throw new NotSupportedException();
         }
 
         // -- Float
-
         public void WriteFloat(float value)
         {
             throw new NotSupportedException();
         }
 
         // -- Double
-
         public void WriteDouble(double value)
         {
             throw new NotSupportedException();
         }
 
-
         // -- StringArray
-
         public void WriteStringArray(params string[] value)
         {
             throw new NotSupportedException();
         }
 
         // -- VarIntArray
-
         public void WriteVarIntArray(params int[] value)
         {
             throw new NotSupportedException();
         }
 
         // -- IntArray
-
         public void WriteIntArray(params int[] value)
         {
             throw new NotSupportedException();
         }
 
         // -- ByteArray
-
         public void WriteByteArray(params byte[] value)
         {
             throw new NotSupportedException();
@@ -207,28 +179,6 @@ namespace PokeD.Server.IO
             throw new NotSupportedException();
         }
 
-        public string ReadLineOverflow()
-        {
-            var result = new StringBuilder();
-            var lastChar = (char) ReadByte();
-
-            while (true)
-            {
-                var newChar = (char) ReadByte();
-                // Dunno if -1 handling should be used
-                if ((lastChar == '\r' && newChar == '\n') || newChar == -1)
-                    return result.ToString();
-
-                result.Append(lastChar);
-                lastChar = newChar;
-            }
-        }
-
-        public string ReadLineNope()
-        {
-            return _reader.ReadLineSingleBreak();
-        }
-
         public string ReadLine()
         {
             try { return _reader.ReadLine(); }
@@ -241,7 +191,6 @@ namespace PokeD.Server.IO
         {
             _tcp.Send(buffer, offset, count);
         }
-
         private int Receive(byte[] buffer, int offset, int count)
         {
             return _tcp.Receive(buffer, offset, count);

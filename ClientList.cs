@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using PokeD.Core.Data.Structs;
+
 using PokeD.Server.Clients;
 
 namespace PokeD.Server

@@ -41,7 +41,6 @@
     <Compile Include="Clients\Protobuf\ProtobufPlayer.Settings.cs" />
     <Compile Include="Clients\Protobuf\ProtobufPlayer.Packets.cs" />
     <Compile Include="Clients\Protobuf\ProtobufPlayer.cs" />
-    <Compile Include="Extensions\StreamReaderExtensions.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Clients\P3D\P3DPlayer.Settings.cs" />
     <Compile Include="Clients\P3D\P3DPlayer.cs" />

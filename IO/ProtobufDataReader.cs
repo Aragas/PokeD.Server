@@ -29,7 +29,6 @@ namespace PokeD.Server.IO
         }
 
         // -- String
-
         public string ReadString(int length = 0)
         {
             length = ReadVarInt();
@@ -39,7 +38,6 @@ namespace PokeD.Server.IO
         }
 
         // -- VarInt
-
         public VarInt ReadVarInt()
         {
             uint result = 0;
@@ -62,7 +60,6 @@ namespace PokeD.Server.IO
             }
             return (int) result;
         }
-
         public VarInt ReadVarInt(out int length)
         {
             uint result = 0;
@@ -84,26 +81,22 @@ namespace PokeD.Server.IO
 
 
         // -- Boolean
-
         public bool ReadBoolean()
         {
             return Convert.ToBoolean(ReadByte());
         }
 
         // -- SByte & Byte
-
         public sbyte ReadSByte()
         {
             return unchecked((sbyte)ReadByte());
         }
-
         public byte ReadByte()
         {
             return (byte)_stream.ReadByte();
         }
 
         // -- Short & UShort
-
         public short ReadShort()
         {
             var bytes = ReadByteArray(2);
@@ -111,14 +104,12 @@ namespace PokeD.Server.IO
 
             return BitConverter.ToInt16(bytes, 0);
         }
-
         public ushort ReadUShort()
         {
             return (ushort)((ReadByte() << 8) | ReadByte());
         }
 
         // -- Int & UInt
-
         public int ReadInt()
         {
             var bytes = ReadByteArray(4);
@@ -126,7 +117,6 @@ namespace PokeD.Server.IO
 
             return BitConverter.ToInt32(bytes, 0);
         }
-
         public uint ReadUInt()
         {
             return (uint)(
@@ -137,7 +127,6 @@ namespace PokeD.Server.IO
         }
 
         // -- Long & ULong
-
         public long ReadLong()
         {
             var bytes = ReadByteArray(8);
@@ -145,7 +134,6 @@ namespace PokeD.Server.IO
 
             return BitConverter.ToInt64(bytes, 0);
         }
-
         public ulong ReadULong()
         {
             return unchecked(
@@ -160,7 +148,6 @@ namespace PokeD.Server.IO
         }
 
         // -- BigInt & UBigInt
-
         public BigInteger ReadBigInteger()
         {
             var bytes = ReadByteArray(16);
@@ -168,14 +155,12 @@ namespace PokeD.Server.IO
 
             return new BigInteger(bytes);
         }
-
         public BigInteger ReadUBigInteger()
         {
             throw new NotImplementedException();
         }
 
         // -- Floats
-
         public float ReadFloat()
         {
             var bytes = ReadByteArray(4);
@@ -185,7 +170,6 @@ namespace PokeD.Server.IO
         }
 
         // -- Doubles
-
         public double ReadDouble()
         {
             var bytes = ReadByteArray(8);
@@ -194,9 +178,7 @@ namespace PokeD.Server.IO
             return BitConverter.ToDouble(bytes, 0);
         }
 
-
         // -- StringArray
-
         public string[] ReadStringArray(int value)
         {
             var myStrings = new string[value];
@@ -208,7 +190,6 @@ namespace PokeD.Server.IO
         }
 
         // -- VarIntArray
-
         public int[] ReadVarIntArray(int value)
         {
             var myInts = new int[value];
@@ -220,7 +201,6 @@ namespace PokeD.Server.IO
         }
 
         // -- IntArray
-
         public int[] ReadIntArray(int value)
         {
             var myInts = new int[value];
@@ -232,7 +212,6 @@ namespace PokeD.Server.IO
         }
 
         // -- ByteArray
-
         public byte[] ReadByteArray(int value)
         {
             var myBytes = new byte[value];
@@ -258,6 +237,7 @@ namespace PokeD.Server.IO
 
             return myBytes;
         }
+
 
         public int BytesLeft()
         {
