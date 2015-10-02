@@ -59,7 +59,7 @@ namespace PokeD.Server.IO
         // -- String
         public void WriteString(string value, int length = 0)
         {
-            var lengthBytes = new VarInt(_buffer.Length).InByteArray();//GetVarIntBytes(value.Length);
+            var lengthBytes = new VarInt(value.Length).InByteArray();
             var final = new byte[value.Length + lengthBytes.Length];
             
             Buffer.BlockCopy(lengthBytes, 0, final, 0, lengthBytes.Length);
