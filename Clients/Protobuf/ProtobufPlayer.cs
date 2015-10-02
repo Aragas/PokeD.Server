@@ -195,9 +195,6 @@ namespace PokeD.Server.Clients.Protobuf
         {
             switch ((PlayerPacketTypes) packet.ID)
             {
-                case PlayerPacketTypes.Unknown:
-                    break;
-
                 case PlayerPacketTypes.JoiningGameRequest:
                     HandleJoiningGameRequest((JoiningGameRequestPacket) packet);
                     break;

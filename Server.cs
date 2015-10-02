@@ -91,8 +91,8 @@ namespace PokeD.Server
 
         ConcurrentDictionary<string, IClient[]> NearPlayers { get; } = new ConcurrentDictionary<string, IClient[]>();
 
-        ConcurrentQueue<PlayerP3DPacket> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerP3DPacket>();
-        ConcurrentQueue<OriginP3DPacket> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<OriginP3DPacket>();
+        ConcurrentQueue<PlayerPacketP3DOrigin> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerPacketP3DOrigin>();
+        ConcurrentQueue<PacketP3DOrigin> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<PacketP3DOrigin>();
 
         [JsonProperty("MutedPlayers")]
         Dictionary<int, List<int>> MutedPlayers { get; } = new Dictionary<int, List<int>>();
@@ -332,7 +332,7 @@ namespace PokeD.Server
         public void SendToClient(IClient player, P3DPacket packet, int originID)
         {
             if (player != null)
-                PacketsToPlayer.Enqueue(new PlayerP3DPacket(player, ref packet, originID));
+                PacketsToPlayer.Enqueue(new PlayerPacketP3DOrigin(player, ref packet, originID));
         }
         public void SendToAllClients(P3DPacket packet, int originID = -1)
         {
@@ -343,13 +343,13 @@ namespace PokeD.Server
                     {
                         var player = Players[i];
                         if (!MutedPlayers[originID].Contains(player.ID))
-                            PacketsToPlayer.Enqueue(new PlayerP3DPacket(player , ref packet, originID));
+                            PacketsToPlayer.Enqueue(new PlayerPacketP3DOrigin(player , ref packet, originID));
                     }
 
                     return;
                 }
 
-            PacketsToAllPlayers.Enqueue(new OriginP3DPacket(ref packet, originID));
+            PacketsToAllPlayers.Enqueue(new PacketP3DOrigin(ref packet, originID));
         }
 
 
@@ -362,6 +362,7 @@ namespace PokeD.Server
             for (var i = 0; i < PlayersToAdd.Count; i++)
             {
                 var playerToAdd = PlayersToAdd[i];
+                if (playerToAdd == null) { PlayersToAdd.RemoveAt(i); continue; }
 
                 Players.Add(playerToAdd);
                 PlayersToAdd.Remove(playerToAdd);
@@ -376,6 +377,7 @@ namespace PokeD.Server
             for (var i = 0; i < PlayersToRemove.Count; i++)
             {
                 var playerToRemove = PlayersToRemove[i];
+                if(playerToRemove == null) { PlayersToRemove.RemoveAt(i); continue; }
 
                 Players.Remove(playerToRemove);
                 PlayersJoining.Remove(playerToRemove);
@@ -400,15 +402,15 @@ namespace PokeD.Server
 
             // Update actual players
             for (var i = 0; i < Players.Count; i++)
-                Players[i].Update();
+                Players[i]?.Update();
 
             // Update joining players
             for (var i = 0; i < PlayersJoining.Count; i++)
-                PlayersJoining[i].Update();
+                PlayersJoining[i]?.Update();
 
             // Update SCON clients
             for (var i = 0; i < SCONClients.Count; i++)
-                SCONClients[i].Update();
+                SCONClients[i]?.Update();
             
             #endregion Player Updating
 
@@ -416,14 +418,14 @@ namespace PokeD.Server
 
             #region Packet Sending
 
-            PlayerP3DPacket playerP3DPacket;
-            while (!IsDisposing && PacketsToPlayer.TryDequeue(out playerP3DPacket))
-                playerP3DPacket.Player.SendPacket(playerP3DPacket.Packet, playerP3DPacket.OriginID);
+            PlayerPacketP3DOrigin packetToPlayer;
+            while (!IsDisposing && PacketsToPlayer.TryDequeue(out packetToPlayer))
+                packetToPlayer.Player?.SendPacket(packetToPlayer.Packet, packetToPlayer.OriginID);
 
-            OriginP3DPacket originP3DPacket;
-            while (!IsDisposing && PacketsToAllPlayers.TryDequeue(out originP3DPacket))
+            PacketP3DOrigin packetToAllPlayers;
+            while (!IsDisposing && PacketsToAllPlayers.TryDequeue(out packetToAllPlayers))
                 for (var i = 0; i < Players.Count; i++)
-                    Players[i].SendPacket(originP3DPacket.Packet, originP3DPacket.OriginID);
+                    Players[i]?.SendPacket(packetToAllPlayers.Packet, packetToAllPlayers.OriginID);
 
             #endregion Packet Sending
 
@@ -435,6 +437,8 @@ namespace PokeD.Server
             for (var i = 0; i < Players.Count; i++)
             {
                 var player = Players[i];
+                if(player == null) continue;
+
                 if (!player.UseCustomWorld)
                     SendToClient(player, new WorldDataPacket { DataItems = World.GenerateDataItems() }, -1);
             }

@@ -14,13 +14,13 @@ namespace PokeD.Server
 
     public partial class Server
     {
-        private struct PlayerP3DPacket
+        private struct PlayerPacketP3DOrigin
         {
             public readonly IClient Player;
             public readonly P3DPacket Packet;
             public readonly int OriginID;
 
-            public PlayerP3DPacket(IClient player, ref P3DPacket packet, int originID = -1)
+            public PlayerPacketP3DOrigin(IClient player, ref P3DPacket packet, int originID = -1)
             {
                 Player = player;
                 Packet = packet;
@@ -28,12 +28,12 @@ namespace PokeD.Server
             }
         }
         
-        private struct OriginP3DPacket
+        private struct PacketP3DOrigin
         {
             public readonly P3DPacket Packet;
             public readonly int OriginID;
 
-            public OriginP3DPacket(ref P3DPacket packet, int origin)
+            public PacketP3DOrigin(ref P3DPacket packet, int origin)
             {
                 Packet = packet;
                 OriginID = origin;

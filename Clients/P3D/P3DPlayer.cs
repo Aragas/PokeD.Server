@@ -141,7 +141,6 @@ namespace PokeD.Server.Clients.P3D
             UpdateWatch.Start();
         }
 
-
         private void HandleData(string data)
         {
             if (string.IsNullOrEmpty(data))
@@ -167,7 +166,6 @@ namespace PokeD.Server.Clients.P3D
                     return;
                 }
 
-                //packet = PlayerResponse.Packets[id]();
                 if (packet.TryParseData(data))
                 {
                     HandlePacket(packet);
