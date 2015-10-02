@@ -336,7 +336,7 @@ namespace PokeD.Server
         }
         public void SendToAllClients(P3DPacket packet, int originID = -1)
         {
-            if (originID != -1 && (packet is ChatMessagePacket || packet is ChatMessagePrivatePacket))
+            if (originID != -1 && (packet is ChatMessageGlobalPacket || packet is ChatMessagePrivatePacket))
                 if (MutedPlayers.ContainsKey(originID) && MutedPlayers[originID].Count > 0)
                 {
                     for (var i = 0; i < Players.Count; i++)
@@ -370,7 +370,7 @@ namespace PokeD.Server
                 if (playerToAdd.ID != 0)
                 {
                     Logger.Log(LogType.Server, $"The player {playerToAdd.Name} joined the game from IP {playerToAdd.IP}");
-                    SendToAllClients(new ChatMessagePacket { DataItems = new DataItems($"Player {playerToAdd.Name} joined the game!") });
+                    SendToAllClients(new ChatMessageGlobalPacket { DataItems = new DataItems($"Player {playerToAdd.Name} joined the game!") });
                 }
             }
 
@@ -388,7 +388,7 @@ namespace PokeD.Server
                     SendToAllClients(new DestroyPlayerPacket { DataItems = new DataItems(playerToRemove.ID.ToString()) });
 
                     Logger.Log(LogType.Server, $"The player {playerToRemove.Name} disconnected, playtime was {DateTime.Now - playerToRemove.ConnectionTime:hh\\:mm\\:ss}");
-                    SendToAllClients(new ChatMessagePacket { DataItems = new DataItems($"Player {playerToRemove.Name} disconnected!") });
+                    SendToAllClients(new ChatMessageGlobalPacket { DataItems = new DataItems($"Player {playerToRemove.Name} disconnected!") });
                 }
 
                 playerToRemove.Disconnect();
@@ -502,7 +502,7 @@ namespace PokeD.Server
             {
                 var player = Players[i];
                 if(player.ChatReceiving)
-                    player.SendPacket(new ChatMessagePacket { Message = message }, -1);
+                    player.SendPacket(new ChatMessageGlobalPacket { Message = message }, -1);
             }
         }
 

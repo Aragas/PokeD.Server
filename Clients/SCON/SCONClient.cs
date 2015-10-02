@@ -122,7 +122,7 @@ namespace PokeD.Server.Clients.SCON
                 var id = reader.ReadVarInt();
                 var origin = reader.ReadVarInt();
 
-                if (id >= SCONResponse.Packets.Length)
+                if (id >= SCONPacketResponses.Packets.Length)
                 {
                     Logger.Log(LogType.GlobalError, $"SCON Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting.");
                     SendPacket(new AuthorizationDisconnectPacket {Reason = $"Packet ID {id} is not correct!"});
@@ -130,7 +130,7 @@ namespace PokeD.Server.Clients.SCON
                     return;
                 }
 
-                var packet = SCONResponse.Packets[id]().ReadPacket(reader);
+                var packet = SCONPacketResponses.Packets[id]().ReadPacket(reader);
                 packet.Origin = origin;
 
                 HandlePacket(packet);
@@ -230,7 +230,7 @@ namespace PokeD.Server.Clients.SCON
             // TODO: Nope.
             if (Stream.Connected)
             {
-                var messagePacket = packet as Core.Packets.Chat.ChatMessagePacket;
+                var messagePacket = packet as Core.Packets.Chat.ChatMessageGlobalPacket;
                 if (messagePacket != null)
                     SendPacket(new ChatMessagePacket { Player = _server.GetClientName(messagePacket.Origin), Message = messagePacket.Message });
                 

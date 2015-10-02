@@ -196,7 +196,7 @@ namespace PokeD.Server.Clients.Protobuf
 
         private void SendCommandResponse(string message)
         {
-            SendPacket(new ChatMessagePacket { Message = message }, -1);
+            SendPacket(new ChatMessageGlobalPacket { Message = message }, -1);
         }
     }
 }

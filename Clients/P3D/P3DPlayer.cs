@@ -153,13 +153,13 @@ namespace PokeD.Server.Clients.P3D
             int id;
             if (P3DPacket.TryParseID(data, out id))
             {
-                if (id >= PlayerResponse.Packets.Length)
+                if (id >= GamePacketResponses.Packets.Length)
                 {
                     Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet ID {id} is not correct, Packet Data: {data}.");
                     return;
                 }
 
-                var packet = PlayerResponse.Packets[id]();
+                var packet = GamePacketResponses.Packets[id]();
                 if (packet == null)
                 {
                     Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet is null. Packet ID {id}, Packet Data: {data}.");
@@ -181,84 +181,84 @@ namespace PokeD.Server.Clients.P3D
         }
         private void HandlePacket(P3DPacket packet)
         {
-            switch ((PlayerPacketTypes) packet.ID)
+            switch ((GamePacketTypes) packet.ID)
             {
-                case PlayerPacketTypes.GameData:
+                case GamePacketTypes.GameData:
                     HandleGameData((GameDataPacket) packet);
                     break;
 
-                case PlayerPacketTypes.PrivateMessage:
+                case GamePacketTypes.ChatMessagePrivate:
                     HandlePrivateMessage((ChatMessagePrivatePacket) packet);
                     break;
 
-                case PlayerPacketTypes.ChatMessage:
-                    HandleChatMessage((ChatMessagePacket) packet);
+                case GamePacketTypes.ChatMessageGlobal:
+                    HandleChatMessage((ChatMessageGlobalPacket) packet);
                     break;
 
-                case PlayerPacketTypes.Ping:
+                case GamePacketTypes.Ping:
                     LastPing = DateTime.UtcNow;
                     break;
 
-                case PlayerPacketTypes.GameStateMessage:
+                case GamePacketTypes.GameStateMessage:
                     HandleGameStateMessage((GameStateMessagePacket) packet);
                     break;
 
 
-                case PlayerPacketTypes.TradeRequest:
+                case GamePacketTypes.TradeRequest:
                     HandleTradeRequest((TradeRequestPacket) packet);
                     break;
 
-                case PlayerPacketTypes.TradeJoin:
+                case GamePacketTypes.TradeJoin:
                     HandleTradeJoin((TradeJoinPacket) packet);
                     break;
 
-                case PlayerPacketTypes.TradeQuit:
+                case GamePacketTypes.TradeQuit:
                     HandleTradeQuit((TradeQuitPacket) packet);
                     break;
 
-                case PlayerPacketTypes.TradeOffer:
+                case GamePacketTypes.TradeOffer:
                     HandleTradeOffer((TradeOfferPacket) packet);
                     break;
 
-                case PlayerPacketTypes.TradeStart:
+                case GamePacketTypes.TradeStart:
                     HandleTradeStart((TradeStartPacket) packet);
                     break;
 
 
-                case PlayerPacketTypes.BattleRequest:
+                case GamePacketTypes.BattleRequest:
                     HandleBattleRequest((BattleRequestPacket) packet);
                     break;
 
-                case PlayerPacketTypes.BattleJoin:
+                case GamePacketTypes.BattleJoin:
                     HandleBattleJoin((BattleJoinPacket) packet);
                     break;
 
-                case PlayerPacketTypes.BattleQuit:
+                case GamePacketTypes.BattleQuit:
                     HandleBattleQuit((BattleQuitPacket) packet);
                     break;
 
-                case PlayerPacketTypes.BattleOffer:
+                case GamePacketTypes.BattleOffer:
                     HandleBattleOffer((BattleOfferPacket) packet);
                     break;
 
-                case PlayerPacketTypes.BattleStart:
+                case GamePacketTypes.BattleStart:
                     HandleBattleStart((BattleStartPacket) packet);
                     break;
 
-                case PlayerPacketTypes.BattleClientData:
+                case GamePacketTypes.BattleClientData:
                     HandleBattleClientData((BattleClientDataPacket) packet);
                     break;
 
-                case PlayerPacketTypes.BattleHostData:
+                case GamePacketTypes.BattleHostData:
                     HandleBattleHostData((BattleHostDataPacket) packet);
                     break;
 
-                case PlayerPacketTypes.BattlePokemonData:
+                case GamePacketTypes.BattlePokemonData:
                     HandleBattlePokemonData((BattlePokemonDataPacket) packet);
                     break;
 
 
-                case PlayerPacketTypes.ServerDataRequest:
+                case GamePacketTypes.ServerDataRequest:
                     HandleServerDataRequest((ServerDataRequestPacket) packet);
                     break;
             }

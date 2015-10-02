@@ -186,7 +186,7 @@ namespace PokeD.Server.Clients.Protobuf
         }
 
 
-        private void HandleChatMessage(ChatMessagePacket packet)
+        private void HandleChatMessage(ChatMessageGlobalPacket packet)
         {
             if (packet.Message.StartsWith("/"))
             {
@@ -208,7 +208,7 @@ namespace PokeD.Server.Clients.Protobuf
                 _server.SendToClient(packet.Origin, new ChatMessagePrivatePacket { Message = packet.Message }, packet.Origin);
             }
             else
-                _server.SendToClient(packet.Origin, new ChatMessagePacket { Message = $"The player with the name \"{packet.DestinationPlayerName}\" doesn't exist." }, -1);
+                _server.SendToClient(packet.Origin, new ChatMessageGlobalPacket { Message = $"The player with the name \"{packet.DestinationPlayerName}\" doesn't exist." }, -1);
         }
 
 

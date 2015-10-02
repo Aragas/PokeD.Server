@@ -127,17 +127,17 @@ namespace PokeD.Server.Clients.P3D
         }
 
 
-        private void HandleChatMessage(ChatMessagePacket packet)
+        private void HandleChatMessage(ChatMessageGlobalPacket packet)
         {
             if (packet.Message.StartsWith("/"))
             {
-                SendPacket(new ChatMessagePacket { Message = packet.Message }, ID);
+                SendPacket(new ChatMessageGlobalPacket { Message = packet.Message }, ID);
                 ExecuteCommand(packet.Message);
             }
             else
             {
                 Logger.LogChatMessage(Name, packet.Message);
-                _server.SendToAllClients(new ChatMessagePacket { Message = packet.Message }, packet.Origin);
+                _server.SendToAllClients(new ChatMessageGlobalPacket { Message = packet.Message }, packet.Origin);
             }
         }
         private void HandlePrivateMessage(ChatMessagePrivatePacket packet)
@@ -149,7 +149,7 @@ namespace PokeD.Server.Clients.P3D
                 _server.SendToClient(packet.Origin, new ChatMessagePrivatePacket { DataItems = packet.DataItems }, packet.Origin);
             }
             else
-                _server.SendToClient(packet.Origin, new ChatMessagePacket { Message = $"The player with the name \"{packet.DestinationPlayerName}\" doesn't exist." }, -1);
+                _server.SendToClient(packet.Origin, new ChatMessageGlobalPacket { Message = $"The player with the name \"{packet.DestinationPlayerName}\" doesn't exist." }, -1);
         }
 
 
