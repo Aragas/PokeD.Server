@@ -95,6 +95,30 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Aragas.Core\Aragas.Core.csproj">
+      <Project>{468d9d51-dfe7-47a8-b0d6-52d035fc714d}</Project>
+      <Name>Aragas.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Choose>
+    <When Condition="Exists('..\Aragas.Core')">
+      <ItemGroup>
+        <ProjectReference Include="..\Aragas.Core\Aragas.Core.csproj">
+          <Project>{468d9d51-dfe7-47a8-b0d6-52d035fc714d}</Project>
+          <Name>Aragas.Core</Name>
+        </ProjectReference>
+      </ItemGroup>
+    </When>
+    <When Condition="!Exists('..\Aragas.Core')">
+      <ItemGroup>
+        <ProjectReference Include="Aragas.Core\Aragas.Core.csproj">
+          <Project>{468d9d51-dfe7-47a8-b0d6-52d035fc714d}</Project>
+          <Name>Aragas.Core</Name>
+        </ProjectReference>
+      </ItemGroup>
+    </When>
+  </Choose>
   <Choose>
     <When Condition="Exists('..\PokeD.Core')">
       <ItemGroup>
@@ -114,11 +138,4 @@
     </When>
   </Choose>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
