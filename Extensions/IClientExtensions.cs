@@ -1,18 +1,18 @@
 ﻿using System.IO;
 
+using Aragas.Core.Wrappers;
+
 using Newtonsoft.Json;
 
 using PCLStorage;
-
-using PokeD.Core.Wrappers;
 
 using PokeD.Server.Clients;
 
 namespace PokeD.Server.Extensions
 {
-    public static class FileSystemWrapperExtensions
+    public static class IClientExtensions
     {
-        public static bool LoadClientSettings(IClient p3DPlayer)
+        public static bool LoadClientSettings(this IClient p3DPlayer)
         {
             if (p3DPlayer.GameJoltID == 0)
                 return false;
@@ -39,7 +39,7 @@ namespace PokeD.Server.Extensions
 
             return true;
         }
-        public static bool SaveClientSettings(IClient p3DPlayer)
+        public static bool SaveClientSettings(this IClient p3DPlayer)
         {
             if (p3DPlayer.GameJoltID == 0)
                 return false;

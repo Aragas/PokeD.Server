@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 
+using Aragas.Core.Wrappers;
+
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Prng;
 
@@ -14,7 +16,6 @@ using PokeD.Core.Packets.SCON.Authorization;
 using PokeD.Core.Packets.SCON.Chat;
 using PokeD.Core.Packets.SCON.Logs;
 using PokeD.Core.Packets.SCON.Status;
-using PokeD.Core.Wrappers;
 
 namespace PokeD.Server.Clients.SCON
 {

@@ -1,8 +1,11 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+
+using Aragas.Core.Data;
+using Aragas.Core.Interfaces;
+using Aragas.Core.Wrappers;
 
 using Newtonsoft.Json;
 
@@ -13,12 +16,9 @@ using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
 
 using PokeD.Core.Data;
-using PokeD.Core.Data.Structs;
-using PokeD.Core.Interfaces;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Chat;
 using PokeD.Core.Packets.Server;
-using PokeD.Core.Wrappers;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.P3D;
@@ -31,8 +31,10 @@ namespace PokeD.Server
 {
     public partial class Server : IUpdatable, IDisposable
     {
-        public const string FileName = "Server.json";
+        const string FileName = "Server.json";
 
+
+        #region Settings
 
         [JsonProperty("Port")]
         public ushort Port { get; private set; } = 15124;
@@ -70,39 +72,18 @@ namespace PokeD.Server
         [JsonProperty("MoveCorrectionEnabled")]
         bool MoveCorrectionEnabled { get; set; } = true;
 
+        #endregion Settings
+
 
         INetworkTCPServer P3DListener { get; set; }
         INetworkTCPServer ProtobufListener { get; set; }
         INetworkTCPServer SCONListener { get; set; }
 
-
-        #region Player Stuff
-
-        int FreePlayerID { get; set; } = 10;
-
-        [JsonIgnore]
-        public int PlayersCount => Players.Count;
-
-        ClientList Players { get; } = new ClientList();
-        List<IClient> PlayersJoining { get; } = new List<IClient>();
-        List<IClient> PlayersToAdd { get; } = new List<IClient>();
-        List<IClient> PlayersToRemove { get; } = new List<IClient>();
-        List<IClient> SCONClients { get; } = new List<IClient>();
-
-        ConcurrentDictionary<string, IClient[]> NearPlayers { get; } = new ConcurrentDictionary<string, IClient[]>();
-
-        ConcurrentQueue<PlayerPacketP3DOrigin> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerPacketP3DOrigin>();
-        ConcurrentQueue<PacketP3DOrigin> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<PacketP3DOrigin>();
-
-        [JsonProperty("MutedPlayers")]
-        Dictionary<int, List<int>> MutedPlayers { get; } = new Dictionary<int, List<int>>();
-
-        #endregion Player Stuff
-
-
+        
         int ListenToConnectionsThread { get; set; }
         int PlayerWatcherThread { get; set; }
         int PlayerCorrectionThread { get; set; }
+
 
         [JsonIgnore]
         public bool IsDisposing { get; private set; }
@@ -111,8 +92,13 @@ namespace PokeD.Server
         public AsymmetricCipherKeyPair RSAKeyPair { get; private set; }
         const int RsaKeySize = 1024;
 
-        public Server() { }
 
+
+        public Server()
+        {
+            //ClientInitialized += Server_ClientInitialized;
+            //ClientFinalized += Server_ClientFinalized;
+        }
 
         private static AsymmetricCipherKeyPair GenerateKeyPair()
         {
@@ -283,76 +269,6 @@ namespace PokeD.Server
         }
 
 
-
-        public void AddPlayer(IClient player)
-        {
-            FileSystemWrapperExtensions.LoadClientSettings(player);
-
-            player.ID = GenerateClientID();
-            SendToClient(player, new IDPacket { PlayerID = player.ID }, -1);
-            SendToClient(player, new WorldDataPacket { DataItems = World.GenerateDataItems() }, -1);
-
-            // Send to player his ID
-            SendToClient(player, new CreatePlayerPacket { PlayerID = player.ID }, -1);
-            // Send to player all Players ID
-            for (var i = 0; i < Players.Count; i++)
-            {
-                SendToClient(player, new CreatePlayerPacket { PlayerID = Players[i].ID }, -1);
-                SendToClient(player, Players[i].GetDataPacket(), Players[i].ID);
-            }
-            // Send to Players player ID
-            SendToAllClients(new CreatePlayerPacket { PlayerID = player.ID }, -1);
-            SendToAllClients(player.GetDataPacket(), player.ID);
-
-
-            PlayersToAdd.Add(player);
-            PlayersJoining.Remove(player);
-        }
-        public void RemovePlayer(IClient player)
-        {
-            FileSystemWrapperExtensions.SaveClientSettings(player);
-
-            PlayersToRemove.Add(player);
-        }
-
-        public void AddSCONClient(SCONClient scon)
-        {
-            SCONClients.Add(scon);
-        }
-        public void RemoveSCONClient(SCONClient scon)
-        {
-            SCONClients.Remove(scon);
-        }
-
-
-        public void SendToClient(int destinationID, P3DPacket packet, int originID)
-        {
-            SendToClient(GetClient(destinationID), packet, originID);
-        }
-        public void SendToClient(IClient player, P3DPacket packet, int originID)
-        {
-            if (player != null)
-                PacketsToPlayer.Enqueue(new PlayerPacketP3DOrigin(player, ref packet, originID));
-        }
-        public void SendToAllClients(P3DPacket packet, int originID = -1)
-        {
-            if (originID != -1 && (packet is ChatMessageGlobalPacket || packet is ChatMessagePrivatePacket))
-                if (MutedPlayers.ContainsKey(originID) && MutedPlayers[originID].Count > 0)
-                {
-                    for (var i = 0; i < Players.Count; i++)
-                    {
-                        var player = Players[i];
-                        if (!MutedPlayers[originID].Contains(player.ID))
-                            PacketsToPlayer.Enqueue(new PlayerPacketP3DOrigin(player , ref packet, originID));
-                    }
-
-                    return;
-                }
-
-            PacketsToAllPlayers.Enqueue(new PacketP3DOrigin(ref packet, originID));
-        }
-
-
         Stopwatch UpdateWatch = Stopwatch.StartNew();
         public void Update()
         {
@@ -362,7 +278,6 @@ namespace PokeD.Server
             for (var i = 0; i < PlayersToAdd.Count; i++)
             {
                 var playerToAdd = PlayersToAdd[i];
-                if (playerToAdd == null) { PlayersToAdd.RemoveAt(i); continue; }
 
                 Players.Add(playerToAdd);
                 PlayersToAdd.Remove(playerToAdd);
@@ -377,7 +292,6 @@ namespace PokeD.Server
             for (var i = 0; i < PlayersToRemove.Count; i++)
             {
                 var playerToRemove = PlayersToRemove[i];
-                if(playerToRemove == null) { PlayersToRemove.RemoveAt(i); continue; }
 
                 Players.Remove(playerToRemove);
                 PlayersJoining.Remove(playerToRemove);
@@ -391,7 +305,7 @@ namespace PokeD.Server
                     SendToAllClients(new ChatMessageGlobalPacket { DataItems = new DataItems($"Player {playerToRemove.Name} disconnected!") });
                 }
 
-                playerToRemove.Disconnect();
+                playerToRemove.Dispose();
             }
 
             #endregion Player Filtration
@@ -402,16 +316,28 @@ namespace PokeD.Server
 
             // Update actual players
             for (var i = 0; i < Players.Count; i++)
-                Players[i]?.Update();
-
+            {
+                var iLocal = i;
+                ThreadWrapper.QueueUserWorkItem(state => Players[iLocal].Update());
+            }
+            //Players[i].Update();
+            
             // Update joining players
             for (var i = 0; i < PlayersJoining.Count; i++)
-                PlayersJoining[i]?.Update();
+            {
+                var iLocal = i;
+                ThreadWrapper.QueueUserWorkItem(state => PlayersJoining[iLocal].Update());
+            }
+            //PlayersJoining[i].Update();
 
             // Update SCON clients
             for (var i = 0; i < SCONClients.Count; i++)
-                SCONClients[i]?.Update();
-            
+            {
+                var iLocal = i;
+                ThreadWrapper.QueueUserWorkItem(delegate { SCONClients[iLocal].Update(); });
+            }
+            //SCONClients[i].Update();
+
             #endregion Player Updating
 
 
@@ -448,53 +374,40 @@ namespace PokeD.Server
         }
 
 
-        private int GenerateClientID()
+        public void SendToClient(IClient player, P3DPacket packet, int originID)
         {
-            return FreePlayerID++;
+            if (player != null)
+                PacketsToPlayer.Enqueue(new PlayerPacketP3DOrigin(player, ref packet, originID));
         }
-
-
-
-        public MuteStatus MutePlayer(int id, string muteName)
+        public void SendToClient(int destinationID, P3DPacket packet, int originID)
         {
-            if (!MutedPlayers.ContainsKey(id))
-                MutedPlayers.Add(id, new List<int>());
-
-            var muteID = GetClientID(muteName);
-            if (id == muteID)
-                return MuteStatus.MutedYourself;
-
-            if (muteID != -1)
-            {
-                MutedPlayers[id].Add(muteID);
-                return MuteStatus.Completed;
-            }
-
-            return MuteStatus.PlayerNotFound;
+            SendToClient(GetClient(destinationID), packet, originID);
         }
-        public MuteStatus UnMutePlayer(int id, string muteName)
+        public void SendToAllClients(P3DPacket packet, int originID = -1)
         {
-            if (!MutedPlayers.ContainsKey(id))
-                return MuteStatus.IsNotMuted;
+            if (originID != -1 && (packet is ChatMessageGlobalPacket || packet is ChatMessagePrivatePacket))
+                if (MutedPlayers.ContainsKey(originID) && MutedPlayers[originID].Count > 0)
+                {
+                    for (var i = 0; i < Players.Count; i++)
+                    {
+                        var player = Players[i];
+                        if (!MutedPlayers[originID].Contains(player.ID))
+                            PacketsToPlayer.Enqueue(new PlayerPacketP3DOrigin(player, ref packet, originID));
+                    }
 
-            var muteID = GetClientID(muteName);
-            if (id == muteID)
-                return MuteStatus.MutedYourself;
+                    return;
+                }
 
-            if (muteID != -1)
-            {
-                MutedPlayers[id].Remove(muteID);
-                return MuteStatus.Completed;
-            }
-
-            return MuteStatus.PlayerNotFound;
+            PacketsToAllPlayers.Enqueue(new PacketP3DOrigin(ref packet, originID));
         }
 
 
         public void SendServerMessageToAllClients(string message)
         {
-            for (var i = 0; i < Players.Count; i++)
-                Players[i].SendPacket(new ServerMessagePacket { Message = message }, -1);
+            SendToAllClients(new ServerMessagePacket { Message = message });
+
+            //for (var i = 0; i < Players.Count; i++)
+            //    Players[i].SendPacket(new ServerMessagePacket { Message = message }, -1);
         }
         public void SendGlobalChatMessageToAllClients(string message)
         {
@@ -502,78 +415,22 @@ namespace PokeD.Server
             {
                 var player = Players[i];
                 if(player.ChatReceiving)
-                    player.SendPacket(new ChatMessageGlobalPacket { Message = message }, -1);
+                    SendToClient(player, new ChatMessageGlobalPacket { Message = message }, -1);
+
+                //var player = Players[i];
+                //if(player.ChatReceiving)
+                //    player.SendPacket(new ChatMessageGlobalPacket { Message = message }, -1);
             }
         }
 
-
-        /// <summary>
-        /// Get IClient by ID.
-        /// </summary>
-        /// <param name="id">IClient ID.</param>
-        /// <returns>Returns null if IClient is not found.</returns>
-        public IClient GetClient(int id)
-        {
-            for (var i = 0; i < Players.Count; i++)
-            {
-                var player = Players[i];
-                if (player.ID == id)
-                    return player;
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Get IClient by name.
-        /// </summary>
-        /// <param name="name">IClient Name.</param>
-        /// <returns>Returns null if IClient is not found.</returns>
-        public IClient GetClient(string name)
-        {
-            for (var i = 0; i < Players.Count; i++)
-            {
-                var player = Players[i];
-                if (player.Name == name)
-                    return player;
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Get IClient Name by ID.
-        /// </summary>
-        /// <param name="name">IClient Name.</param>
-        /// <returns>Returns String.Empty if IClient is not found.</returns>
-        public int GetClientID(string name)
-        {
-            return GetClient(name)?.ID ?? -1;
-        }
-
-        /// <summary>
-        /// Get IClient ID by Name.
-        /// </summary>
-        /// <param name="id">IClient ID.</param>
-        /// <returns>Returns -1 if IClient is not found.</returns>
-        public string GetClientName(int id)
-        {
-            return GetClient(id)?.Name ?? string.Empty;
-        }
-
-        /// <summary>
-        /// Get all connected IClient Names.
-        /// </summary>
-        /// <returns>Returns null if there are no IClient connected.</returns>
-        public PlayerInfo[] GetAllClientsInfo()
-        {
-            return Players.GetAllClientsInfo();
-        }
-
-
+        
         public void Dispose()
         {
+            if(IsDisposing)
+                return;
+
             IsDisposing = true;
+
 
             for (var i = 0; i < PlayersJoining.Count; i++)
                 PlayersJoining[i].Dispose();

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 
+using Aragas.Core.Data;
+
 using Newtonsoft.Json;
 
 using PokeD.Core.Data;
@@ -118,11 +120,11 @@ namespace PokeD.Server.Clients.P3D
         private void HandleGameData(GameDataPacket packet)
         {
             ParseGameData(packet);
-            
-            if (!Initialized)
+
+            if (!IsInitialized)
             {
                 _server.AddPlayer(this);
-                Initialized = true;
+                IsInitialized = true;
             }
         }
 

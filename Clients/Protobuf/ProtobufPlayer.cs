@@ -2,14 +2,18 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
+using Aragas.Core.Data;
+using Aragas.Core.Interfaces;
+using Aragas.Core.IO;
+using Aragas.Core.Packets;
+using Aragas.Core.Wrappers;
+
 using Newtonsoft.Json;
 
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Prng;
 
-using PokeD.Core.Data;
 using PokeD.Core.Extensions;
-using PokeD.Core.Interfaces;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
@@ -18,9 +22,6 @@ using PokeD.Core.Packets.Encryption;
 using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
-using PokeD.Core.Wrappers;
-
-using PokeD.Server.IO;
 
 namespace PokeD.Server.Clients.Protobuf
 {
@@ -92,7 +93,7 @@ namespace PokeD.Server.Clients.Protobuf
         #endregion Other Values
 
         INetworkTCPClient Client { get; }
-        IPacketStream Stream { get; }
+        ProtobufStream Stream { get; }
 
 
         readonly Server _server;
@@ -117,7 +118,7 @@ namespace PokeD.Server.Clients.Protobuf
         {
             if (!Stream.Connected)
             {
-                _server.RemovePlayer(this);
+                //_server.RemovePlayer(this);
                 return;
             }
 
@@ -130,7 +131,7 @@ namespace PokeD.Server.Clients.Protobuf
                     {
                         Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Length size is 0. Disconnecting IClient {Name}.");
                         SendPacket(new KickedPacket { Reason = "Packet Length size is 0!" }, -1);
-                        _server.RemovePlayer(this);
+                        //_server.RemovePlayer(this);
                         return;
                     }
 
@@ -177,7 +178,7 @@ namespace PokeD.Server.Clients.Protobuf
                 {
                     Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
                     SendPacket(new KickedPacket { Reason = $"Packet ID {id} is not correct!" }, -1);
-                    _server.RemovePlayer(this);
+                    //_server.RemovePlayer(this);
                     return;
                 }
 
@@ -343,7 +344,7 @@ namespace PokeD.Server.Clients.Protobuf
         {
             Stream?.Dispose();
 
-            _server.RemovePlayer(this);
+            //_server.RemovePlayer(this);
         }
     }
 }

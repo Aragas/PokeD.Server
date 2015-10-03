@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 
+using Aragas.Core.Data;
+using Aragas.Core.Packets;
+using Aragas.Core.Wrappers;
+
 using Newtonsoft.Json;
 
 using PokeD.Core.Data;
 using PokeD.Core.Extensions;
-using PokeD.Core.Interfaces;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
@@ -15,7 +18,6 @@ using PokeD.Core.Packets.Client;
 using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
-using PokeD.Core.Wrappers;
 
 using PokeD.Server.IO;
 
@@ -66,8 +68,6 @@ namespace PokeD.Server.Clients.P3D
 
         #region Other Values
 
-        [JsonIgnore]
-        public bool Initialized { get; private set; }
 
         [JsonIgnore]
         public string IP => Client.IP;
@@ -83,13 +83,17 @@ namespace PokeD.Server.Clients.P3D
         [JsonProperty("ChatReceiving")]
         public bool ChatReceiving => true;
 
+        bool IsInitialized { get; set; }
+        bool IsDisposed { get; set; }
+
         #endregion Other Values
 
         INetworkTCPClient Client { get; }
-        IPacketStream Stream { get; }
+        P3DStream Stream { get; }
 
 
         readonly Server _server;
+
 
 #if DEBUG
         // -- Debug -- //
@@ -119,8 +123,8 @@ namespace PokeD.Server.Clients.P3D
             if (Stream.Connected && Stream.DataAvailable > 0)
             {
                 var data = Stream.ReadLine();
-
                 LastMessage = DateTime.UtcNow;
+
                 HandleData(data);
             }
 
@@ -144,41 +148,48 @@ namespace PokeD.Server.Clients.P3D
 
         private void HandleData(string data)
         {
-            if (string.IsNullOrEmpty(data))
+            try
             {
-                Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet Data is null or empty.");
-                return;
-            }
-
-
-            int id;
-            if (P3DPacket.TryParseID(data, out id))
-            {
-                if (id >= GamePacketResponses.Packets.Length)
+                if (string.IsNullOrEmpty(data))
                 {
-                    Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet ID {id} is not correct, Packet Data: {data}.");
+                    Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet Data is null or empty.");
                     return;
                 }
 
-                var packet = GamePacketResponses.Packets[id]();
-                if (packet == null)
-                {
-                    Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet is null. Packet ID {id}, Packet Data: {data}.");
-                    return;
-                }
 
-                if (packet.TryParseData(data))
+                int id;
+                if (P3DPacket.TryParseID(data, out id))
                 {
-                    HandlePacket(packet);
+                    if (id >= GamePacketResponses.Packets.Length)
+                    {
+                        Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet ID {id} is not correct, Packet Data: {data}.");
+                        return;
+                    }
+
+                    var packet = GamePacketResponses.Packets[id]();
+                    if (packet == null)
+                    {
+                        Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet is null. Packet ID {id}, Packet Data: {data}.");
+                        return;
+                    }
+
+                    if (packet.TryParseData(data))
+                    {
+                        HandlePacket(packet);
 #if DEBUG
-                    Received.Add(packet);
+                        Received.Add(packet);
 #endif
+                    }
+                    else
+                        Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet TryParseData error. Packet ID {id}, Packet Data: {data}.");
                 }
                 else
-                    Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet TryParseData error. Packet ID {id}, Packet Data: {data}.");
+                    Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet TryParseID error. Packet Data: {data}.");
             }
-            else
-                Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet TryParseID error. Packet Data: {data}.");
+            catch (NullReferenceException)
+            {
+                Logger.Log(LogType.GlobalError, $"P3D Reading Error: GamePacketResponses.Packets[] is null.");
+            }
         }
         private void HandlePacket(P3DPacket packet)
         {
@@ -307,19 +318,27 @@ namespace PokeD.Server.Clients.P3D
                 PokemonSkin,
                 PokemonFacing.ToString(CultureInfo));
         }
+        
 
-
-        public void Disconnect()
+        private void DisconnectAndDispose()
         {
-            Stream.Disconnect();
+            if (IsDisposed)
+                return;
+
+            IsDisposed = true;
+
+
+            Stream.Dispose();
         }
-
-
         public void Dispose()
         {
-            Stream?.Dispose();
+            if (IsDisposed)
+                return;
 
-            _server.RemovePlayer(this);
+            IsDisposed = true;
+
+
+            DisconnectAndDispose();
         }
     }
 }

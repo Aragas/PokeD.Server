@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Linq;
 
+using Aragas.Core.Data;
+
 using Newtonsoft.Json;
 
 using PokeD.Core;
-using PokeD.Core.Data;
 using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
 using PokeD.Core.Packets.Client;
@@ -180,7 +181,7 @@ namespace PokeD.Server.Clients.Protobuf
 
             if (!Initialized)
             {
-                _server.AddPlayer(this);
+                //_server.AddPlayer(this);
                 Initialized = true;
             }
         }
@@ -308,7 +309,7 @@ namespace PokeD.Server.Clients.Protobuf
 
             SendPacket(spacket, ID);
 
-            _server.RemovePlayer(this);
+            //_server.RemovePlayer(this);
         }
     }
 }

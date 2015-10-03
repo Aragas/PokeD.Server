@@ -49,14 +49,11 @@
     <Compile Include="Data\Season.cs" />
     <Compile Include="Data\Weather.cs" />
     <Compile Include="Data\World.cs" />
-    <Compile Include="Exceptions\ProtobufReadingException.cs" />
-    <Compile Include="Extensions\FileSystemWrapperExtensions.cs" />
-    <Compile Include="IO\BouncyCastleAES.cs" />
-    <Compile Include="IO\ProtobufDataReader.cs" />
-    <Compile Include="IO\ProtobufStream.cs" />
+    <Compile Include="Extensions\IClientExtensions.cs" />
     <Compile Include="IO\P3DStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Clients\SCON\SCONClient.cs" />
+    <Compile Include="Server.Players.cs" />
     <Compile Include="Server.Structs.cs" />
     <Compile Include="Server.Commands.cs" />
     <Compile Include="Server.cs" />
@@ -116,8 +113,6 @@
       </ItemGroup>
     </When>
   </Choose>
-  <ItemGroup>
-  </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

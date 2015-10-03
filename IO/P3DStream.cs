@@ -4,10 +4,12 @@ using System.IO;
 using System.Numerics;
 using System.Text;
 
-using PokeD.Core.Data;
-using PokeD.Core.Interfaces;
+using Aragas.Core.Data;
+using Aragas.Core.Interfaces;
+using Aragas.Core.Packets;
+using Aragas.Core.Wrappers;
+
 using PokeD.Core.Packets;
-using PokeD.Core.Wrappers;
 
 namespace PokeD.Server.IO
 {
@@ -248,7 +250,10 @@ namespace PokeD.Server.IO
 
         public void Dispose()
         {
-            _tcp?.Disconnect().Dispose();
+            if (Connected)
+                _tcp.Disconnect();
+
+            _tcp?.Dispose();
         }
     }
 }

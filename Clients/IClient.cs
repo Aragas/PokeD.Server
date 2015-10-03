@@ -1,7 +1,9 @@
 ﻿using System;
 
-using PokeD.Core.Data;
-using PokeD.Core.Interfaces;
+using Aragas.Core.Data;
+using Aragas.Core.Interfaces;
+using Aragas.Core.Packets;
+
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Shared;
 
@@ -27,7 +29,5 @@ namespace PokeD.Server.Clients
 
         void SendPacket(ProtobufPacket packet, int originID);
         void SendPacket(P3DPacket packet, int originID);
-
-        void Disconnect();
     }
 }

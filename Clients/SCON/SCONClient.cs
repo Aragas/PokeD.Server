@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
 
+using Aragas.Core.Data;
+using Aragas.Core.Interfaces;
+using Aragas.Core.IO;
+using Aragas.Core.Packets;
+using Aragas.Core.Wrappers;
+
 using Newtonsoft.Json;
 
-using PokeD.Core.Data;
-using PokeD.Core.Interfaces;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
@@ -12,9 +16,6 @@ using PokeD.Core.Packets.SCON.Chat;
 using PokeD.Core.Packets.SCON.Logs;
 using PokeD.Core.Packets.SCON.Status;
 using PokeD.Core.Packets.Shared;
-using PokeD.Core.Wrappers;
-
-using PokeD.Server.IO;
 
 namespace PokeD.Server.Clients.SCON
 {
@@ -58,7 +59,7 @@ namespace PokeD.Server.Clients.SCON
         #endregion Values
 
         INetworkTCPClient Client { get; }
-        IPacketStream Stream { get; }
+        ProtobufStream Stream { get; }
 
         readonly Server _server;
 
@@ -90,22 +91,18 @@ namespace PokeD.Server.Clients.SCON
 
             if (Stream.Connected && Stream.DataAvailable > 0)
             {
-                //try
-                //{
-                    var dataLength = Stream.ReadVarInt();
-                    if (dataLength == 0)
-                    {
-                        Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Length size is 0. Disconnecting.");
-                        SendPacket(new AuthorizationDisconnectPacket { Reason = "Packet Length size is 0!" });
-                        Dispose();
-                        return;
-                    }
+                var dataLength = Stream.ReadVarInt();
+                if (dataLength == 0)
+                {
+                    Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Length size is 0. Disconnecting.");
+                    SendPacket(new AuthorizationDisconnectPacket {Reason = "Packet Length size is 0!"});
+                    Dispose();
+                    return;
+                }
 
-                    var data = Stream.ReadByteArray(dataLength);
+                var data = Stream.ReadByteArray(dataLength);
 
-                    HandleData(data);
-                //}
-                //catch (ProtobufReadingException ex) { Logger.Log(LogType.GlobalError, $"Protobuf Reading Exeption: {ex.Message}. Disconnecting IClient {Name}."); }
+                HandleData(data);
             }
         }
 
@@ -250,7 +247,7 @@ namespace PokeD.Server.Clients.SCON
         {
             Stream?.Dispose();
 
-            _server.RemoveSCONClient(this);
+            //_server.RemoveSCONClient(this);
         }
     }
 }
