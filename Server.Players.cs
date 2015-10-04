@@ -75,6 +75,12 @@ namespace PokeD.Server
         }
         public void RemovePlayer(IClient player)
         {
+            if (player is SCONClient)
+            {
+                SCONClients.Remove(player);
+                return;
+            }
+
             player.SaveClientSettings();
 
             PlayersToRemove.Add(player);
