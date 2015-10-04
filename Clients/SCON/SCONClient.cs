@@ -23,10 +23,10 @@ namespace PokeD.Server.Clients.SCON
         #region Values
 
         [JsonIgnore]
-        public int ID { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
+        public int ID { get { return 0; } set {  } }
 
         [JsonIgnore]
-        public string Name { get { throw new NotImplementedException(); } }
+        public string Name => string.Empty;
 
         [JsonIgnore]
         public string IP => Client.IP;
@@ -35,19 +35,19 @@ namespace PokeD.Server.Clients.SCON
         public DateTime ConnectionTime { get; } = DateTime.Now;
 
         [JsonIgnore]
-        public bool UseCustomWorld { get { throw new NotImplementedException(); } }
+        public bool UseCustomWorld => true;
 
         [JsonIgnore]
-        public ulong GameJoltID { get { throw new NotImplementedException(); } }
+        public ulong GameJoltID => 0;
 
         [JsonIgnore]
-        public bool IsGameJoltPlayer { get { throw new NotImplementedException(); } }
+        public bool IsGameJoltPlayer => false;
 
         [JsonIgnore]
-        public string LevelFile { get { throw new NotImplementedException(); } }
+        public string LevelFile => string.Empty;
 
         [JsonIgnore]
-        public Vector3 Position { get { throw new NotImplementedException(); } }
+        public Vector3 Position => Vector3.Zero;
 
         [JsonProperty("ChatReceiving")]
         public bool ChatReceiving { get; private set; }
