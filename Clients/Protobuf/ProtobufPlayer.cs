@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using Aragas.Core.Data;
-using Aragas.Core.Interfaces;
 using Aragas.Core.IO;
 using Aragas.Core.Packets;
 using Aragas.Core.Wrappers;
@@ -70,9 +69,6 @@ namespace PokeD.Server.Clients.Protobuf
         #region Other Values
 
         [JsonIgnore]
-        public bool Initialized { get; private set; }
-
-        [JsonIgnore]
         public bool EncryptionEnabled => _server.EncryptionEnabled;
 
         [JsonIgnore]
@@ -88,6 +84,9 @@ namespace PokeD.Server.Clients.Protobuf
 
         [JsonProperty("ChatReceiving")]
         public bool ChatReceiving => true;
+
+        bool IsInitialized { get; set; }
+        bool IsDisposed { get; set; }
 
 
         #endregion Other Values
@@ -113,25 +112,19 @@ namespace PokeD.Server.Clients.Protobuf
         }
 
 
-        Stopwatch UpdateWatch = Stopwatch.StartNew();
+        Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
         public void Update()
         {
-            if (!Stream.Connected)
+            if (Stream.Connected)
             {
-                //_server.RemovePlayer(this);
-                return;
-            }
-
-            if (Stream.Connected && Stream.DataAvailable > 0)
-            {
-                //try
-                //{
+                if (Stream.Connected && Stream.DataAvailable > 0)
+                {
                     var dataLength = Stream.ReadVarInt();
                     if (dataLength == 0)
                     {
                         Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Length size is 0. Disconnecting IClient {Name}.");
-                        SendPacket(new KickedPacket { Reason = "Packet Length size is 0!" }, -1);
-                        //_server.RemovePlayer(this);
+                        SendPacket(new KickedPacket {Reason = "Packet Length size is 0!"}, -1);
+                        _server.RemovePlayer(this);
                         return;
                     }
 
@@ -139,58 +132,68 @@ namespace PokeD.Server.Clients.Protobuf
 
                     LastMessage = DateTime.UtcNow;
                     HandleData(data);
-                //}
-                //catch (ProtobufReadingException ex) { Logger.Log(LogType.GlobalError, $"Protobuf Reading Exeption: {ex.Message}. Disconnecting IClient {Name}."); }
+                }
+
+
+
+                // Stuff that is done every 1 second
+                if (UpdateWatch.ElapsedMilliseconds < 1000)
+                    return;
+
+                BattleUpdate();
+
+                if (!Battling && _server.CustomWorldEnabled && UseCustomWorld)
+                {
+                    CustomWorld.Update();
+                    SendPacket(new WorldDataPacket {DataItems = CustomWorld.GenerateDataItems()}, -1);
+                }
+
+                UpdateWatch.Reset();
+                UpdateWatch.Start();
             }
-
-
-
-            // Stuff that is done every 1 second
-            if (UpdateWatch.ElapsedMilliseconds < 1000)
-                return;
-
-            BattleUpdate();
-
-            if (!Battling && _server.CustomWorldEnabled && UseCustomWorld)
-            {
-                CustomWorld.Update();
-                SendPacket(new WorldDataPacket { DataItems = CustomWorld.GenerateDataItems() }, -1);
-            }
-
-            UpdateWatch.Reset();
-            UpdateWatch.Start();
+            else
+                _server.RemovePlayer(this);
         }
 
         private void HandleData(byte[] data)
         {
-            if (data == null)
+            if (data != null)
             {
-                Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Data is null.");
-                return;
-            }
-
-            using (var reader = new ProtobufDataReader(data))
-            {
-                var id = reader.ReadVarInt();
-                var origin = reader.ReadVarInt();
-
-                if (id >= GamePacketResponses.Packets.Length)
+                using (var reader = new ProtobufDataReader(data))
                 {
-                    Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
-                    SendPacket(new KickedPacket { Reason = $"Packet ID {id} is not correct!" }, -1);
-                    //_server.RemovePlayer(this);
-                    return;
-                }
+                    var id = reader.ReadVarInt();
+                    var origin = reader.ReadVarInt();
 
-                var packet = GamePacketResponses.Packets[id]().ReadPacket(reader);
-                packet.Origin = origin;
+                    if (GamePacketResponses.Packets.Length > id)
+                    {
+                        if (GamePacketResponses.Packets[id] != null)
+                        {
+                            var packet = GamePacketResponses.Packets[id]().ReadPacket(reader);
+                            packet.Origin = origin;
 
-                HandlePacket(packet);
-                
+                            HandlePacket(packet);
+
 #if DEBUG
-                Received.Add(packet);
+                            Received.Add(packet);
 #endif
+                        }
+                        else
+                        {
+                            Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: GamePacketResponses.Packets[{id}] is null. Disconnecting IClient {Name}.");
+                            SendPacket(new KickedPacket { Reason = $"Packet ID {id} is not correct!" }, -1);
+                            _server.RemovePlayer(this);
+                        }
+                    }
+                    else
+                    {
+                        Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
+                        SendPacket(new KickedPacket {Reason = $"Packet ID {id} is not correct!"}, -1);
+                        _server.RemovePlayer(this);
+                    }
+                }
             }
+            else
+                Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Data is null.");
         }
         private void HandlePacket(ProtobufPacket packet)
         {
@@ -288,7 +291,7 @@ namespace PokeD.Server.Clients.Protobuf
         }
 
 
-        public void SendPacket(ProtobufPacket packet, int originID)
+        private void SendPacket(ProtobufPacket packet, int originID)
         {
             if (Stream.Connected)
             {
@@ -334,17 +337,20 @@ namespace PokeD.Server.Clients.Protobuf
         }
 
 
-        public void Disconnect()
+        private void DisconnectAndDispose()
         {
-            Stream?.Disconnect();
+            Stream.Disconnect();
+            Stream.Dispose();
         }
-
-
         public void Dispose()
         {
-            Stream?.Dispose();
+            if (IsDisposed)
+                return;
 
-            //_server.RemovePlayer(this);
+            IsDisposed = true;
+
+
+            DisconnectAndDispose();
         }
     }
 }

@@ -2,7 +2,6 @@
 
 using Aragas.Core.Data;
 using Aragas.Core.Interfaces;
-using Aragas.Core.Packets;
 
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Shared;
@@ -27,7 +26,6 @@ namespace PokeD.Server.Clients
 
         GameDataPacket GetDataPacket();
 
-        void SendPacket(ProtobufPacket packet, int originID);
         void SendPacket(P3DPacket packet, int originID);
     }
 }

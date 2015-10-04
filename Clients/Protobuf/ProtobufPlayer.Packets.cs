@@ -179,10 +179,10 @@ namespace PokeD.Server.Clients.Protobuf
 
             ParseGameData(packet);
 
-            if (!Initialized)
+            if (!IsInitialized)
             {
-                //_server.AddPlayer(this);
-                Initialized = true;
+                _server.AddPlayer(this);
+                IsInitialized = true;
             }
         }
 
@@ -309,7 +309,7 @@ namespace PokeD.Server.Clients.Protobuf
 
             SendPacket(spacket, ID);
 
-            //_server.RemovePlayer(this);
+            _server.RemovePlayer(this);
         }
     }
 }

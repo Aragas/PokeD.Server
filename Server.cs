@@ -25,7 +25,6 @@ using PokeD.Server.Clients.P3D;
 using PokeD.Server.Clients.Protobuf;
 using PokeD.Server.Clients.SCON;
 using PokeD.Server.Data;
-using PokeD.Server.Extensions;
 
 namespace PokeD.Server
 {
@@ -96,8 +95,7 @@ namespace PokeD.Server
 
         public Server()
         {
-            //ClientInitialized += Server_ClientInitialized;
-            //ClientFinalized += Server_ClientFinalized;
+
         }
 
         private static AsymmetricCipherKeyPair GenerateKeyPair()
@@ -120,7 +118,7 @@ namespace PokeD.Server
             if(EncryptionEnabled)
                 RSAKeyPair = GenerateKeyPair();
 
-            Logger.Log(LogType.Info, $"Starting {ServerName}");
+            Logger.Log(LogType.Info, $"Starting {ServerName}.");
 
 
             ListenToConnectionsThread = ThreadWrapper.StartThread(ListenToConnectionsCycle, true, "ListenToConnectionsThread");
@@ -138,7 +136,7 @@ namespace PokeD.Server
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save Server settings!");
 
-            Logger.Log(LogType.Info, $"Stopping {ServerName}");
+            Logger.Log(LogType.Info, $"Stopping {ServerName}.");
 
 
             if (ThreadWrapper.IsRunning(ListenToConnectionsThread))
@@ -151,6 +149,8 @@ namespace PokeD.Server
                 ThreadWrapper.AbortThread(PlayerCorrectionThread);
 
             Dispose();
+
+            Logger.Log(LogType.Info, $"Stopped {ServerName}.");
 
             return status;
         }
@@ -186,7 +186,7 @@ namespace PokeD.Server
 
                 if (SCONListener != null && SCONListener.AvailableClients)
                     if (SCONListener.AvailableClients)
-                        AddSCONClient(new SCONClient(SCONListener.AcceptNetworkTCPClient(), this));
+                        SCONClients.Add(new SCONClient(SCONListener.AcceptNetworkTCPClient(), this));
 
 
 
@@ -284,7 +284,7 @@ namespace PokeD.Server
 
                 if (playerToAdd.ID != 0)
                 {
-                    Logger.Log(LogType.Server, $"The player {playerToAdd.Name} joined the game from IP {playerToAdd.IP}");
+                    Logger.Log(LogType.Server, $"The player {playerToAdd.Name} joined the game from IP {playerToAdd.IP}.");
                     SendToAllClients(new ChatMessageGlobalPacket { DataItems = new DataItems($"Player {playerToAdd.Name} joined the game!") });
                 }
             }
@@ -295,13 +295,14 @@ namespace PokeD.Server
 
                 Players.Remove(playerToRemove);
                 PlayersJoining.Remove(playerToRemove);
+                SCONClients.Remove(playerToRemove);
                 PlayersToRemove.Remove(playerToRemove);
 
                 if (playerToRemove.ID != 0)
                 {
                     SendToAllClients(new DestroyPlayerPacket { DataItems = new DataItems(playerToRemove.ID.ToString()) });
 
-                    Logger.Log(LogType.Server, $"The player {playerToRemove.Name} disconnected, playtime was {DateTime.Now - playerToRemove.ConnectionTime:hh\\:mm\\:ss}");
+                    Logger.Log(LogType.Server, $"The player {playerToRemove.Name} disconnected, playtime was {DateTime.Now - playerToRemove.ConnectionTime:hh\\:mm\\:ss}.");
                     SendToAllClients(new ChatMessageGlobalPacket { DataItems = new DataItems($"Player {playerToRemove.Name} disconnected!") });
                 }
 
@@ -310,48 +311,46 @@ namespace PokeD.Server
 
             #endregion Player Filtration
 
-
-
+            
             #region Player Updating
 
             // Update actual players
             for (var i = 0; i < Players.Count; i++)
-            {
-                var iLocal = i;
-                ThreadWrapper.QueueUserWorkItem(state => Players[iLocal].Update());
-            }
-            //Players[i].Update();
+            //{
+            //    var player = Players[i];
+            //    ThreadWrapper.QueueUserWorkItem(state => player.Update());
+            //}
+                Players[i]?.Update();
             
             // Update joining players
             for (var i = 0; i < PlayersJoining.Count; i++)
-            {
-                var iLocal = i;
-                ThreadWrapper.QueueUserWorkItem(state => PlayersJoining[iLocal].Update());
-            }
-            //PlayersJoining[i].Update();
+            //{
+            //    var playerJoining = PlayersJoining[i];
+            //    ThreadWrapper.QueueUserWorkItem(state => playerJoining.Update());
+            //}
+                PlayersJoining[i]?.Update();
 
             // Update SCON clients
             for (var i = 0; i < SCONClients.Count; i++)
-            {
-                var iLocal = i;
-                ThreadWrapper.QueueUserWorkItem(delegate { SCONClients[iLocal].Update(); });
-            }
-            //SCONClients[i].Update();
+            //{
+            //    var scon = PlayersJoining[i];
+            //    ThreadWrapper.QueueUserWorkItem(state => scon.Update());
+            //}
+                SCONClients[i]?.Update();
 
             #endregion Player Updating
 
-
-
+            
             #region Packet Sending
 
             PlayerPacketP3DOrigin packetToPlayer;
             while (!IsDisposing && PacketsToPlayer.TryDequeue(out packetToPlayer))
-                packetToPlayer.Player?.SendPacket(packetToPlayer.Packet, packetToPlayer.OriginID);
-
+                packetToPlayer.Player.SendPacket(packetToPlayer.Packet, packetToPlayer.OriginID);
+            
             PacketP3DOrigin packetToAllPlayers;
             while (!IsDisposing && PacketsToAllPlayers.TryDequeue(out packetToAllPlayers))
                 for (var i = 0; i < Players.Count; i++)
-                    Players[i]?.SendPacket(packetToAllPlayers.Packet, packetToAllPlayers.OriginID);
+                    Players[i].SendPacket(packetToAllPlayers.Packet, packetToAllPlayers.OriginID);
 
             #endregion Packet Sending
 
@@ -404,10 +403,8 @@ namespace PokeD.Server
 
         public void SendServerMessageToAllClients(string message)
         {
-            SendToAllClients(new ServerMessagePacket { Message = message });
-
-            //for (var i = 0; i < Players.Count; i++)
-            //    Players[i].SendPacket(new ServerMessagePacket { Message = message }, -1);
+            for (var i = 0; i < Players.Count; i++)
+                Players[i].SendPacket(new ServerMessagePacket { Message = message }, -1);
         }
         public void SendGlobalChatMessageToAllClients(string message)
         {
@@ -415,11 +412,7 @@ namespace PokeD.Server
             {
                 var player = Players[i];
                 if(player.ChatReceiving)
-                    SendToClient(player, new ChatMessageGlobalPacket { Message = message }, -1);
-
-                //var player = Players[i];
-                //if(player.ChatReceiving)
-                //    player.SendPacket(new ChatMessageGlobalPacket { Message = message }, -1);
+                    player.SendPacket(new ChatMessageGlobalPacket { Message = message }, -1);
             }
         }
 
@@ -437,12 +430,12 @@ namespace PokeD.Server
 
             for (var i = 0; i < Players.Count; i++)
             {
-                Players[i].SendPacket(new ServerClosePacket { Reason = "Closing server" }, -1);
+                Players[i].SendPacket(new ServerClosePacket { Reason = "Closing server!" }, -1);
                 Players[i].Dispose();
             }
             for (var i = 0; i < PlayersToAdd.Count; i++)
             {
-                PlayersToAdd[i].SendPacket(new ServerClosePacket { Reason = "Closing server" }, -1);
+                PlayersToAdd[i].SendPacket(new ServerClosePacket { Reason = "Closing server!" }, -1);
                 PlayersToAdd[i].Dispose();
             }
 
@@ -456,7 +449,7 @@ namespace PokeD.Server
 
             if (PacketsToPlayer != null)
                 PacketsToPlayer = null;
-
+            
             if (PacketsToAllPlayers != null)
                 PacketsToAllPlayers = null;
 

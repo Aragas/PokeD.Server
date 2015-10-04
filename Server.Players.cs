@@ -44,6 +44,13 @@ namespace PokeD.Server
 
         public void AddPlayer(IClient player)
         {
+            if (player is SCONClient)
+            {
+                SCONClients.Add(player);
+                PlayersJoining.Remove(player);
+                return;
+            }
+
             player.LoadClientSettings();
 
             player.ID = GenerateClientID();
@@ -71,16 +78,6 @@ namespace PokeD.Server
             player.SaveClientSettings();
 
             PlayersToRemove.Add(player);
-        }
-
-
-        private void AddSCONClient(SCONClient scon)
-        {
-            SCONClients.Add(scon);
-        }
-        private void RemoveSCONClient(SCONClient scon)
-        {
-            SCONClients.Remove(scon);
         }
 
         

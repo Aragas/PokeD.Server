@@ -85,6 +85,9 @@ namespace PokeD.Server.Clients.SCON
                 {
                     Authorized = true;
                     SendPacket(new AuthorizationCompletePacket());
+
+                    IsInitialized = true;
+                    _server.AddPlayer(this);
                 }
                 else
                     SendPacket(new AuthorizationDisconnectPacket { Reason = "Password not correct!" });

@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Globalization;
 
 using Aragas.Core.Data;
-using Aragas.Core.Packets;
 using Aragas.Core.Wrappers;
 
 using Newtonsoft.Json;
@@ -68,7 +67,6 @@ namespace PokeD.Server.Clients.P3D
 
         #region Other Values
 
-
         [JsonIgnore]
         public string IP => Client.IP;
 
@@ -111,85 +109,73 @@ namespace PokeD.Server.Clients.P3D
         }
 
 
-        Stopwatch UpdateWatch = Stopwatch.StartNew();
+        Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
         public void Update()
         {
-            if (!Stream.Connected)
+            if (Stream.Connected)
             {
+                if (Stream.Connected && Stream.DataAvailable > 0)
+                {
+                    var data = Stream.ReadLine();
+                    LastMessage = DateTime.UtcNow;
+
+                    HandleData(data);
+                }
+
+
+
+                // Stuff that is done every 1 second
+                if (UpdateWatch.ElapsedMilliseconds < 1000)
+                    return;
+
+                BattleUpdate();
+
+                if (!Battling && _server.CustomWorldEnabled && UseCustomWorld)
+                {
+                    CustomWorld.Update();
+                    SendPacket(new WorldDataPacket {DataItems = CustomWorld.GenerateDataItems()}, -1);
+                }
+
+                UpdateWatch.Reset();
+                UpdateWatch.Start();
+            }
+            else
                 _server.RemovePlayer(this);
-                return;
-            }
-
-            if (Stream.Connected && Stream.DataAvailable > 0)
-            {
-                var data = Stream.ReadLine();
-                LastMessage = DateTime.UtcNow;
-
-                HandleData(data);
-            }
-
-
-
-            // Stuff that is done every 1 second
-            if (UpdateWatch.ElapsedMilliseconds < 1000)
-                return;
-
-            BattleUpdate();
-
-            if (!Battling && _server.CustomWorldEnabled && UseCustomWorld)
-            {
-                CustomWorld.Update();
-                SendPacket(new WorldDataPacket { DataItems = CustomWorld.GenerateDataItems() }, -1);
-            }
-            
-            UpdateWatch.Reset();
-            UpdateWatch.Start();
         }
 
         private void HandleData(string data)
         {
-            try
+            if (!string.IsNullOrEmpty(data))
             {
-                if (string.IsNullOrEmpty(data))
-                {
-                    Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet Data is null or empty.");
-                    return;
-                }
-
-
                 int id;
                 if (P3DPacket.TryParseID(data, out id))
                 {
-                    if (id >= GamePacketResponses.Packets.Length)
+                    if (GamePacketResponses.Packets.Length > id)
                     {
-                        Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet ID {id} is not correct, Packet Data: {data}.");
-                        return;
-                    }
-
-                    var packet = GamePacketResponses.Packets[id]();
-                    if (packet == null)
-                    {
-                        Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet is null. Packet ID {id}, Packet Data: {data}.");
-                        return;
-                    }
-
-                    if (packet.TryParseData(data))
-                    {
-                        HandlePacket(packet);
+                        if (GamePacketResponses.Packets[id] != null)
+                        {
+                            var packet = GamePacketResponses.Packets[id]();
+                            if (packet.TryParseData(data))
+                            {
+                                HandlePacket(packet);
 #if DEBUG
-                        Received.Add(packet);
+                                Received.Add(packet);
 #endif
+                            }
+                            else
+                                Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet TryParseData error. Packet ID {id}, Packet Data: {data}.");
+                        }
+                        else
+                            Logger.Log(LogType.GlobalError, $"P3D Reading Error: SCONPacketResponses.Packets[{id}] is null.");
                     }
                     else
-                        Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet TryParseData error. Packet ID {id}, Packet Data: {data}.");
+                        Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packets Length {GamePacketResponses.Packets.Length} > Packet ID {id}, Packet Data: {data}.");
                 }
                 else
                     Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet TryParseID error. Packet Data: {data}.");
             }
-            catch (NullReferenceException)
-            {
-                Logger.Log(LogType.GlobalError, $"P3D Reading Error: GamePacketResponses.Packets[] is null.");
-            }
+            else
+                Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet Data is null or empty.");
         }
         private void HandlePacket(P3DPacket packet)
         {
@@ -276,10 +262,7 @@ namespace PokeD.Server.Clients.P3D
             }
         }
 
-        public void SendPacket(ProtobufPacket packet, int originID)
-        {
-            throw new NotImplementedException();
-        }
+
         public void SendPacket(P3DPacket packet, int originID)
         {
             if (Stream.Connected)
@@ -295,10 +278,6 @@ namespace PokeD.Server.Clients.P3D
         }
 
 
-        public GameDataPacket GetDataPacket()
-        {
-            return new GameDataPacket { DataItems = GenerateDataItems() };
-        }
         private DataItems GenerateDataItems()
         {
             return new DataItems(
@@ -318,16 +297,15 @@ namespace PokeD.Server.Clients.P3D
                 PokemonSkin,
                 PokemonFacing.ToString(CultureInfo));
         }
+        public GameDataPacket GetDataPacket()
+        {
+            return new GameDataPacket { DataItems = GenerateDataItems() };
+        }
         
 
         private void DisconnectAndDispose()
         {
-            if (IsDisposed)
-                return;
-
-            IsDisposed = true;
-
-
+            Stream.Disconnect();
             Stream.Dispose();
         }
         public void Dispose()
