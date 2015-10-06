@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 using Aragas.Core.Data;
+using Aragas.Core.Interfaces;
 using Aragas.Core.IO;
 using Aragas.Core.Packets;
 using Aragas.Core.Wrappers;
@@ -123,8 +124,7 @@ namespace PokeD.Server.Clients.Protobuf
                     if (dataLength == 0)
                     {
                         Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Length size is 0. Disconnecting IClient {Name}.");
-                        SendPacket(new KickedPacket {Reason = "Packet Length size is 0!"}, -1);
-                        _server.RemovePlayer(this);
+                        _server.RemovePlayer(this, "Packet Length size is 0!");
                         return;
                     }
 
@@ -159,10 +159,10 @@ namespace PokeD.Server.Clients.Protobuf
         {
             if (data != null)
             {
-                using (var reader = new ProtobufDataReader(data))
+                using (IPacketDataReader reader = new ProtobufDataReader(data))
                 {
-                    var id = reader.ReadVarInt();
-                    var origin = reader.ReadVarInt();
+                    var id = reader.Read<VarInt>();
+                    var origin = reader.Read<VarInt>();
 
                     if (GamePacketResponses.Packets.Length > id)
                     {
@@ -180,15 +180,13 @@ namespace PokeD.Server.Clients.Protobuf
                         else
                         {
                             Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: GamePacketResponses.Packets[{id}] is null. Disconnecting IClient {Name}.");
-                            SendPacket(new KickedPacket { Reason = $"Packet ID {id} is not correct!" }, -1);
-                            _server.RemovePlayer(this);
+                            _server.RemovePlayer(this, $"Packet ID {id} is not correct!");
                         }
                     }
                     else
                     {
                         Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
-                        SendPacket(new KickedPacket {Reason = $"Packet ID {id} is not correct!"}, -1);
-                        _server.RemovePlayer(this);
+                        _server.RemovePlayer(this, $"Packet ID {id} is not correct!");
                     }
                 }
             }
@@ -197,7 +195,7 @@ namespace PokeD.Server.Clients.Protobuf
         }
         private void HandlePacket(ProtobufPacket packet)
         {
-            switch ((GamePacketTypes) packet.ID)
+            switch ((GamePacketTypes) (int) packet.ID)
             {
                 case GamePacketTypes.JoiningGameRequest:
                     HandleJoiningGameRequest((JoiningGameRequestPacket) packet);

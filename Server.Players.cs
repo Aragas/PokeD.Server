@@ -41,6 +41,18 @@ namespace PokeD.Server
             return FreePlayerID++;
         }
 
+        private bool IsGameJoltIDUsed(IClient client)
+        {
+            for (int i = 0; i < Players.Count; i++)
+            {
+                var player = Players[i];
+                if (player.IsGameJoltPlayer && client.GameJoltID == player.GameJoltID)
+                    return true;
+            }
+
+            return false;
+        }
+
 
         public void AddPlayer(IClient player)
         {
@@ -48,6 +60,12 @@ namespace PokeD.Server
             {
                 SCONClients.Add(player);
                 PlayersJoining.Remove(player);
+                return;
+            }
+
+            if (IsGameJoltIDUsed(player))
+            {
+                RemovePlayer(player, "You are already on server!");
                 return;
             }
 
@@ -73,7 +91,7 @@ namespace PokeD.Server
             PlayersToAdd.Add(player);
             PlayersJoining.Remove(player);
         }
-        public void RemovePlayer(IClient player)
+        public void RemovePlayer(IClient player, string reason = "")
         {
             if (player is SCONClient)
             {
@@ -82,6 +100,8 @@ namespace PokeD.Server
             }
 
             player.SaveClientSettings();
+            if(!string.IsNullOrEmpty(reason))
+                player.SendPacket(new KickedPacket { Reason = reason }, -1);
 
             PlayersToRemove.Add(player);
         }

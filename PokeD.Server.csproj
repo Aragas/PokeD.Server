@@ -50,13 +50,17 @@
     <Compile Include="Data\Weather.cs" />
     <Compile Include="Data\World.cs" />
     <Compile Include="Extensions\IClientExtensions.cs" />
-    <Compile Include="IO\P3DStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Clients\SCON\SCONClient.cs" />
     <Compile Include="Server.Players.cs" />
     <Compile Include="Server.Structs.cs" />
     <Compile Include="Server.Commands.cs" />
     <Compile Include="Server.cs" />
+    <Compile Include="Statistics\Data\CatchEmAll.cs" />
+    <Compile Include="Statistics\Data\Evolves.cs" />
+    <Compile Include="Statistics\Data\HM.cs" />
+    <Compile Include="Statistics\Data\Hotspots.cs" />
+    <Compile Include="Statistics\Data\Trade.cs" />
   </ItemGroup>
   <Choose>
     <When Condition="Exists('..\packages')">
@@ -100,6 +104,12 @@
       <Project>{468d9d51-dfe7-47a8-b0d6-52d035fc714d}</Project>
       <Name>Aragas.Core</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="CsvHelper, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8c4959082be5c823, processorArchitecture=MSIL">
+      <HintPath>..\packages\CsvHelper.2.13.2.0\lib\portable-net40+sl5+win8+wpa+wp8\CsvHelper.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <Choose>
     <When Condition="Exists('..\Aragas.Core')">

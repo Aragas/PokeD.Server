@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 
 using PokeD.Core.Data;
 using PokeD.Core.Extensions;
+using PokeD.Core.IO;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
@@ -17,8 +18,6 @@ using PokeD.Core.Packets.Client;
 using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
-
-using PokeD.Server.IO;
 
 namespace PokeD.Server.Clients.P3D
 {
@@ -133,7 +132,7 @@ namespace PokeD.Server.Clients.P3D
                 if (!Battling && _server.CustomWorldEnabled && UseCustomWorld)
                 {
                     CustomWorld.Update();
-                    SendPacket(new WorldDataPacket {DataItems = CustomWorld.GenerateDataItems()}, -1);
+                    SendPacket(new WorldDataPacket { DataItems = CustomWorld.GenerateDataItems() }, -1);
                 }
 
                 UpdateWatch.Reset();
@@ -179,7 +178,7 @@ namespace PokeD.Server.Clients.P3D
         }
         private void HandlePacket(P3DPacket packet)
         {
-            switch ((GamePacketTypes) packet.ID)
+            switch ((GamePacketTypes)(int) packet.ID)
             {
                 case GamePacketTypes.GameData:
                     HandleGameData((GameDataPacket) packet);

@@ -24,98 +24,96 @@ namespace PokeD.Server.Clients.P3D
 
         private void ParseGameData(GameDataPacket packet)
         {
-            if (packet.DataItems == null)
+            if (packet.DataItems != null)
             {
-                Logger.Log(LogType.GlobalError, $"P3D Reading Error: ParseGameData DataItems is null.");
-                return;
-            }
-
-            var strArray = packet.DataItems.ToArray();
-            if (strArray.Length < 14)
-            {
-                Logger.Log(LogType.GlobalError, $"P3D Reading Error: ParseGameData DataItems < 14. Packet DataItems {packet.DataItems}.");
-                return;
-            }
-
-            for (var index = 0; index < strArray.Length; index++)
-            {
-                var dataItem = strArray[index];
-
-                if (string.IsNullOrEmpty(dataItem))
-                    continue;
-
-                switch (index)
+                var strArray = packet.DataItems.ToArray();
+                if (strArray.Length >= 14)
                 {
-                    case 0:
-                        GameMode = packet.GameMode;
-                        break;
+                    for (var index = 0; index < strArray.Length; index++)
+                    {
+                        var dataItem = strArray[index];
 
-                    case 1:
-                        IsGameJoltPlayer = packet.IsGameJoltPlayer;
-                        break;
+                        if (string.IsNullOrEmpty(dataItem))
+                            continue;
 
-                    case 2:
-                        GameJoltID = packet.GameJoltID;
-                        break;
-
-                    case 3:
-                        DecimalSeparator = packet.DecimalSeparator;
-                        break;
-
-                    case 4:
-                        Name = packet.Name;
-                        break;
-
-                    case 5:
-                        LevelFile = packet.LevelFile;
-                        break;
-
-                    case 6:
-                        if (packet.GetPokemonPosition(DecimalSeparator) != Vector3.Zero)
+                        switch (index)
                         {
-                            LastPosition = Position;
+                            case 0:
+                                GameMode = packet.GameMode;
+                                break;
 
-                            Position = packet.GetPosition(DecimalSeparator);
+                            case 1:
+                                IsGameJoltPlayer = packet.IsGameJoltPlayer;
+                                break;
 
-                            IsMoving = LastPosition != Position;
+                            case 2:
+                                GameJoltID = packet.GameJoltID;
+                                break;
+
+                            case 3:
+                                DecimalSeparator = packet.DecimalSeparator;
+                                break;
+
+                            case 4:
+                                Name = packet.Name;
+                                break;
+
+                            case 5:
+                                LevelFile = packet.LevelFile;
+                                break;
+
+                            case 6:
+                                if (packet.GetPokemonPosition(DecimalSeparator) != Vector3.Zero)
+                                {
+                                    LastPosition = Position;
+
+                                    Position = packet.GetPosition(DecimalSeparator);
+
+                                    IsMoving = LastPosition != Position;
+                                }
+                                break;
+
+                            case 7:
+                                Facing = packet.Facing;
+                                break;
+
+                            case 8:
+                                Moving = packet.Moving;
+                                break;
+
+                            case 9:
+                                Skin = packet.Skin;
+                                break;
+
+                            case 10:
+                                BusyType = packet.BusyType;
+                                //Basic.ServersManager.UpdatePlayerList();
+                                break;
+
+                            case 11:
+                                PokemonVisible = packet.PokemonVisible;
+                                break;
+
+                            case 12:
+                                if (packet.GetPokemonPosition(DecimalSeparator) != Vector3.Zero)
+                                    PokemonPosition = packet.GetPokemonPosition(DecimalSeparator);
+                                break;
+
+                            case 13:
+                                PokemonSkin = packet.PokemonSkin;
+                                break;
+
+                            case 14:
+                                PokemonFacing = packet.PokemonFacing;
+                                break;
                         }
-                        break;
-
-                    case 7:
-                        Facing = packet.Facing;
-                        break;
-
-                    case 8:
-                        Moving = packet.Moving;
-                        break;
-
-                    case 9:
-                        Skin = packet.Skin;
-                        break;
-
-                    case 10:
-                        BusyType = packet.BusyType;
-                        //Basic.ServersManager.UpdatePlayerList();
-                        break;
-
-                    case 11:
-                        PokemonVisible = packet.PokemonVisible;
-                        break;
-
-                    case 12:
-                        if (packet.GetPokemonPosition(DecimalSeparator) != Vector3.Zero)
-                            PokemonPosition = packet.GetPokemonPosition(DecimalSeparator);
-                        break;
-
-                    case 13:
-                        PokemonSkin = packet.PokemonSkin;
-                        break;
-
-                    case 14:
-                        PokemonFacing = packet.PokemonFacing;
-                        break;
+                    }
                 }
+                else
+                    Logger.Log(LogType.GlobalError, $"P3D Reading Error: ParseGameData DataItems < 14. Packet DataItems {packet.DataItems}.");
             }
+            else
+                Logger.Log(LogType.GlobalError, $"P3D Reading Error: ParseGameData DataItems is null.");
         }
         private void HandleGameData(GameDataPacket packet)
         {

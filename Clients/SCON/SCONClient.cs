@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 using Aragas.Core.Data;
+using Aragas.Core.Interfaces;
 using Aragas.Core.IO;
 using Aragas.Core.Packets;
 using Aragas.Core.Wrappers;
@@ -111,10 +112,10 @@ namespace PokeD.Server.Clients.SCON
         {
             if (data != null)
             {
-                using (var reader = new ProtobufDataReader(data))
+                using (IPacketDataReader reader = new ProtobufDataReader(data))
                 {
-                    var id = reader.ReadVarInt();
-                    var origin = reader.ReadVarInt();
+                    var id = reader.Read<VarInt>();
+                    var origin = reader.Read<VarInt>();
 
                     if (SCONPacketResponses.Packets.Length > id)
                     {
@@ -145,7 +146,7 @@ namespace PokeD.Server.Clients.SCON
         }
         private void HandlePacket(ProtobufPacket packet)
         {
-            switch ((SCONPacketTypes) packet.ID)
+            switch ((SCONPacketTypes)(int) packet.ID)
             {
                 case SCONPacketTypes.AuthorizationRequest:
                     HandleAuthorizationRequest((AuthorizationRequestPacket) packet);
