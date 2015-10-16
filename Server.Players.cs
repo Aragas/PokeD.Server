@@ -26,6 +26,8 @@ namespace PokeD.Server
         List<IClient> PlayersToRemove { get; } = new List<IClient>();
         List<IClient> SCONClients { get; } = new List<IClient>();
 
+        List<IClient> NPCs { get; set; } = new List<IClient>();
+
         ConcurrentDictionary<string, IClient[]> NearPlayers { get; } = new ConcurrentDictionary<string, IClient[]>();
 
         ConcurrentQueue<PlayerPacketP3DOrigin> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerPacketP3DOrigin>();

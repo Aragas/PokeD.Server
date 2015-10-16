@@ -12,12 +12,10 @@ namespace PokeD.Server.Extensions
 {
     public static class IClientExtensions
     {
-        public static bool LoadClientSettings(this IClient p3DPlayer)
+        public static bool LoadClientSettings(this IClient player)
         {
-            if (p3DPlayer.GameJoltID == 0)
-                return false;
+            var filename = player.GameJoltID == 0 ? $"{player.Name}.json" : $"{player.GameJoltID}.json";
 
-            var filename = $"{p3DPlayer.GameJoltID}.json";
             using (var stream = FileSystemWrapper.UsersFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).Result.OpenAsync(FileAccess.ReadAndWrite).Result)
             using (var reader = new StreamReader(stream))
             using (var writer = new StreamWriter(stream))
@@ -25,13 +23,13 @@ namespace PokeD.Server.Extensions
                 var file = reader.ReadToEnd();
                 if (!string.IsNullOrEmpty(file))
                 {
-                    try { JsonConvert.PopulateObject(file, p3DPlayer); stream.SetLength(0); writer.Write(JsonConvert.SerializeObject(p3DPlayer, Formatting.Indented)); }
-                    catch (JsonReaderException) { stream.SetLength(0); writer.Write(JsonConvert.SerializeObject(p3DPlayer, Formatting.Indented)); return false; }
+                    try { JsonConvert.PopulateObject(file, player); stream.SetLength(0); writer.Write(JsonConvert.SerializeObject(player, Formatting.Indented)); }
+                    catch (JsonReaderException) { stream.SetLength(0); writer.Write(JsonConvert.SerializeObject(player, Formatting.Indented)); return false; }
                     catch (JsonWriterException) { return false; }
                 }
                 else
                 {
-                    try { stream.SetLength(0); writer.Write(JsonConvert.SerializeObject(p3DPlayer, Formatting.Indented)); }
+                    try { stream.SetLength(0); writer.Write(JsonConvert.SerializeObject(player, Formatting.Indented)); }
                     catch (JsonWriterException) { return false; }
                 }
 
@@ -39,16 +37,14 @@ namespace PokeD.Server.Extensions
 
             return true;
         }
-        public static bool SaveClientSettings(this IClient p3DPlayer)
+        public static bool SaveClientSettings(this IClient player)
         {
-            if (p3DPlayer.GameJoltID == 0)
-                return false;
+            var filename = player.GameJoltID == 0 ? $"{player.Name}.json" : $"{player.GameJoltID}.json";
 
-            var filename = $"{p3DPlayer.GameJoltID}.json";
             using (var stream = FileSystemWrapper.UsersFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).Result.OpenAsync(FileAccess.ReadAndWrite).Result)
             using (var writer = new StreamWriter(stream))
             {
-                try { writer.Write(JsonConvert.SerializeObject(p3DPlayer, Formatting.Indented)); }
+                try { writer.Write(JsonConvert.SerializeObject(player, Formatting.Indented)); }
                 catch (JsonWriterException) { return false; }
             }
 

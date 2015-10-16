@@ -1,87 +1,58 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 
 using Aragas.Core.Data;
 using Aragas.Core.Wrappers;
 
-using Newtonsoft.Json;
-
 using PokeD.Core.Data;
 using PokeD.Core.Extensions;
-using PokeD.Core.IO;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
 using PokeD.Core.Packets.Client;
-using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
 
-namespace PokeD.Server.Clients.P3D
+using PokeD.Server.Data;
+
+namespace PokeD.Server.Clients.NPC
 {
-    public partial class P3DPlayer : IClient
+    public partial class NPCPlayer : NPC, IClient
     {
         CultureInfo CultureInfo => CultureInfo.InvariantCulture;
 
         #region Game Values
 
-        [JsonIgnore]
         public int ID { get; set; }
 
-        [JsonIgnore]
-        public string GameMode { get; private set; }
-        [JsonIgnore]
-        public bool IsGameJoltPlayer { get; private set; }
-        [JsonIgnore]
-        public ulong GameJoltID { get; private set; }
-        [JsonIgnore]
+        public string GameMode => "NPC";
+        public bool IsGameJoltPlayer => false;
+        public ulong GameJoltID => 0;
         private char DecimalSeparator { get; set; }
-        [JsonIgnore]
         public string Name { get; private set; }
 
-        [JsonIgnore]
         public string LevelFile { get; private set; }
-        [JsonIgnore]
         public Vector3 Position { get; private set; }
-        [JsonIgnore]
         public int Facing { get; private set; }
-        [JsonIgnore]
         public bool Moving { get; private set; }
-        [JsonIgnore]
         public string Skin { get; private set; }
-        [JsonIgnore]
         public string BusyType { get; private set; }
-        [JsonIgnore]
         public bool PokemonVisible { get; private set; }
-        [JsonIgnore]
         public Vector3 PokemonPosition { get; private set; }
-        [JsonIgnore]
         public string PokemonSkin { get; private set; }
-        [JsonIgnore]
         public int PokemonFacing { get; private set; }
 
         #endregion Game Values
 
         #region Other Values
 
-        [JsonProperty("Password")]
-        public PasswordStorage Password { get; set; }
-        bool PasswordCorrect { get; set; }
+        public string IP => string.Empty;
 
-        [JsonIgnore]
-        public string IP => Client.IP;
-
-        [JsonIgnore]
         public DateTime ConnectionTime { get; } = DateTime.Now;
 
-        [JsonIgnore]
-        public DateTime LastMessage { get; private set; }
-        [JsonIgnore]
-        public DateTime LastPing { get; private set; }
+        public bool UseCustomWorld => false;
 
-        [JsonProperty("ChatReceiving")]
         public bool ChatReceiving => true;
 
         bool IsInitialized { get; set; }
@@ -89,10 +60,9 @@ namespace PokeD.Server.Clients.P3D
 
         #endregion Other Values
 
-        INetworkTCPClient Client { get; }
-        P3DStream Stream { get; }
 
-
+        readonly string _name;
+        readonly ILua _lua;
         readonly Server _server;
 
 
@@ -104,85 +74,34 @@ namespace PokeD.Server.Clients.P3D
 #endif
 
 
-        public P3DPlayer(INetworkTCPClient client, Server server)
+        public NPCPlayer(string name, ILua lua, Server server)
         {
-            Client = client;
-            Stream = new P3DStream(Client);
+            _name = name;
+            _lua = lua;
+            _lua["NPC"] = (NPC)this;
+
             _server = server;
         }
 
 
-        Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
         public void Update()
         {
-            if (Stream.Connected)
-            {
-                if (Stream.Connected && Stream.DataAvailable > 0)
-                {
-                    var data = Stream.ReadLine();
-                    LastMessage = DateTime.UtcNow;
-
-                    HandleData(data);
-                }
-
-
-
-                // Stuff that is done every 1 second
-                if (UpdateWatch.ElapsedMilliseconds < 1000)
-                    return;
-
-                BattleUpdate();
-
-                if (!Battling && _server.CustomWorldEnabled && UseCustomWorld)
-                {
-                    CustomWorld.Update();
-                    SendPacket(new WorldDataPacket { DataItems = CustomWorld.GenerateDataItems() }, -1);
-                }
-
-                UpdateWatch.Reset();
-                UpdateWatch.Start();
-            }
-            else
-                _server.RemovePlayer(this);
+            _lua.CallFunction("OnUpdate");
         }
 
-        private void HandleData(string data)
+        public void BattleUpdate(BattleDataTable battleData)
         {
-            if (!string.IsNullOrEmpty(data))
-            {
-                int id;
-                if (P3DPacket.TryParseID(data, out id))
-                {
-                    if (GamePacketResponses.Packets.Length > id)
-                    {
-                        if (GamePacketResponses.Packets[id] != null)
-                        {
-                            var packet = GamePacketResponses.Packets[id]();
-                            if (packet.TryParseData(data))
-                            {
-                                HandlePacket(packet);
-#if DEBUG
-                                Received.Add(packet);
-#endif
-                            }
-                            else
-                                Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet TryParseData error. Packet ID {id}, Packet Data: {data}.");
-                        }
-                        else
-                            Logger.Log(LogType.GlobalError, $"P3D Reading Error: SCONPacketResponses.Packets[{id}] is null.");
-                    }
-                    else
-                        Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packets Length {GamePacketResponses.Packets.Length} > Packet ID {id}, Packet Data: {data}.");
-                }
-                else
-                    Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet TryParseID error. Packet Data: {data}.");
-            }
-            else
-                Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet Data is null or empty.");
+            _lua.CallFunction("OnBattleUpdate", battleData);
+        }
+
+
+        public void SendPacket(P3DPacket packet, int originID)
+        {
+            HandlePacket(packet);
         }
         private void HandlePacket(P3DPacket packet)
         {
-            switch ((GamePacketTypes)(int) packet.ID)
+            switch ((GamePacketTypes) (int) packet.ID)
             {
                 case GamePacketTypes.GameData:
                     HandleGameData((GameDataPacket) packet);
@@ -197,7 +116,6 @@ namespace PokeD.Server.Clients.P3D
                     break;
 
                 case GamePacketTypes.Ping:
-                    LastPing = DateTime.UtcNow;
                     break;
 
                 case GamePacketTypes.GameStateMessage:
@@ -266,30 +184,6 @@ namespace PokeD.Server.Clients.P3D
         }
 
 
-        public void SendPacket(P3DPacket packet, int originID)
-        {
-            if (Stream.Connected)
-            {
-                packet.Origin = originID;
-
-                Stream.SendPacket(ref packet);
-
-#if DEBUG
-                Sended.Add(packet);
-#endif
-            }
-        }
-
-
-        private void Initialize()
-        {
-            if(IsInitialized)
-                return;
-
-            _server.AddPlayer(this);
-            IsInitialized = true;
-        }
-
         private DataItems GenerateDataItems()
         {
             return new DataItems(
@@ -314,12 +208,6 @@ namespace PokeD.Server.Clients.P3D
             return new GameDataPacket { DataItems = GenerateDataItems() };
         }
         
-
-        private void DisconnectAndDispose()
-        {
-            Stream.Disconnect();
-            Stream.Dispose();
-        }
         public void Dispose()
         {
             if (IsDisposed)
@@ -328,7 +216,20 @@ namespace PokeD.Server.Clients.P3D
             IsDisposed = true;
 
 
-            DisconnectAndDispose();
+        }
+
+        public override void Move(int x, int y, int z)
+        {
+
+        }
+
+        public override void SayPlayerPM(int playerID, string message)
+        {
+            _server.SendPrivateChatMessageToClient(playerID, message, ID);
+        }
+        public override void SayGlobal(string message)
+        {
+            _server.SendGlobalChatMessageToAllClients(message);
         }
     }
 }

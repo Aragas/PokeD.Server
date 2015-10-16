@@ -21,10 +21,12 @@ using PokeD.Core.Packets.Chat;
 using PokeD.Core.Packets.Server;
 
 using PokeD.Server.Clients;
+using PokeD.Server.Clients.NPC;
 using PokeD.Server.Clients.P3D;
 using PokeD.Server.Clients.Protobuf;
 using PokeD.Server.Clients.SCON;
 using PokeD.Server.Data;
+using PokeD.Server.Extensions;
 
 namespace PokeD.Server
 {
@@ -115,8 +117,14 @@ namespace PokeD.Server
             if(!status)
                 Logger.Log(LogType.Warning, "Failed to load Server settings!");
 
-            if(EncryptionEnabled)
+            if (EncryptionEnabled)
+            {
+                Logger.Log(LogType.Info, "Generating RSA key pair.");
                 RSAKeyPair = GenerateKeyPair();
+            }
+
+            Logger.Log(LogType.Info, "Loading NPC's.");
+            NPCs = NPCLoader.LoadNPCs(this);
 
             Logger.Log(LogType.Info, $"Starting {ServerName}.");
 
@@ -272,7 +280,9 @@ namespace PokeD.Server
         Stopwatch UpdateWatch = Stopwatch.StartNew();
         public void Update()
         {
-            
+            UpdateNPC();
+
+
             #region Player Filtration
 
             for (var i = 0; i < PlayersToAdd.Count; i++)
@@ -372,15 +382,21 @@ namespace PokeD.Server
             UpdateWatch.Start();
         }
 
+        public void UpdateNPC()
+        {
+            for (var i = 0; i < NPCs.Count; i++)
+                NPCs[i]?.Update();
+        }
 
+
+        public void SendToClient(int destinationID, P3DPacket packet, int originID)
+        {
+            SendToClient(GetClient(destinationID), packet, originID);
+        }
         public void SendToClient(IClient player, P3DPacket packet, int originID)
         {
             if (player != null)
                 PacketsToPlayer.Enqueue(new PlayerPacketP3DOrigin(player, ref packet, originID));
-        }
-        public void SendToClient(int destinationID, P3DPacket packet, int originID)
-        {
-            SendToClient(GetClient(destinationID), packet, originID);
         }
         public void SendToAllClients(P3DPacket packet, int originID = -1)
         {
@@ -400,6 +416,16 @@ namespace PokeD.Server
             PacketsToAllPlayers.Enqueue(new PacketP3DOrigin(ref packet, originID));
         }
 
+
+        public void SendPrivateChatMessageToClient(int destinationID, string message, int originID)
+        {
+            SendPrivateChatMessageToClient(GetClient(destinationID), message, originID);
+        }
+        public void SendPrivateChatMessageToClient(IClient player, string message, int originID)
+        {
+            if (player != null)
+                PacketsToPlayer.Enqueue(new PlayerPacketP3DOrigin(player, new ChatMessagePrivatePacket { DataItems = new DataItems(message) }, originID));
+        }
 
         public void SendServerMessageToAllClients(string message)
         {

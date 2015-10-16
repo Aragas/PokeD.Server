@@ -1,9 +1,6 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 
 using Aragas.Core.Data;
-
-using Newtonsoft.Json;
 
 using PokeD.Core.Data;
 using PokeD.Core.Packets.Battle;
@@ -13,12 +10,11 @@ using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
 
-namespace PokeD.Server.Clients.P3D
+namespace PokeD.Server.Clients.NPC
 {
-    public partial class P3DPlayer
+    public partial class NPCPlayer
     {
-        [JsonIgnore]
-        public bool IsMoving { get; private set; }
+        public override bool IsMoving { get; }
         Vector3 LastPosition { get; set; }
 
 
@@ -39,15 +35,15 @@ namespace PokeD.Server.Clients.P3D
                         switch (index)
                         {
                             case 0:
-                                GameMode = packet.GameMode;
+                                //GameMode = packet.GameMode;
                                 break;
 
                             case 1:
-                                IsGameJoltPlayer = packet.IsGameJoltPlayer;
+                                //IsGameJoltPlayer = packet.IsGameJoltPlayer;
                                 break;
 
                             case 2:
-                                GameJoltID = packet.GameJoltID;
+                                //GameJoltID = packet.GameJoltID;
                                 break;
 
                             case 3:
@@ -63,14 +59,14 @@ namespace PokeD.Server.Clients.P3D
                                 break;
 
                             case 6:
-                                if (packet.GetPokemonPosition(DecimalSeparator) != Vector3.Zero)
-                                {
-                                    LastPosition = Position;
-
-                                    Position = packet.GetPosition(DecimalSeparator);
-
-                                    IsMoving = LastPosition != Position;
-                                }
+                                //if (packet.GetPokemonPosition(DecimalSeparator) != Vector3.Zero)
+                                //{
+                                //    LastPosition = Position;
+                                //
+                                //    Position = packet.GetPosition(DecimalSeparator);
+                                //
+                                //    IsMoving = LastPosition != Position;
+                                //}
                                 break;
 
                             case 7:
@@ -119,9 +115,11 @@ namespace PokeD.Server.Clients.P3D
         {
             ParseGameData(packet);
 
-            // if GameJoltID == 0, initialize in login
-            if (!IsInitialized && GameJoltID != 0)
-                Initialize();
+            if (!IsInitialized)
+            {
+                _server.AddPlayer(this);
+                IsInitialized = true;
+            }
         }
 
 
@@ -130,7 +128,7 @@ namespace PokeD.Server.Clients.P3D
             if (packet.Message.StartsWith("/"))
             {
                 SendPacket(new ChatMessageGlobalPacket { Message = packet.Message }, ID);
-                ExecuteCommand(packet.Message);
+                //ExecuteCommand(packet.Message);
             }
             else
             {
@@ -191,18 +189,10 @@ namespace PokeD.Server.Clients.P3D
 
         private void HandleBattleClientData(BattleClientDataPacket packet)
         {
-            BattleOpponentID = packet.DestinationPlayerID;
-            BattleLastPacket = DateTime.UtcNow;
-            Battling = true;
-
             _server.SendToClient(packet.DestinationPlayerID, new BattleClientDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
         }
         private void HandleBattleHostData(BattleHostDataPacket packet)
         {
-            BattleOpponentID = packet.DestinationPlayerID;
-            BattleLastPacket = DateTime.UtcNow;
-            Battling = true;
-
             _server.SendToClient(packet.DestinationPlayerID, new BattleHostDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
         }
         private void HandleBattleJoin(BattleJoinPacket packet)
@@ -215,14 +205,10 @@ namespace PokeD.Server.Clients.P3D
         }
         private void HandleBattlePokemonData(BattlePokemonDataPacket packet)
         {
-            BattleLastPacket = DateTime.UtcNow;
-
             _server.SendToClient(packet.DestinationPlayerID, new BattlePokemonDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
         }
         private void HandleBattleQuit(BattleQuitPacket packet)
         {
-            Battling = false;
-
             _server.SendToClient(packet.DestinationPlayerID, new BattleQuitPacket(), packet.Origin);
         }
         private void HandleBattleRequest(BattleRequestPacket packet)

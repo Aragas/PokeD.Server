@@ -26,6 +26,12 @@ namespace PokeD.Server
                 Packet = packet;
                 OriginID = originID;
             }
+            public PlayerPacketP3DOrigin(IClient player, P3DPacket packet, int originID = -1)
+            {
+                Player = player;
+                Packet = packet;
+                OriginID = originID;
+            }
         }
         
         private struct PacketP3DOrigin

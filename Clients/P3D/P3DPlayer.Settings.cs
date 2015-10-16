@@ -1,5 +1,5 @@
 using System;
-
+using Aragas.Core.Data;
 using Newtonsoft.Json;
 
 using PokeD.Core.Packets.Chat;
@@ -23,6 +23,9 @@ namespace PokeD.Server.Clients.P3D
 
             if (command.StartsWith("help"))
                 ExecuteHelpCommand();
+
+            else if (command.StartsWith("login "))
+                ExecuteLoginCommand(command.Remove(0, 6));
 
             else if (command.StartsWith("world "))
                 ExecuteWorldCommand(command.Remove(0, 6));
@@ -234,6 +237,38 @@ namespace PokeD.Server.Clients.P3D
             else
                 SendCommandResponse("Invalid command!"); 
         }
+
+        private void ExecuteLoginCommand(string command)
+        {
+            if (command.StartsWith("password "))
+            {
+                command = command.Remove(0, 9);
+
+                var hash = new PasswordStorage(command).Hash;
+
+                if (Password.Hash == hash)
+                    Initialize();
+                else
+                {
+                    //Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Length size is 0. Disconnecting IClient {Name}.");
+                    _server.RemovePlayer(this, "Password not correct!");
+                }
+            }
+
+            else if(command.StartsWith("register "))
+            {
+                command = command.Remove(0, 9);
+
+                Password = new PasswordStorage(command);
+                Initialize();
+            }
+
+            else
+                SendCommandResponse("Invalid command!");
+
+
+        }
+
 
         private void SendCommandResponse(string message)
         {
