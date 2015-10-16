@@ -89,10 +89,10 @@ namespace PokeD.Server.Clients.NPC
             _lua.CallFunction("OnUpdate");
         }
 
-        public void BattleUpdate(BattleDataTable battleData)
-        {
-            _lua.CallFunction("OnBattleUpdate", battleData);
-        }
+        //public void BattleUpdate(BattleDataTable battleData)
+        //{
+        //    _lua.CallFunction("OnBattleUpdate", battleData);
+        //}
 
 
         public void SendPacket(P3DPacket packet, int originID)
