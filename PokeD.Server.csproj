@@ -35,7 +35,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ClientList.cs" />
-    <Compile Include="Clients\NPC\NPC.cs" />
+    <Compile Include="Clients\NPC\INPC.cs" />
     <Compile Include="Clients\NPC\NPCPlayer.cs" />
     <Compile Include="Clients\NPC\NPCPlayer.Packets.cs" />
     <Compile Include="Clients\IClient.cs" />

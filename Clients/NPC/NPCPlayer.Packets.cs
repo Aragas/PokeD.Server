@@ -14,7 +14,7 @@ namespace PokeD.Server.Clients.NPC
 {
     public partial class NPCPlayer
     {
-        public override bool IsMoving { get; }
+        public bool IsMoving { get; }
         Vector3 LastPosition { get; set; }
 
 

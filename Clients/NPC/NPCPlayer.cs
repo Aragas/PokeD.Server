@@ -18,7 +18,7 @@ using PokeD.Server.Data;
 
 namespace PokeD.Server.Clients.NPC
 {
-    public partial class NPCPlayer : NPC, IClient
+    public partial class NPCPlayer : INPC, IClient
     {
         CultureInfo CultureInfo => CultureInfo.InvariantCulture;
 
@@ -78,7 +78,7 @@ namespace PokeD.Server.Clients.NPC
         {
             _name = name;
             _lua = lua;
-            _lua["NPC"] = (NPC)this;
+            _lua["NPC"] = (INPC)this;
 
             _server = server;
         }
@@ -218,16 +218,17 @@ namespace PokeD.Server.Clients.NPC
 
         }
 
-        public override void Move(int x, int y, int z)
+
+        public void Move(int x, int y, int z)
         {
 
         }
 
-        public override void SayPlayerPM(int playerID, string message)
+        public void SayPlayerPM(int playerID, string message)
         {
             _server.SendPrivateChatMessageToClient(playerID, message, ID);
         }
-        public override void SayGlobal(string message)
+        public void SayGlobal(string message)
         {
             _server.SendGlobalChatMessageToAllClients(message);
         }
