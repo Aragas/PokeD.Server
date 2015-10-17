@@ -30,6 +30,7 @@ namespace PokeD.Server.Clients.NPC
         public ulong GameJoltID => 0;
         private char DecimalSeparator { get; set; }
         public string Name { get; private set; } = string.Empty;
+        public Prefix Prefix { get; } = Prefix.NPC;
 
         public string LevelFile { get; private set; } = string.Empty;
         public Vector3 Position { get; private set; }
@@ -179,7 +180,7 @@ namespace PokeD.Server.Clients.NPC
                 IsGameJoltPlayer ? "1" : "0",
                 GameJoltID.ToString(CultureInfo),
                 DecimalSeparator.ToString(),
-                Name,
+                $"[{Prefix}] {Name}",
                 LevelFile,
                 Position.ToPokeString(DecimalSeparator, CultureInfo),
                 Facing.ToString(CultureInfo),

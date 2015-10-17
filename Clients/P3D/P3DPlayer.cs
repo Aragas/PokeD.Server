@@ -18,6 +18,7 @@ using PokeD.Core.Packets.Client;
 using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
+using PokeD.Server.Data;
 
 namespace PokeD.Server.Clients.P3D
 {
@@ -69,6 +70,9 @@ namespace PokeD.Server.Clients.P3D
         [JsonProperty("Password")]
         public PasswordStorage Password { get; set; }
         bool PasswordCorrect { get; set; }
+
+        [JsonProperty("Prefix")]
+        public Prefix Prefix { get; private set; }
 
         [JsonIgnore]
         public string IP => Client.IP;

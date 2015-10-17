@@ -16,6 +16,7 @@ using PokeD.Core.Packets.SCON.Chat;
 using PokeD.Core.Packets.SCON.Logs;
 using PokeD.Core.Packets.SCON.Status;
 using PokeD.Core.Packets.Shared;
+using PokeD.Server.Data;
 
 namespace PokeD.Server.Clients.SCON
 {
@@ -25,6 +26,9 @@ namespace PokeD.Server.Clients.SCON
 
         [JsonIgnore]
         public int ID { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
+
+        [JsonIgnore]
+        public Prefix Prefix { get;}
 
         [JsonIgnore]
         public string Name { get { throw new NotImplementedException(); } }

@@ -22,6 +22,7 @@ using PokeD.Core.Packets.Encryption;
 using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
+using PokeD.Server.Data;
 
 namespace PokeD.Server.Clients.Protobuf
 {
@@ -68,6 +69,9 @@ namespace PokeD.Server.Clients.Protobuf
         #endregion Game Values
 
         #region Other Values
+
+        [JsonProperty("Prefix")]
+        public Prefix Prefix { get; private set; }
 
         [JsonIgnore]
         public bool EncryptionEnabled => _server.EncryptionEnabled;

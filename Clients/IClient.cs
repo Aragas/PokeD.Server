@@ -5,6 +5,7 @@ using Aragas.Core.Interfaces;
 
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Shared;
+using PokeD.Server.Data;
 
 namespace PokeD.Server.Clients
 {
@@ -12,6 +13,7 @@ namespace PokeD.Server.Clients
     {
         int ID { get; set; }
         string Name { get; }
+        Prefix Prefix { get; }
         bool IsGameJoltPlayer { get; }
         ulong GameJoltID { get; }
         Vector3 Position { get; }
