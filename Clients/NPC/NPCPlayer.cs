@@ -29,19 +29,19 @@ namespace PokeD.Server.Clients.NPC
         public bool IsGameJoltPlayer => false;
         public ulong GameJoltID => 0;
         private char DecimalSeparator { get; set; }
-        public string Name { get; private set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
         public Prefix Prefix { get; } = Prefix.NPC;
 
-        public string LevelFile { get; private set; } = string.Empty;
-        public Vector3 Position { get; private set; }
-        public int Facing { get; private set; }
-        public bool Moving { get; private set; }
-        public string Skin { get; private set; } = string.Empty;
-        public string BusyType { get; private set; } = string.Empty;
-        public bool PokemonVisible { get; private set; }
-        public Vector3 PokemonPosition { get; private set; }
-        public string PokemonSkin { get; private set; } = string.Empty;
-        public int PokemonFacing { get; private set; }
+        public string LevelFile { get; set; } = string.Empty;
+        public Vector3 Position { get; set; }
+        public int Facing { get; set; }
+        public bool Moving { get; set; }
+        public string Skin { get; set; } = string.Empty;
+        public string BusyType { get; set; } = string.Empty;
+        public bool PokemonVisible { get; set; }
+        public Vector3 PokemonPosition { get; set; }
+        public string PokemonSkin { get; set; } = string.Empty;
+        public int PokemonFacing { get; set; }
 
         #endregion Game Values
 
@@ -80,6 +80,10 @@ namespace PokeD.Server.Clients.NPC
             _server = server;
         }
 
+        public Vector3 Vector3(double x, double y, double z)
+        {
+            return new Vector3(x, y, z);
+        }
 
         public void Update()
         {
