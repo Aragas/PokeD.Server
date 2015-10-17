@@ -10,7 +10,6 @@ using PokeD.Core.Extensions;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
-using PokeD.Core.Packets.Client;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
 
@@ -30,17 +29,17 @@ namespace PokeD.Server.Clients.NPC
         public bool IsGameJoltPlayer => false;
         public ulong GameJoltID => 0;
         private char DecimalSeparator { get; set; }
-        public string Name { get; private set; }
+        public string Name { get; private set; } = string.Empty;
 
-        public string LevelFile { get; private set; }
+        public string LevelFile { get; private set; } = string.Empty;
         public Vector3 Position { get; private set; }
         public int Facing { get; private set; }
         public bool Moving { get; private set; }
-        public string Skin { get; private set; }
-        public string BusyType { get; private set; }
+        public string Skin { get; private set; } = string.Empty;
+        public string BusyType { get; private set; } = string.Empty;
         public bool PokemonVisible { get; private set; }
         public Vector3 PokemonPosition { get; private set; }
-        public string PokemonSkin { get; private set; }
+        public string PokemonSkin { get; private set; } = string.Empty;
         public int PokemonFacing { get; private set; }
 
         #endregion Game Values
@@ -49,7 +48,7 @@ namespace PokeD.Server.Clients.NPC
 
         public string IP => string.Empty;
 
-        public DateTime ConnectionTime { get; } = DateTime.Now;
+        public DateTime ConnectionTime { get; } = DateTime.MinValue;
 
         public bool UseCustomWorld => false;
 
@@ -61,24 +60,21 @@ namespace PokeD.Server.Clients.NPC
         #endregion Other Values
 
 
-        readonly string _name;
         readonly ILua _lua;
         readonly Server _server;
 
 
 #if DEBUG
-        // -- Debug -- //
         List<P3DPacket> Received { get; } =  new List<P3DPacket>();
-        List<P3DPacket> Sended { get; } = new List<P3DPacket>();
-        // -- Debug -- //
 #endif
 
 
         public NPCPlayer(string name, ILua lua, Server server)
         {
-            _name = name;
+            Name = name;
             _lua = lua;
-            _lua["NPC"] = (INPC)this;
+            _lua["NPC"] = this;
+            _lua.ReloadFile();
 
             _server = server;
         }
@@ -88,25 +84,24 @@ namespace PokeD.Server.Clients.NPC
         {
             _lua.CallFunction("OnUpdate");
         }
-
-        //public void BattleUpdate(BattleDataTable battleData)
-        //{
-        //    _lua.CallFunction("OnBattleUpdate", battleData);
-        //}
+        public void BattleUpdate(BattleDataTable battleData)
+        {
+            _lua.CallFunction("OnBattleUpdate", battleData);
+        }
 
 
         public void SendPacket(P3DPacket packet, int originID)
         {
+#if DEBUG
+            Received.Add(packet);
+#endif
+
             HandlePacket(packet);
         }
         private void HandlePacket(P3DPacket packet)
         {
             switch ((GamePacketTypes) (int) packet.ID)
             {
-                case GamePacketTypes.GameData:
-                    HandleGameData((GameDataPacket) packet);
-                    break;
-
                 case GamePacketTypes.ChatMessagePrivate:
                     HandlePrivateMessage((ChatMessagePrivatePacket) packet);
                     break;
@@ -115,8 +110,6 @@ namespace PokeD.Server.Clients.NPC
                     HandleChatMessage((ChatMessageGlobalPacket) packet);
                     break;
 
-                case GamePacketTypes.Ping:
-                    break;
 
                 case GamePacketTypes.GameStateMessage:
                     HandleGameStateMessage((GameStateMessagePacket) packet);
@@ -174,11 +167,6 @@ namespace PokeD.Server.Clients.NPC
 
                 case GamePacketTypes.BattlePokemonData:
                     HandleBattlePokemonData((BattlePokemonDataPacket) packet);
-                    break;
-
-
-                case GamePacketTypes.ServerDataRequest:
-                    HandleServerDataRequest((ServerDataRequestPacket) packet);
                     break;
             }
         }

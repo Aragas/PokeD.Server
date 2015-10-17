@@ -85,6 +85,11 @@ namespace PokeD.Server
                 SendToClient(player, new CreatePlayerPacket { PlayerID = Players[i].ID }, -1);
                 SendToClient(player, Players[i].GetDataPacket(), Players[i].ID);
             }
+            for (var i = 0; i < NPCs.Count; i++)
+            {
+                SendToClient(player, new CreatePlayerPacket { PlayerID = NPCs[i].ID }, -1);
+                SendToClient(player, NPCs[i].GetDataPacket(), NPCs[i].ID);
+            }
             // Send to Players player ID
             SendToAllClients(new CreatePlayerPacket { PlayerID = player.ID }, -1);
             SendToAllClients(player.GetDataPacket(), player.ID);

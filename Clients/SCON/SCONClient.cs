@@ -88,7 +88,7 @@ namespace PokeD.Server.Clients.SCON
         {
             if (Stream.Connected)
             {
-                if (Stream.Connected && Stream.DataAvailable > 0)
+                if (Stream.DataAvailable > 0)
                 {
                     var dataLength = Stream.ReadVarInt();
                     if (dataLength == 0)
@@ -220,28 +220,22 @@ namespace PokeD.Server.Clients.SCON
 
         private void SendPacket(ProtobufPacket packet, int originID = 0)
         {
-            if (Stream.Connected)
-            {
-                Stream.SendPacket(ref packet);
+            Stream.SendPacket(ref packet);
 
 #if DEBUG
-                Sended.Add(packet);
+            Sended.Add(packet);
 #endif
-            }
         }
         public void SendPacket(P3DPacket packet, int originID = 0)
         {
             // TODO: Nope.
-            if (Stream.Connected)
-            {
-                var messagePacket = packet as Core.Packets.Chat.ChatMessageGlobalPacket;
-                if (messagePacket != null)
-                    SendPacket(new ChatMessagePacket { Player = _server.GetClientName(messagePacket.Origin), Message = messagePacket.Message });
+            var messagePacket = packet as Core.Packets.Chat.ChatMessageGlobalPacket;
+            if (messagePacket != null)
+                SendPacket(new ChatMessagePacket { Player = _server.GetClientName(messagePacket.Origin), Message = messagePacket.Message });
                 
 #if DEBUG
-                Sended.Add(packet);
+            Sended.Add(packet);
 #endif
-            }
         }
 
 

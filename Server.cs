@@ -123,8 +123,7 @@ namespace PokeD.Server
                 RSAKeyPair = GenerateKeyPair();
             }
 
-            Logger.Log(LogType.Info, "Loading NPC's.");
-            NPCs = NPCLoader.LoadNPCs(this);
+            StartNPCs();
 
             Logger.Log(LogType.Info, $"Starting {ServerName}.");
 
@@ -163,6 +162,16 @@ namespace PokeD.Server
             return status;
         }
 
+        private bool StartNPCs()
+        {
+            Logger.Log(LogType.Info, "Loading NPC's.");
+            NPCs = NPCLoader.LoadNPCs(this);
+
+            foreach (var npc in NPCs)
+                npc.ID = GenerateClientID();
+
+            return true;
+        }
 
         public static long ClientConnectionsThreadTime { get; private set; }
         private void ListenToConnectionsCycle()

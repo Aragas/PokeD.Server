@@ -118,7 +118,7 @@ namespace PokeD.Server.Clients.Protobuf
         {
             if (Stream.Connected)
             {
-                if (Stream.Connected && Stream.DataAvailable > 0)
+                if (Stream.DataAvailable > 0)
                 {
                     var dataLength = Stream.ReadVarInt();
                     if (dataLength == 0)
@@ -291,17 +291,15 @@ namespace PokeD.Server.Clients.Protobuf
 
         private void SendPacket(ProtobufPacket packet, int originID)
         {
-            if (Stream.Connected)
-            {
-                packet.Origin = originID;
+            packet.Origin = originID;
 
-                Stream.SendPacket(ref packet);
+            Stream.SendPacket(ref packet);
 
 #if DEBUG
-                Sended.Add(packet);
+            Sended.Add(packet);
 #endif
-            }
         }
+
         public void SendPacket(P3DPacket packet, int originID)
         {
             SendPacket(packet as ProtobufPacket, originID);

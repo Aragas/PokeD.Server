@@ -113,11 +113,12 @@ namespace PokeD.Server.Clients.P3D
 
 
         Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
+
         public void Update()
         {
             if (Stream.Connected)
             {
-                if (Stream.Connected && Stream.DataAvailable > 0)
+                if (Stream.DataAvailable > 0)
                 {
                     var data = Stream.ReadLine();
                     LastMessage = DateTime.UtcNow;
@@ -136,7 +137,7 @@ namespace PokeD.Server.Clients.P3D
                 if (!Battling && _server.CustomWorldEnabled && UseCustomWorld)
                 {
                     CustomWorld.Update();
-                    SendPacket(new WorldDataPacket { DataItems = CustomWorld.GenerateDataItems() }, -1);
+                    SendPacket(new WorldDataPacket {DataItems = CustomWorld.GenerateDataItems()}, -1);
                 }
 
                 UpdateWatch.Reset();
@@ -268,16 +269,13 @@ namespace PokeD.Server.Clients.P3D
 
         public void SendPacket(P3DPacket packet, int originID)
         {
-            if (Stream.Connected)
-            {
-                packet.Origin = originID;
+            packet.Origin = originID;
 
-                Stream.SendPacket(ref packet);
+            Stream.SendPacket(ref packet);
 
 #if DEBUG
-                Sended.Add(packet);
+            Sended.Add(packet);
 #endif
-            }
         }
 
 

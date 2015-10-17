@@ -5,7 +5,6 @@ using Aragas.Core.Wrappers;
 
 namespace PokeD.Server.Data
 {
-    /*
     public class Pokemon
     {
         public enum Move { }
@@ -64,12 +63,12 @@ namespace PokeD.Server.Data
         public enum TrainerType { }
 
         public TrainerType Type { get; }
-        public Pokemon Pokemon { get; }
+        public Pokemon Poke { get; }
 
         public Trainer(TrainerType type, Pokemon pokemon)
         {
             Type = type;
-            Pokemon = pokemon;
+            Poke = pokemon;
         }
         public Trainer(ILuaTable table)
         {
@@ -77,13 +76,13 @@ namespace PokeD.Server.Data
                 return;
 
             Type = (TrainerType) (int) (double) table["type"];
-            Pokemon = new Pokemon(table["pokemon"] as ILuaTable);
+            Poke = new Pokemon(table["pokemon"] as ILuaTable);
         }
 
         public ILuaTable ToLuaTable(ILuaTable table)
         {
             table["type"] = (double) (int) Type;
-            table["pokemon"] = Pokemon.ToDictionary();
+            table["pokemon"] = Poke.ToDictionary();
 
             return table;
         }
@@ -96,7 +95,7 @@ namespace PokeD.Server.Data
 
 
             dictionary["type"] = (double) (int) Type;
-            dictionary["pokemon"] = Pokemon.ToDictionary();
+            dictionary["pokemon"] = Poke.ToDictionary();
 
             return dictionary;
         }
@@ -143,5 +142,4 @@ namespace PokeD.Server.Data
             return dictionary;
         }
     }
-    */
 }
