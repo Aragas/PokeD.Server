@@ -28,7 +28,7 @@ namespace PokeD.Server.Clients.NPC
         public string GameMode => "NPC";
         public bool IsGameJoltPlayer => false;
         public ulong GameJoltID => 0;
-        private char DecimalSeparator { get; set; }
+        private char DecimalSeparator { get; set; } = '.';
         public string Name { get; set; } = string.Empty;
         public Prefix Prefix { get; } = Prefix.NPC;
 
