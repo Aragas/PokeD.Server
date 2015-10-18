@@ -14,6 +14,7 @@ using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
 using PokeD.Core.Packets.SCON.Chat;
 using PokeD.Core.Packets.SCON.Logs;
+using PokeD.Core.Packets.SCON.Lua;
 using PokeD.Core.Packets.SCON.Status;
 using PokeD.Core.Packets.Shared;
 using PokeD.Server.Data;
@@ -211,6 +212,15 @@ namespace PokeD.Server.Clients.SCON
 
                 case SCONPacketTypes.BanListRequest:
                     HandleBanListRequest((BanListRequestPacket) packet);
+                    break;
+
+
+                case SCONPacketTypes.UploadLuaToServer:
+                    HandleUploadLuaToServer((UploadLuaToServerPacket) packet);
+                    break;
+
+                case SCONPacketTypes.ReloadNPCs:
+                    HandleReloadNPCs((ReloadNPCsPacket) packet);
                     break;
             }
         }

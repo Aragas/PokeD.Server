@@ -110,6 +110,11 @@ namespace PokeD.Server
             if(!string.IsNullOrEmpty(reason))
                 player.SendPacket(new KickedPacket { Reason = reason }, -1);
 
+
+            Players.Remove(player);
+            PlayersJoining.Remove(player);
+            SCONClients.Remove(player);
+
             PlayersToRemove.Add(player);
         }
 

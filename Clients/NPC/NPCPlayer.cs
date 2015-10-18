@@ -74,6 +74,7 @@ namespace PokeD.Server.Clients.NPC
         {
             Name = name;
             _lua = lua;
+            _lua["Vector3"] = new Vector3();
             _lua["NPC"] = this;
             _lua.ReloadFile();
 
@@ -207,8 +208,6 @@ namespace PokeD.Server.Clients.NPC
                 return;
 
             IsDisposed = true;
-
-
         }
 
 

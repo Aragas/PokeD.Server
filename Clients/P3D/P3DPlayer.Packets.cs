@@ -122,6 +122,8 @@ namespace PokeD.Server.Clients.P3D
             // if GameJoltID == 0, initialize in login
             if (!IsInitialized && GameJoltID != 0)
                 Initialize();
+
+            SendPacket(GetDataPacket(), ID);
         }
 
 

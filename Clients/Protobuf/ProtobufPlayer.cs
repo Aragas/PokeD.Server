@@ -318,7 +318,7 @@ namespace PokeD.Server.Clients.Protobuf
                 IsGameJoltPlayer = IsGameJoltPlayer,
                 GameJoltID = GameJoltID,
                 DecimalSeparator = DecimalSeparator,
-                Name = Name,
+                Name = Prefix != Prefix.NONE ? $"[{Prefix}] {Name}" : Name,
                 LevelFile = LevelFile,
                 //Position = Position,
                 Facing = Facing,

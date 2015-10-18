@@ -299,7 +299,7 @@ namespace PokeD.Server.Clients.P3D
                 IsGameJoltPlayer ? "1" : "0",
                 GameJoltID.ToString(CultureInfo),
                 DecimalSeparator.ToString(),
-                Name,
+                Prefix != Prefix.NONE ? $"[{Prefix}] {Name}": Name,
                 LevelFile,
                 Position.ToPokeString(DecimalSeparator, CultureInfo),
                 Facing.ToString(CultureInfo),

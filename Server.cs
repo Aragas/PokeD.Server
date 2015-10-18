@@ -172,6 +172,19 @@ namespace PokeD.Server
 
             return true;
         }
+        public bool ReloadNPCs()
+        {
+            foreach (var npc in NPCs)
+                PlayersToRemove.Add(npc);
+
+            Logger.Log(LogType.Info, "Reloading NPC's.");
+            NPCs = NPCLoader.LoadNPCs(this);
+
+            foreach (var npc in NPCs)
+                npc.ID = GenerateClientID();
+
+            return true;
+        }
 
         public static long ClientConnectionsThreadTime { get; private set; }
         private void ListenToConnectionsCycle()
@@ -312,9 +325,6 @@ namespace PokeD.Server
             {
                 var playerToRemove = PlayersToRemove[i];
 
-                Players.Remove(playerToRemove);
-                PlayersJoining.Remove(playerToRemove);
-                SCONClients.Remove(playerToRemove);
                 PlayersToRemove.Remove(playerToRemove);
 
                 if (playerToRemove.ID != 0)
@@ -335,31 +345,22 @@ namespace PokeD.Server
 
             // Update actual players
             for (var i = 0; i < Players.Count; i++)
-            //{
-            //    var player = Players[i];
-            //    ThreadWrapper.QueueUserWorkItem(state => player.Update());
-            //}
                 Players[i]?.Update();
             
             // Update joining players
             for (var i = 0; i < PlayersJoining.Count; i++)
-            //{
-            //    var playerJoining = PlayersJoining[i];
-            //    ThreadWrapper.QueueUserWorkItem(state => playerJoining.Update());
-            //}
                 PlayersJoining[i]?.Update();
 
             // Update SCON clients
             for (var i = 0; i < SCONClients.Count; i++)
-            //{
-            //    var scon = PlayersJoining[i];
-            //    ThreadWrapper.QueueUserWorkItem(state => scon.Update());
-            //}
                 SCONClients[i]?.Update();
+
+            for (var i = 0; i < PlayersToRemove.Count; i++)
+                PlayersToRemove[i]?.Update();
 
             #endregion Player Updating
 
-            
+
             #region Packet Sending
 
             PlayerPacketP3DOrigin packetToPlayer;
