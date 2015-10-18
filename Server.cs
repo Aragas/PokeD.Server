@@ -325,6 +325,9 @@ namespace PokeD.Server
             {
                 var playerToRemove = PlayersToRemove[i];
 
+                Players.Remove(playerToRemove);
+                PlayersJoining.Remove(playerToRemove);
+                SCONClients.Remove(playerToRemove);
                 PlayersToRemove.Remove(playerToRemove);
 
                 if (playerToRemove.ID != 0)
@@ -354,9 +357,6 @@ namespace PokeD.Server
             // Update SCON clients
             for (var i = 0; i < SCONClients.Count; i++)
                 SCONClients[i]?.Update();
-
-            for (var i = 0; i < PlayersToRemove.Count; i++)
-                PlayersToRemove[i]?.Update();
 
             #endregion Player Updating
 
