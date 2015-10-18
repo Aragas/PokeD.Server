@@ -39,8 +39,11 @@ namespace PokeD.Server.Clients.P3D
         public ulong GameJoltID { get; private set; }
         [JsonIgnore]
         private char DecimalSeparator { get; set; }
+
+
+        private string _name;
         [JsonIgnore]
-        public string Name { get; private set; }
+        public string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {_name}" : _name; } private set { _name = value; } }
 
         [JsonIgnore]
         public string LevelFile { get; private set; }
@@ -299,7 +302,7 @@ namespace PokeD.Server.Clients.P3D
                 IsGameJoltPlayer ? "1" : "0",
                 GameJoltID.ToString(CultureInfo),
                 DecimalSeparator.ToString(),
-                Prefix != Prefix.NONE ? $"[{Prefix}] {Name}": Name,
+                Name,
                 LevelFile,
                 Position.ToPokeString(DecimalSeparator, CultureInfo),
                 Facing.ToString(CultureInfo),
