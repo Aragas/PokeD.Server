@@ -128,6 +128,13 @@ namespace PokeD.Server
                     return player;
             }
 
+            for (var i = 0; i < NPCs.Count; i++)
+            {
+                var npc = NPCs[i];
+                if (npc.ID == id)
+                    return npc;
+            }
+
             return null;
         }
 
