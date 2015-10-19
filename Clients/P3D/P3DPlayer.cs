@@ -78,7 +78,7 @@ namespace PokeD.Server.Clients.P3D
         public Prefix Prefix { get; private set; }
 
         [JsonIgnore]
-        public string IP => Client.IP;
+        public string IP => ClientWrapper.IP;
 
         [JsonIgnore]
         public DateTime ConnectionTime { get; } = DateTime.Now;
@@ -96,7 +96,7 @@ namespace PokeD.Server.Clients.P3D
 
         #endregion Other Values
 
-        INetworkTCPClient Client { get; }
+        ITCPClient ClientWrapper { get; }
         P3DStream Stream { get; }
 
 
@@ -111,10 +111,10 @@ namespace PokeD.Server.Clients.P3D
 #endif
 
 
-        public P3DPlayer(INetworkTCPClient client, Server server)
+        public P3DPlayer(ITCPClient clientWrapper, Server server)
         {
-            Client = client;
-            Stream = new P3DStream(Client);
+            ClientWrapper = clientWrapper;
+            Stream = new P3DStream(ClientWrapper);
             _server = server;
         }
 

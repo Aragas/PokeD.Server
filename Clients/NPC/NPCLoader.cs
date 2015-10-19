@@ -19,7 +19,7 @@ namespace PokeD.Server.Clients.NPC
                 if (file.Name.ToLower().StartsWith(Identifier) && file.Name.ToLower().EndsWith(Extension))
                 {
                     var name = GetNPCName(file.Name);
-                    var lua = LuaWrapper.Create(file.Name);
+                    var lua = LuaWrapper.CreateLua(file.Name);
                     var npc = new NPCPlayer(name, lua, server);
                     npcs.Add(npc);
                 }

@@ -35,7 +35,7 @@ namespace PokeD.Server.Clients.SCON
         public string Name { get { throw new NotImplementedException(); } }
 
         [JsonIgnore]
-        public string IP => Client.IP;
+        public string IP => ClientWrapper.IP;
 
         [JsonIgnore]
         public DateTime ConnectionTime { get; } = DateTime.Now;
@@ -66,7 +66,7 @@ namespace PokeD.Server.Clients.SCON
 
         #endregion Values
 
-        INetworkTCPClient Client { get; }
+        ITCPClient ClientWrapper { get; }
         ProtobufStream Stream { get; }
 
         readonly Server _server;
@@ -78,10 +78,10 @@ namespace PokeD.Server.Clients.SCON
         // -- Debug -- //
 #endif
 
-        public SCONClient(INetworkTCPClient client, Server server)
+        public SCONClient(ITCPClient clientWrapper, Server server)
         {
-            Client = client;
-            Stream = new ProtobufStream(Client);
+            ClientWrapper = clientWrapper;
+            Stream = new ProtobufStream(ClientWrapper);
             _server = server;
 
             AuthorizationStatus = 

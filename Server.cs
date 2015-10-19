@@ -76,14 +76,14 @@ namespace PokeD.Server
         #endregion Settings
 
 
-        INetworkTCPServer P3DListener { get; set; }
-        INetworkTCPServer ProtobufListener { get; set; }
-        INetworkTCPServer SCONListener { get; set; }
+        ITCPListener P3DListener { get; set; }
+        ITCPListener ProtobufListener { get; set; }
+        ITCPListener SCONListener { get; set; }
 
         
-        int ListenToConnectionsThread { get; set; }
-        int PlayerWatcherThread { get; set; }
-        int PlayerCorrectionThread { get; set; }
+        IThread ListenToConnectionsThread { get; set; }
+        IThread PlayerWatcherThread { get; set; }
+        IThread PlayerCorrectionThread { get; set; }
 
 
         [JsonIgnore]
@@ -128,11 +128,22 @@ namespace PokeD.Server
             Logger.Log(LogType.Info, $"Starting {ServerName}.");
 
 
-            ListenToConnectionsThread = ThreadWrapper.StartThread(ListenToConnectionsCycle, true, "ListenToConnectionsThread");
+            ListenToConnectionsThread = ThreadWrapper.CreateThread(ListenToConnectionsCycle);
+            ListenToConnectionsThread.Name = "ListenToConnectionsThread";
+            ListenToConnectionsThread.IsBackground = true;
+            ListenToConnectionsThread.Start();
+
             if (MoveCorrectionEnabled)
             {
-                PlayerWatcherThread = ThreadWrapper.StartThread(PlayerWatcherCycle, true, "PlayerWatcherThread");
-                PlayerCorrectionThread = ThreadWrapper.StartThread(PlayerCorrectionCycle, true, "PlayerCorrectionThread");
+                PlayerWatcherThread = ThreadWrapper.CreateThread(PlayerWatcherCycle);
+                PlayerWatcherThread.Name = "PlayerWatcherThread";
+                PlayerWatcherThread.IsBackground = true;
+                PlayerWatcherThread.Start();
+
+                PlayerCorrectionThread = ThreadWrapper.CreateThread(PlayerCorrectionCycle);
+                PlayerCorrectionThread.Name = "PlayerCorrectionThread";
+                PlayerCorrectionThread.IsBackground = true;
+                PlayerCorrectionThread.Start();
             }
 
             return status;
@@ -146,14 +157,15 @@ namespace PokeD.Server
             Logger.Log(LogType.Info, $"Stopping {ServerName}.");
 
 
-            if (ThreadWrapper.IsRunning(ListenToConnectionsThread))
-                ThreadWrapper.AbortThread(ListenToConnectionsThread);
+            if (ListenToConnectionsThread.IsRunning)
+                ListenToConnectionsThread.Abort();
 
-            if (ThreadWrapper.IsRunning(PlayerWatcherThread))
-                ThreadWrapper.AbortThread(PlayerWatcherThread);
+            if (PlayerWatcherThread.IsRunning)
+                PlayerWatcherThread.Abort();
 
-            if (ThreadWrapper.IsRunning(PlayerCorrectionThread))
-                ThreadWrapper.AbortThread(PlayerCorrectionThread);
+            if (PlayerCorrectionThread.IsRunning)
+                PlayerCorrectionThread.Abort();
+
 
             Dispose();
 
@@ -189,18 +201,18 @@ namespace PokeD.Server
         public static long ClientConnectionsThreadTime { get; private set; }
         private void ListenToConnectionsCycle()
         {
-            P3DListener = NetworkTCPServerWrapper.NewInstance(Port);
+            P3DListener = TCPListenerWrapper.CreateTCPListener(Port);
             P3DListener.Start();
 
             if (ProtobufPort != 0)
             {
-                ProtobufListener = NetworkTCPServerWrapper.NewInstance(ProtobufPort);
+                ProtobufListener = TCPListenerWrapper.CreateTCPListener(ProtobufPort);
                 ProtobufListener.Start();
             }
 
             if (SCON_Enabled && SCONPort != 0)
             {
-                SCONListener = NetworkTCPServerWrapper.NewInstance(SCONPort);
+                SCONListener = TCPListenerWrapper.CreateTCPListener(SCONPort);
                 SCONListener.Start();
             }
 

@@ -78,7 +78,7 @@ namespace PokeD.Server.Clients.Protobuf
         public bool EncryptionEnabled => _server.EncryptionEnabled;
 
         [JsonIgnore]
-        public string IP => Client.IP;
+        public string IP => ClientWrapper.IP;
 
         [JsonIgnore]
         public DateTime ConnectionTime { get; } = DateTime.Now;
@@ -97,7 +97,7 @@ namespace PokeD.Server.Clients.Protobuf
 
         #endregion Other Values
 
-        INetworkTCPClient Client { get; }
+        ITCPClient ClientWrapper { get; }
         ProtobufStream Stream { get; }
 
 
@@ -110,10 +110,10 @@ namespace PokeD.Server.Clients.Protobuf
         // -- Debug -- //
 #endif
 
-        public ProtobufPlayer(INetworkTCPClient client, Server server)
+        public ProtobufPlayer(ITCPClient clientWrapper, Server server)
         {
-            Client = client;
-            Stream = new ProtobufStream(Client);
+            ClientWrapper = clientWrapper;
+            Stream = new ProtobufStream(ClientWrapper);
             _server = server;
         }
 
