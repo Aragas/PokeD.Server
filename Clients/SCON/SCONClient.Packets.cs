@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using System.IO;
 using Aragas.Core.Wrappers;
 
 using Org.BouncyCastle.Crypto.Digests;
@@ -165,46 +165,43 @@ namespace PokeD.Server.Clients.SCON
             }
 
             if (FileSystemWrapper.LogFolder.CheckExistsAsync(packet.LogFilename).Result == ExistenceCheckResult.FileExists)
-            {
-                var logText = FileSystemWrapper.LogFolder.GetFileAsync(packet.LogFilename).Result.ReadAllTextAsync().Result;
-
-                SendPacket(new LogFileResponsePacket { LogFilename = packet.LogFilename, LogFile = logText });
-            }
+                using (var reader = new StreamReader(FileSystemWrapper.LogFolder.GetFileAsync(packet.LogFilename).Result.OpenAsync(FileAccess.Read).Result))
+                {
+                    var logText = reader.ReadToEnd();
+                    SendPacket(new LogFileResponsePacket { LogFilename = packet.LogFilename, LogFile = logText });
+                }
         }
 
         private void HandleCrashLogListRequest(CrashLogListRequestPacket packet)
         {
             if (!Authorized)
             {
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
+                SendPacket(new AuthorizationDisconnectPacket {Reason = "Not authorized!"});
                 return;
             }
 
-            if (FileSystemWrapper.LogFolder.CheckExistsAsync("Crash").Result == ExistenceCheckResult.FolderExists)
-            {
-                var list = FileSystemWrapper.LogFolder.GetFolderAsync("Crash").Result.GetFilesAsync().Result;
+            var list = FileSystemWrapper.CrashLogFolder.GetFilesAsync().Result;
 
-                var crashLogs = new List<Log>();
-                foreach (var file in list)
-                    crashLogs.Add(new Log { LogFileName = file.Name });
+            var crashLogs = new List<Log>();
+            foreach (var file in list)
+                crashLogs.Add(new Log {LogFileName = file.Name});
 
-                SendPacket(new CrashLogListResponsePacket { CrashLogList = new LogList(crashLogs.ToArray()) });
-            }
+            SendPacket(new CrashLogListResponsePacket {CrashLogList = new LogList(crashLogs.ToArray())});
         }
+
         private void HandleCrashLogFileRequest(CrashLogFileRequestPacket packet)
         {
             if (!Authorized)
             {
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
+                SendPacket(new AuthorizationDisconnectPacket {Reason = "Not authorized!"});
                 return;
             }
 
-            if (FileSystemWrapper.LogFolder.CheckExistsAsync("Crash").Result == ExistenceCheckResult.FolderExists)
-                if (FileSystemWrapper.LogFolder.GetFolderAsync("Crash").Result.CheckExistsAsync(packet.CrashLogFilename).Result == ExistenceCheckResult.FileExists)
+            if (FileSystemWrapper.CrashLogFolder.CheckExistsAsync(packet.CrashLogFilename).Result == ExistenceCheckResult.FileExists)
+                using (var reader = new StreamReader(FileSystemWrapper.CrashLogFolder.GetFileAsync(packet.CrashLogFilename).Result.OpenAsync(FileAccess.Read).Result))
                 {
-                    var crashLogText = FileSystemWrapper.LogFolder.GetFolderAsync("Crash").Result.GetFileAsync(packet.CrashLogFilename).Result.ReadAllTextAsync().Result;
-
-                    SendPacket(new CrashLogFileResponsePacket { CrashLogFilename = packet.CrashLogFilename, CrashLogFile = crashLogText });
+                    var logText = reader.ReadToEnd();
+                    SendPacket(new CrashLogFileResponsePacket {CrashLogFilename = packet.CrashLogFilename, CrashLogFile = logText});
                 }
         }
 

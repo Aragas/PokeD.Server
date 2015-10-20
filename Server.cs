@@ -220,15 +220,15 @@ namespace PokeD.Server
             while (!IsDisposing)
             {
                 if (P3DListener.AvailableClients)
-                    PlayersJoining.Add(new P3DPlayer(P3DListener.AcceptNetworkTCPClient(), this));
+                    PlayersJoining.Add(new P3DPlayer(P3DListener.AcceptTCPClient(), this));
 
                 if (ProtobufListener != null && ProtobufListener.AvailableClients)
                     if (ProtobufListener.AvailableClients)
-                        PlayersJoining.Add(new ProtobufPlayer(ProtobufListener.AcceptNetworkTCPClient(), this));
+                        PlayersJoining.Add(new ProtobufPlayer(ProtobufListener.AcceptTCPClient(), this));
 
                 if (SCONListener != null && SCONListener.AvailableClients)
                     if (SCONListener.AvailableClients)
-                        SCONClients.Add(new SCONClient(SCONListener.AcceptNetworkTCPClient(), this));
+                        SCONClients.Add(new SCONClient(SCONListener.AcceptTCPClient(), this));
 
 
 
