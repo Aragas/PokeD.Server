@@ -10,25 +10,25 @@ namespace PokeD.Server
 {
     public class ClientList
     {
-        public int Count => Clients.Count;
+        public int Count => ClientsList.Count;
 
-        private List<IClient> Clients { get; } 
+        private List<IClient> ClientsList { get; } 
 
         public ClientList()
         {
-            Clients = new List<IClient>();
+            ClientsList = new List<IClient>();
         }
 
         public IEnumerable<IClient> GetEnumerator()
         {
-            return Clients.AsEnumerable();
+            return ClientsList.AsEnumerable();
         }
 
         public IEnumerable<T> GetConcreteTypeEnumerator<T>() where T : IClient
         {
             var type = typeof (T);
             var list = new List<T>();
-            foreach (var client in Clients)
+            foreach (var client in ClientsList)
                 if (client.GetType() == type)
                     list.Add((T) client);
 
@@ -40,7 +40,7 @@ namespace PokeD.Server
             var type2 = typeof(T2);
 
             var list = new List<IClient>();
-            foreach (var client in Clients)
+            foreach (var client in ClientsList)
             {
                 var type = client.GetType();
                 if (type == type1 || type == type2)
@@ -56,7 +56,7 @@ namespace PokeD.Server
             var type3 = typeof(T3);
 
             var list = new List<IClient>();
-            foreach (var client in Clients)
+            foreach (var client in ClientsList)
             {
                 var type = client.GetType();
                 if (type == type1 || type == type2 || type == type3)
@@ -66,21 +66,21 @@ namespace PokeD.Server
             return list.AsEnumerable();
         }
 
-        public IClient this[int index] => Clients[index];
+        public IClient this[int index] => ClientsList[index];
 
         public void Add(IClient client)
         {
-            Clients.Add(client);
+            ClientsList.Add(client);
         }
         public void Remove(IClient client)
         {
-            Clients.Remove(client);
+            ClientsList.Remove(client);
         }
 
         public PlayerInfo[] GetAllClientsInfo()
         {
             var list = new List<PlayerInfo>();
-            foreach (var c in Clients)
+            foreach (var c in ClientsList)
                 list.Add(new PlayerInfo
                 {
                     Name = c.Name,
@@ -96,7 +96,7 @@ namespace PokeD.Server
 
         public void Clear()
         {
-            Clients.Clear();
+            ClientsList.Clear();
         }
     }
 }
