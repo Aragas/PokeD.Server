@@ -1,5 +1,7 @@
 using System;
+
 using Aragas.Core.Data;
+
 using Newtonsoft.Json;
 
 using PokeD.Core.Packets.Chat;

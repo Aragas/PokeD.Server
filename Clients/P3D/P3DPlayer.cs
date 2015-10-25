@@ -18,7 +18,9 @@ using PokeD.Core.Packets.Client;
 using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
+
 using PokeD.Server.Data;
+using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.P3D
 {
@@ -36,7 +38,7 @@ namespace PokeD.Server.Clients.P3D
         [JsonIgnore]
         public bool IsGameJoltPlayer { get; private set; }
         [JsonIgnore]
-        public ulong GameJoltID { get; private set; }
+        public long GameJoltID { get; private set; }
         [JsonIgnore]
         private char DecimalSeparator { get; set; }
 
@@ -120,7 +122,6 @@ namespace PokeD.Server.Clients.P3D
 
 
         Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
-
         public void Update()
         {
             if (Stream.Connected)
@@ -144,7 +145,7 @@ namespace PokeD.Server.Clients.P3D
                 if (!Battling && _server.CustomWorldEnabled && UseCustomWorld)
                 {
                     CustomWorld.Update();
-                    SendPacket(new WorldDataPacket {DataItems = CustomWorld.GenerateDataItems()}, -1);
+                    SendPacket(new WorldDataPacket { DataItems = CustomWorld.GenerateDataItems() }, -1);
                 }
 
                 UpdateWatch.Reset();
@@ -283,6 +284,16 @@ namespace PokeD.Server.Clients.P3D
 #if DEBUG
             Sended.Add(packet);
 #endif
+        }
+
+        public void LoadFromDB(Player data)
+        {
+            if (ID == 0)
+                ID = data.Id;
+
+            Prefix = data.Prefix;
+
+            UseCustomWorld = data.IsUsingCustomWorld;
         }
 
 

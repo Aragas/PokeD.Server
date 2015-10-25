@@ -12,7 +12,7 @@ namespace PokeD.Server
     {
         public int Count => Clients.Count;
 
-        private List<IClient> Clients { get; set; } 
+        private List<IClient> Clients { get; } 
 
         public ClientList()
         {
@@ -34,7 +34,6 @@ namespace PokeD.Server
 
             return list.AsEnumerable();
         }
-
         public IEnumerable<IClient> GetConcreteTypeEnumerator<T1, T2>() where T1 : IClient where T2 : IClient
         {
             var type1 = typeof(T1);
@@ -50,7 +49,6 @@ namespace PokeD.Server
             
             return list.AsEnumerable();
         }
-
         public IEnumerable<IClient> GetConcreteTypeEnumerator<T1, T2, T3>() where T1 : IClient where T2 : IClient where T3 : IClient
         {
             var type1 = typeof(T1);
@@ -74,7 +72,6 @@ namespace PokeD.Server
         {
             Clients.Add(client);
         }
-
         public void Remove(IClient client)
         {
             Clients.Remove(client);

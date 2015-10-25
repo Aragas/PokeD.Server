@@ -3,8 +3,6 @@ using System.Linq;
 
 using Aragas.Core.Data;
 
-using Newtonsoft.Json;
-
 using PokeD.Core.Data;
 using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
@@ -17,11 +15,6 @@ namespace PokeD.Server.Clients.P3D
 {
     public partial class P3DPlayer
     {
-        [JsonIgnore]
-        public bool IsMoving { get; private set; }
-        Vector3 LastPosition { get; set; }
-
-
         private void ParseGameData(GameDataPacket packet)
         {
             if (packet.DataItems != null)
@@ -63,14 +56,15 @@ namespace PokeD.Server.Clients.P3D
                                 break;
 
                             case 6:
-                                if (packet.GetPokemonPosition(DecimalSeparator) != Vector3.Zero)
-                                {
-                                    LastPosition = Position;
-
-                                    Position = packet.GetPosition(DecimalSeparator);
-
-                                    IsMoving = LastPosition != Position;
-                                }
+                                Position = packet.GetPosition(DecimalSeparator);
+                                //if (packet.GetPokemonPosition(DecimalSeparator) != Vector3.Zero)
+                                //{
+                                //    LastPosition = Position;
+                                //
+                                //    Position = packet.GetPosition(DecimalSeparator);
+                                //
+                                //    IsMoving = LastPosition != Position;
+                                //}
                                 break;
 
                             case 7:
@@ -118,6 +112,10 @@ namespace PokeD.Server.Clients.P3D
         private void HandleGameData(GameDataPacket packet)
         {
             ParseGameData(packet);
+            _server.UpdateDBPlayer(this);
+
+            if(!Moving)
+                _server.SendToAllClients(packet, packet.Origin);
 
             // if GameJoltID == 0, initialize in login
             if (!IsInitialized && GameJoltID != 0)

@@ -17,7 +17,9 @@ using PokeD.Core.Packets.SCON.Logs;
 using PokeD.Core.Packets.SCON.Lua;
 using PokeD.Core.Packets.SCON.Status;
 using PokeD.Core.Packets.Shared;
+
 using PokeD.Server.Data;
+using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.SCON
 {
@@ -29,7 +31,7 @@ namespace PokeD.Server.Clients.SCON
         public int ID { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
 
         [JsonIgnore]
-        public Prefix Prefix { get;}
+        public Prefix Prefix { get { throw new NotImplementedException(); } }
 
         [JsonIgnore]
         public string Name { get { throw new NotImplementedException(); } }
@@ -44,7 +46,7 @@ namespace PokeD.Server.Clients.SCON
         public bool UseCustomWorld { get { throw new NotImplementedException(); } }
 
         [JsonIgnore]
-        public ulong GameJoltID { get { throw new NotImplementedException(); } }
+        public long GameJoltID { get { throw new NotImplementedException(); } }
 
         [JsonIgnore]
         public bool IsGameJoltPlayer { get { throw new NotImplementedException(); } }
@@ -59,7 +61,7 @@ namespace PokeD.Server.Clients.SCON
         public bool ChatReceiving { get; private set; }
 
         [JsonIgnore]
-        public bool IsMoving { get; private set; }
+        public bool Moving { get { throw new NotImplementedException(); } }
 
         bool IsInitialized { get; set; }
         bool IsDisposed { get; set; }
@@ -100,7 +102,7 @@ namespace PokeD.Server.Clients.SCON
                     {
                         Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Length size is 0. Disconnecting.");
                         SendPacket(new AuthorizationDisconnectPacket {Reason = "Packet Length size is 0!"});
-                        _server.RemovePlayer(this);
+                        _server.RemoveSCON(this);
                         return;
                     }
 
@@ -142,7 +144,7 @@ namespace PokeD.Server.Clients.SCON
                     {
                         Logger.Log(LogType.GlobalError, $"SCON Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting.");
                         SendPacket(new AuthorizationDisconnectPacket {Reason = $"Packet ID {id} is not correct!"});
-                        _server.RemovePlayer(this);
+                        _server.RemoveSCON(this);
                     }
                 }
             }
@@ -226,10 +228,7 @@ namespace PokeD.Server.Clients.SCON
         }
 
 
-        public GameDataPacket GetDataPacket()
-        {
-            throw new NotImplementedException();
-        }
+        public GameDataPacket GetDataPacket() { throw new NotImplementedException(); }
 
 
         private void SendPacket(ProtobufPacket packet, int originID = 0)
@@ -251,6 +250,8 @@ namespace PokeD.Server.Clients.SCON
             Sended.Add(packet);
 #endif
         }
+
+        public void LoadFromDB(Player data) { throw new NotImplementedException(); }
 
 
         private void DisconnectAndDispose()

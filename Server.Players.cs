@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
-
+using System.Diagnostics;
 using Newtonsoft.Json;
 
 using PokeD.Core.Data.Structs;
@@ -8,7 +8,7 @@ using PokeD.Core.Packets.Server;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.SCON;
-using PokeD.Server.Extensions;
+using PokeD.Server.Database;
 
 namespace PokeD.Server
 {
@@ -17,17 +17,11 @@ namespace PokeD.Server
         [JsonIgnore]
         public int PlayersCount => Players.Count;
 
-        int FreePlayerID { get; set; } = 10;
-
-
         ClientList Players { get; } = new ClientList();
         List<IClient> PlayersJoining { get; } = new List<IClient>();
         List<IClient> PlayersToAdd { get; } = new List<IClient>();
         List<IClient> PlayersToRemove { get; } = new List<IClient>();
-        List<IClient> SCONClients { get; } = new List<IClient>();
-
-        List<IClient> NPCs { get; set; } = new List<IClient>();
-
+        
         ConcurrentDictionary<string, IClient[]> NearPlayers { get; } = new ConcurrentDictionary<string, IClient[]>();
 
         ConcurrentQueue<PlayerPacketP3DOrigin> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerPacketP3DOrigin>();
@@ -36,12 +30,8 @@ namespace PokeD.Server
         [JsonProperty("MutedPlayers")]
         Dictionary<int, List<int>> MutedPlayers { get; } = new Dictionary<int, List<int>>();
 
+        List<IClient> AllClients { get { var list = new List<IClient>(Players.GetEnumerator()); list.AddRange(NPCs); return list; } }
 
-
-        private int GenerateClientID()
-        {
-            return FreePlayerID++;
-        }
 
         private bool IsGameJoltIDUsed(IClient client)
         {
@@ -58,37 +48,25 @@ namespace PokeD.Server
 
         public void AddPlayer(IClient player)
         {
-            if (player is SCONClient)
-            {
-                SCONClients.Add(player);
-                PlayersJoining.Remove(player);
-                return;
-            }
-
             if (IsGameJoltIDUsed(player))
             {
                 RemovePlayer(player, "You are already on server!");
                 return;
             }
 
-            player.LoadClientSettings();
+            LoadDBPlayer(player);
 
-            player.ID = GenerateClientID();
             SendToClient(player, new IDPacket { PlayerID = player.ID }, -1);
             SendToClient(player, new WorldDataPacket { DataItems = World.GenerateDataItems() }, -1);
 
             // Send to player his ID
             SendToClient(player, new CreatePlayerPacket { PlayerID = player.ID }, -1);
             // Send to player all Players ID
-            for (var i = 0; i < Players.Count; i++)
+            var clients = AllClients;
+            for (var i = 0; i < clients.Count; i++)
             {
-                SendToClient(player, new CreatePlayerPacket { PlayerID = Players[i].ID }, -1);
-                SendToClient(player, Players[i].GetDataPacket(), Players[i].ID);
-            }
-            for (var i = 0; i < NPCs.Count; i++)
-            {
-                SendToClient(player, new CreatePlayerPacket { PlayerID = NPCs[i].ID }, -1);
-                SendToClient(player, NPCs[i].GetDataPacket(), NPCs[i].ID);
+                SendToClient(player, new CreatePlayerPacket { PlayerID = clients[i].ID }, -1);
+                SendToClient(player, clients[i].GetDataPacket(), clients[i].ID);
             }
             // Send to Players player ID
             SendToAllClients(new CreatePlayerPacket { PlayerID = player.ID }, -1);
@@ -100,20 +78,58 @@ namespace PokeD.Server
         }
         public void RemovePlayer(IClient player, string reason = "")
         {
-            if (player is SCONClient)
-            {
-                SCONClients.Remove(player);
-                return;
-            }
+            UpdateDBPlayer(player);
 
-            player.SaveClientSettings();
             if(!string.IsNullOrEmpty(reason))
                 player.SendPacket(new KickedPacket { Reason = reason }, -1);
 
             PlayersToRemove.Add(player);
         }
 
-        
+        private void LoadDBPlayer(IClient player)
+        {
+            if (player.IsGameJoltPlayer)
+            {
+                var data = Database.Find<Player>(p => p.GameJoltID == player.GameJoltID);
+
+                if (data != null)
+                    player.LoadFromDB(data);
+                else
+                {
+                    Database.Insert(new Player(player, PlayerType.Player));
+                    player.LoadFromDB(Database.Find<Player>(p => p.GameJoltID == player.GameJoltID));
+                }
+            }
+            else
+            {
+                var data = Database.Find<Player>(p => p.Name == player.Name);
+
+                if (data != null)
+                    player.LoadFromDB(data);
+                else
+                {
+                    Database.Insert(new Player(player, PlayerType.Player));
+                    player.LoadFromDB(Database.Find<Player>(p => p.Name == player.Name));
+                }
+            }
+        }
+
+        Stopwatch UpdateDBWatch { get; } = Stopwatch.StartNew();
+        public void UpdateDBPlayer(IClient player)
+        {
+            if(player.ID == 0)
+                return;
+
+            if (UpdateDBWatch.ElapsedMilliseconds < 2000)
+                return;
+            
+            Database.Update(new Player(player, PlayerType.Player));
+
+            UpdateDBWatch.Reset();
+            UpdateDBWatch.Start();
+        }
+
+
         /// <summary>
         /// Get IClient by ID.
         /// </summary>
@@ -121,18 +137,12 @@ namespace PokeD.Server
         /// <returns>Returns null if IClient is not found.</returns>
         public IClient GetClient(int id)
         {
-            for (var i = 0; i < Players.Count; i++)
+            var clients = AllClients;
+            for (var i = 0; i < clients.Count; i++)
             {
-                var player = Players[i];
+                var player = clients[i];
                 if (player.ID == id)
                     return player;
-            }
-
-            for (var i = 0; i < NPCs.Count; i++)
-            {
-                var npc = NPCs[i];
-                if (npc.ID == id)
-                    return npc;
             }
 
             return null;

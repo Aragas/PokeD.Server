@@ -14,7 +14,7 @@ namespace PokeD.Server
 
     public partial class Server
     {
-        private struct PlayerPacketP3DOrigin
+        private class PlayerPacketP3DOrigin
         {
             public readonly IClient Player;
             public readonly P3DPacket Packet;
@@ -34,7 +34,7 @@ namespace PokeD.Server
             }
         }
         
-        private struct PacketP3DOrigin
+        private class PacketP3DOrigin
         {
             public readonly P3DPacket Packet;
             public readonly int OriginID;

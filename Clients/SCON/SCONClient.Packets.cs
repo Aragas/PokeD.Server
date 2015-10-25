@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+
 using Aragas.Core.Wrappers;
 
 using Org.BouncyCastle.Crypto.Digests;
@@ -88,7 +89,7 @@ namespace PokeD.Server.Clients.SCON
                     SendPacket(new AuthorizationCompletePacket());
 
                     IsInitialized = true;
-                    _server.AddPlayer(this);
+                    _server.AddSCON(this);
                 }
                 else
                     SendPacket(new AuthorizationDisconnectPacket { Reason = "Password not correct!" });
@@ -231,7 +232,6 @@ namespace PokeD.Server.Clients.SCON
         {
             
         }
-
         private void HandleReloadNPCs(ReloadNPCsPacket packet)
         {
             _server.ReloadNPCs();

@@ -23,6 +23,7 @@ using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
 using PokeD.Server.Data;
+using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.Protobuf
 {
@@ -39,7 +40,7 @@ namespace PokeD.Server.Clients.Protobuf
         [JsonIgnore]
         public bool IsGameJoltPlayer { get; private set; }
         [JsonIgnore]
-        public ulong GameJoltID { get; private set; }
+        public long GameJoltID { get; private set; }
         [JsonIgnore]
         private char DecimalSeparator { get; set; }
         private string _name;
@@ -308,6 +309,11 @@ namespace PokeD.Server.Clients.Protobuf
         public void SendPacket(P3DPacket packet, int originID)
         {
             SendPacket(packet as ProtobufPacket, originID);
+        }
+
+        public void LoadFromDB(Player data)
+        {
+            throw new NotImplementedException();
         }
 
 

@@ -6,6 +6,7 @@ using Aragas.Core.Interfaces;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Shared;
 using PokeD.Server.Data;
+using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients
 {
@@ -15,7 +16,8 @@ namespace PokeD.Server.Clients
         string Name { get; }
         Prefix Prefix { get; }
         bool IsGameJoltPlayer { get; }
-        ulong GameJoltID { get; }
+        long GameJoltID { get; }
+        bool Moving { get; }
         Vector3 Position { get; }
         string LevelFile { get; }
 
@@ -23,11 +25,12 @@ namespace PokeD.Server.Clients
         DateTime ConnectionTime { get; }
         bool UseCustomWorld { get; }
         bool ChatReceiving { get; }
-        bool IsMoving { get; }
 
 
         GameDataPacket GetDataPacket();
 
         void SendPacket(P3DPacket packet, int originID);
+
+        void LoadFromDB(Player data);
     }
 }

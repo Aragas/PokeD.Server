@@ -1,23 +1,12 @@
-﻿using System.Linq;
-
-using Aragas.Core.Data;
-
-using PokeD.Core.Data;
-using PokeD.Core.Packets.Battle;
+﻿using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
-using PokeD.Core.Packets.Client;
-using PokeD.Core.Packets.Server;
 using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
 
 namespace PokeD.Server.Clients.NPC
 {
     public partial class NPCPlayer
-    {
-        public bool IsMoving { get; }
-        Vector3 LastPosition { get; set; }
-
-        
+    {       
         private void HandleChatMessage(ChatMessageGlobalPacket packet)
         {
             if (packet.Message.StartsWith("/"))

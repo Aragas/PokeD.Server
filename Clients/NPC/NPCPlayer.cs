@@ -14,6 +14,7 @@ using PokeD.Core.Packets.Shared;
 using PokeD.Core.Packets.Trade;
 
 using PokeD.Server.Data;
+using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.NPC
 {
@@ -27,7 +28,7 @@ namespace PokeD.Server.Clients.NPC
 
         public string GameMode => "NPC";
         public bool IsGameJoltPlayer => false;
-        public ulong GameJoltID => 0;
+        public long GameJoltID => 0;
         private char DecimalSeparator { get; set; } = '.';
         public string Name { get; set; } = string.Empty;
         public Prefix Prefix { get; } = Prefix.NPC;
@@ -55,7 +56,6 @@ namespace PokeD.Server.Clients.NPC
 
         public bool ChatReceiving => true;
 
-        bool IsInitialized { get; set; }
         bool IsDisposed { get; set; }
 
         #endregion Other Values
@@ -104,6 +104,7 @@ namespace PokeD.Server.Clients.NPC
 
             HandlePacket(packet);
         }
+
         private void HandlePacket(P3DPacket packet)
         {
             switch ((GamePacketTypes) (int) packet.ID)
@@ -177,7 +178,8 @@ namespace PokeD.Server.Clients.NPC
             }
         }
 
-
+        public void LoadFromDB(Player data) { throw new NotImplementedException(); }
+        
         private DataItems GenerateDataItems()
         {
             return new DataItems(
@@ -197,10 +199,7 @@ namespace PokeD.Server.Clients.NPC
                 PokemonSkin,
                 PokemonFacing.ToString(CultureInfo));
         }
-        public GameDataPacket GetDataPacket()
-        {
-            return new GameDataPacket { DataItems = GenerateDataItems() };
-        }
+        public GameDataPacket GetDataPacket() { return new GameDataPacket { DataItems = GenerateDataItems() }; }
         
         public void Dispose()
         {

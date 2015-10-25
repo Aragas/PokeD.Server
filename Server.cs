@@ -21,12 +21,12 @@ using PokeD.Core.Packets.Chat;
 using PokeD.Core.Packets.Server;
 
 using PokeD.Server.Clients;
-using PokeD.Server.Clients.NPC;
 using PokeD.Server.Clients.P3D;
 using PokeD.Server.Clients.Protobuf;
 using PokeD.Server.Clients.SCON;
 using PokeD.Server.Data;
-using PokeD.Server.Extensions;
+using PokeD.Server.Database;
+
 
 namespace PokeD.Server
 {
@@ -93,12 +93,10 @@ namespace PokeD.Server
         public AsymmetricCipherKeyPair RSAKeyPair { get; private set; }
         const int RsaKeySize = 1024;
 
+        IDatabase Database { get; set; }
 
 
-        public Server()
-        {
-
-        }
+        public Server() { }
 
         private static AsymmetricCipherKeyPair GenerateKeyPair()
         {
@@ -123,7 +121,13 @@ namespace PokeD.Server
                 RSAKeyPair = GenerateKeyPair();
             }
 
-            StartNPCs();
+            const string databasePath = "server";
+            Logger.Log(LogType.Info, $"Loading {databasePath}.");
+            Database = DatabaseWrapper.Create(databasePath);
+            Database.CreateTable<Player>();
+
+            LoadNPCs();
+
 
             Logger.Log(LogType.Info, $"Starting {ServerName}.");
 
@@ -174,30 +178,7 @@ namespace PokeD.Server
             return status;
         }
 
-        private bool StartNPCs()
-        {
-            Logger.Log(LogType.Info, "Loading NPC's.");
-            NPCs = NPCLoader.LoadNPCs(this);
-
-            foreach (var npc in NPCs)
-                npc.ID = GenerateClientID();
-
-            return true;
-        }
-        public bool ReloadNPCs()
-        {
-            foreach (var npc in NPCs)
-                PlayersToRemove.Add(npc);
-
-            Logger.Log(LogType.Info, "Reloading NPC's.");
-            NPCs = NPCLoader.LoadNPCs(this);
-
-            foreach (var npc in NPCs)
-                npc.ID = GenerateClientID();
-
-            return true;
-        }
-
+        
         public static long ClientConnectionsThreadTime { get; private set; }
         private void ListenToConnectionsCycle()
         {
@@ -291,10 +272,29 @@ namespace PokeD.Server
             while (!IsDisposing)
             {
                 foreach (var nearPlayers in NearPlayers.Where(nearPlayers => nearPlayers.Value != null))
-                    foreach (var player in nearPlayers.Value.Where(player => player.IsMoving))
+                    foreach (var player in nearPlayers.Value.Where(player => player.Moving))
                         foreach (var playerToSend in nearPlayers.Value.Where(playerToSend => player != playerToSend))
                             playerToSend.SendPacket(player.GetDataPacket(), player.ID);
 
+                /*
+                for (int i = 0; i < Players.Count; i++)
+                {
+                    var player1 = Players[i];
+                    for (int j = 0; j < Players.Count; j++)
+                    {
+                        var player2 = Players[j];
+
+                        if(player1 != player2)
+                            if (player1.IsMoving)
+                                SendToClient(player2, player1.GetDataPacket(), player1.ID);
+                        //var nearPlayer = Players[i];
+                        //if (nearPlayer.IsMoving)
+                        //    SendToAllClients(nearPlayer.GetDataPacket(), nearPlayer.ID);
+                    }
+                    //if (nearPlayer.IsMoving)
+                    //    SendToAllClients(nearPlayer.GetDataPacket(), nearPlayer.ID);
+                }
+                */
 
 
                 if (watch.ElapsedMilliseconds < 5)
@@ -339,7 +339,6 @@ namespace PokeD.Server
 
                 Players.Remove(playerToRemove);
                 PlayersJoining.Remove(playerToRemove);
-                SCONClients.Remove(playerToRemove);
                 PlayersToRemove.Remove(playerToRemove);
 
                 if (playerToRemove.ID != 0)
@@ -404,12 +403,6 @@ namespace PokeD.Server
             UpdateWatch.Start();
         }
 
-        public void UpdateNPC()
-        {
-            for (var i = 0; i < NPCs.Count; i++)
-                NPCs[i]?.Update();
-        }
-
 
         public void SendToClient(int destinationID, P3DPacket packet, int originID)
         {
@@ -437,7 +430,7 @@ namespace PokeD.Server
 
             PacketsToAllPlayers.Enqueue(new PacketP3DOrigin(ref packet, originID));
         }
-
+        
 
         public void SendPrivateChatMessageToClient(int destinationID, string message, int originID)
         {
