@@ -29,7 +29,7 @@ namespace PokeD.Server.Database
 
         public bool IsUsingCustomWorld;
 
-        public int[] MutedPlayers;
+        //public int[] MutedPlayers;
 
 
         public Player() { }
