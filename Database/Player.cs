@@ -14,20 +14,20 @@ namespace PokeD.Server.Database
 
     public class Player : DatabaseTable
     {
-        public PlayerType PlayerType;
+		public PlayerType PlayerType { get; set; }
 
-        public long GameJoltID;
+		public long GameJoltID{ get; set; }
 
-        public Prefix Prefix;
-        public string Name;
+		public Prefix Prefix{ get; set; }
+		public string Name{ get; set; }
 
-        public string Position;
-        public string LevelFile;
+		public string Position{ get; set; }
+		public string LevelFile{ get; set; }
 
-        public string LastIP;
-        public DateTime LastConnectionTime;
+		public string LastIP{ get; set; }
+		public DateTime LastConnectionTime{ get; set; }
 
-        public bool IsUsingCustomWorld;
+		public bool IsUsingCustomWorld{ get; set; }
 
         //public int[] MutedPlayers;
 
