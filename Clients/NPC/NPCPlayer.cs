@@ -94,6 +94,10 @@ namespace PokeD.Server.Clients.NPC
         {
             _lua.CallFunction("OnBattleUpdate", battleData);
         }
+        public void GotMessage(int playerID, string message)
+        {
+            _lua.CallFunction("OnPrivateMessage", playerID, message);
+        }
 
 
         public void SendPacket(P3DPacket packet, int originID)
