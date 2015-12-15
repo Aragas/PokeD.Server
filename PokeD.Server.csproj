@@ -47,6 +47,7 @@
     <Compile Include="Data\BattleDataTable.cs" />
     <Compile Include="Clients\NPC\NPCLoader.cs" />
     <Compile Include="Data\Prefix.cs" />
+    <Compile Include="Extensions\DateTimeExtensions.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Clients\P3D\P3DPlayer.Settings.cs" />
     <Compile Include="Clients\P3D\P3DPlayer.cs" />

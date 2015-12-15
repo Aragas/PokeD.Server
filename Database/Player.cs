@@ -7,6 +7,7 @@ using PokeD.Core.Extensions;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Data;
+using PokeD.Server.Extensions;
 
 namespace PokeD.Server.Database
 {
@@ -25,7 +26,7 @@ namespace PokeD.Server.Database
 		public string LevelFile{ get; set; }
 
 		public string LastIP{ get; set; }
-		public DateTime LastConnectionTime{ get; set; }
+		public int LastConnectionTime{ get; set; }
 
 		public bool IsUsingCustomWorld{ get; set; }
 
@@ -50,7 +51,8 @@ namespace PokeD.Server.Database
             LevelFile = client.LevelFile;
 
             LastIP = client.IP;
-            LastConnectionTime = client.ConnectionTime;
+
+            LastConnectionTime = client.ConnectionTime.ToUnixTime();
 
             IsUsingCustomWorld = client.UseCustomWorld;
         }
@@ -72,7 +74,7 @@ namespace PokeD.Server.Database
         public string LevelFile { get; set; }
 
         public string LastIP { get; set; }
-        public DateTime LastConnectionTime { get; set; }
+        public int LastConnectionTime { get; set; }
 
         public bool IsUsingCustomWorld { get; set; }
 
@@ -96,7 +98,7 @@ namespace PokeD.Server.Database
             LevelFile = client.LevelFile;
 
             LastIP = client.IP;
-            LastConnectionTime = client.ConnectionTime;
+            LastConnectionTime = client.ConnectionTime.ToUnixTime();
 
             IsUsingCustomWorld = client.UseCustomWorld;
         }
