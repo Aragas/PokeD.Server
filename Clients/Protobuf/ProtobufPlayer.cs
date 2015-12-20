@@ -14,6 +14,7 @@ using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Prng;
 
 using PokeD.Core.Extensions;
+using PokeD.Core.IO;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.Battle;
 using PokeD.Core.Packets.Chat;
@@ -114,7 +115,7 @@ namespace PokeD.Server.Clients.Protobuf
         public ProtobufPlayer(ITCPClient clientWrapper, Server server)
         {
             ClientWrapper = clientWrapper;
-            Stream = new ProtobufStream(ClientWrapper);
+            Stream = new ProtobufOriginStream(ClientWrapper);
             _server = server;
         }
 
@@ -165,7 +166,7 @@ namespace PokeD.Server.Clients.Protobuf
         {
             if (data != null)
             {
-                using (IPacketDataReader reader = new ProtobufDataReader(data))
+                using (PacketDataReader reader = new ProtobufDataReader(data))
                 {
                     var id = reader.Read<VarInt>();
                     var origin = reader.Read<VarInt>();
@@ -174,7 +175,7 @@ namespace PokeD.Server.Clients.Protobuf
                     {
                         if (GamePacketResponses.Packets[id] != null)
                         {
-                            var packet = GamePacketResponses.Packets[id]().ReadPacket(reader);
+                            var packet = GamePacketResponses.Packets[id]().ReadPacket(reader) as ProtobufOriginPacket;
                             packet.Origin = origin;
 
                             HandlePacket(packet);
@@ -295,11 +296,12 @@ namespace PokeD.Server.Clients.Protobuf
         }
 
 
-        private void SendPacket(ProtobufPacket packet, int originID)
+        private void SendPacket(ProtobufOriginPacket packet, int originID)
         {
             packet.Origin = originID;
+            var proto = packet as ProtobufPacket;
 
-            Stream.SendPacket(ref packet);
+           Stream.SendPacket(ref proto);
 
 #if DEBUG
             Sended.Add(packet);
@@ -308,12 +310,17 @@ namespace PokeD.Server.Clients.Protobuf
 
         public void SendPacket(P3DPacket packet, int originID)
         {
-            SendPacket(packet as ProtobufPacket, originID);
+            SendPacket(packet as ProtobufOriginPacket, originID);
         }
 
         public void LoadFromDB(Player data)
         {
-            throw new NotImplementedException();
+            if (ID == 0)
+                ID = data.Id;
+
+            Prefix = data.Prefix;
+
+            UseCustomWorld = data.IsUsingCustomWorld;
         }
 
 

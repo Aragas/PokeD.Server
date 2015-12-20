@@ -119,7 +119,7 @@ namespace PokeD.Server.Clients.SCON
         {
             if (data != null)
             {
-                using (IPacketDataReader reader = new ProtobufDataReader(data))
+                using (PacketDataReader reader = new ProtobufDataReader(data))
                 {
                     var id = reader.Read<VarInt>();
                     var origin = reader.Read<VarInt>();
@@ -128,7 +128,7 @@ namespace PokeD.Server.Clients.SCON
                     {
                         if (SCONPacketResponses.Packets[id] != null)
                         {
-                            var packet = SCONPacketResponses.Packets[id]().ReadPacket(reader);
+                            var packet = SCONPacketResponses.Packets[id]().ReadPacket(reader) as ProtobufOriginPacket;
                             packet.Origin = origin;
 
                             HandlePacket(packet);
