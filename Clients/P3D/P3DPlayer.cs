@@ -4,20 +4,21 @@ using System.Diagnostics;
 using System.Globalization;
 
 using Aragas.Core.Data;
+using Aragas.Core.Packets;
 using Aragas.Core.Wrappers;
 
 using Newtonsoft.Json;
 
-using PokeD.Core.Data;
+using PokeD.Core.Data.P3D;
 using PokeD.Core.Extensions;
 using PokeD.Core.IO;
 using PokeD.Core.Packets;
-using PokeD.Core.Packets.Battle;
-using PokeD.Core.Packets.Chat;
-using PokeD.Core.Packets.Client;
-using PokeD.Core.Packets.Server;
-using PokeD.Core.Packets.Shared;
-using PokeD.Core.Packets.Trade;
+using PokeD.Core.Packets.P3D.Battle;
+using PokeD.Core.Packets.P3D.Chat;
+using PokeD.Core.Packets.P3D.Client;
+using PokeD.Core.Packets.P3D.Server;
+using PokeD.Core.Packets.P3D.Shared;
+using PokeD.Core.Packets.P3D.Trade;
 
 using PokeD.Server.Data;
 using PokeD.Server.Database;
@@ -102,7 +103,7 @@ namespace PokeD.Server.Clients.P3D
         P3DStream Stream { get; }
 
 
-        readonly Server _server;
+        readonly ModuleP3D _module;
 
 
 #if DEBUG
@@ -113,11 +114,11 @@ namespace PokeD.Server.Clients.P3D
 #endif
 
 
-        public P3DPlayer(ITCPClient clientWrapper, Server server)
+        public P3DPlayer(ITCPClient clientWrapper, IServerModule server)
         {
             ClientWrapper = clientWrapper;
             Stream = new P3DStream(ClientWrapper);
-            _server = server;
+            _module = (ModuleP3D) server;
         }
 
 
@@ -142,7 +143,7 @@ namespace PokeD.Server.Clients.P3D
 
                 BattleUpdate();
 
-                if (!Battling && _server.CustomWorldEnabled && UseCustomWorld)
+                if (!Battling && _module.Server.CustomWorldEnabled && UseCustomWorld)
                 {
                     CustomWorld.Update();
                     SendPacket(new WorldDataPacket { DataItems = CustomWorld.GenerateDataItems() }, -1);
@@ -152,7 +153,7 @@ namespace PokeD.Server.Clients.P3D
                 UpdateWatch.Start();
             }
             else
-                _server.RemovePlayer(this);
+                _module.RemoveClient(this);
         }
 
         private void HandleData(string data)
@@ -162,11 +163,11 @@ namespace PokeD.Server.Clients.P3D
                 int id;
                 if (P3DPacket.TryParseID(data, out id))
                 {
-                    if (GamePacketResponses.Packets.Length > id)
+                    if (P3DPacketResponses.Packets.Length > id)
                     {
-                        if (GamePacketResponses.Packets[id] != null)
+                        if (P3DPacketResponses.Packets[id] != null)
                         {
-                            var packet = GamePacketResponses.Packets[id]();
+                            var packet = P3DPacketResponses.Packets[id]();
                             if (packet.TryParseData(data))
                             {
                                 HandlePacket(packet);
@@ -181,7 +182,7 @@ namespace PokeD.Server.Clients.P3D
                             Logger.Log(LogType.GlobalError, $"P3D Reading Error: SCONPacketResponses.Packets[{id}] is null.");
                     }
                     else
-                        Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packets Length {GamePacketResponses.Packets.Length} > Packet ID {id}, Packet Data: {data}.");
+                        Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packets Length {P3DPacketResponses.Packets.Length} > Packet ID {id}, Packet Data: {data}.");
                 }
                 else
                     Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet TryParseID error. Packet Data: {data}.");
@@ -191,98 +192,102 @@ namespace PokeD.Server.Clients.P3D
         }
         private void HandlePacket(P3DPacket packet)
         {
-            switch ((GamePacketTypes)(int) packet.ID)
+            switch ((P3DPacketTypes) (int) packet.ID)
             {
-                case GamePacketTypes.GameData:
+                case P3DPacketTypes.GameData:
                     HandleGameData((GameDataPacket) packet);
                     break;
 
-                case GamePacketTypes.ChatMessagePrivate:
+                case P3DPacketTypes.ChatMessagePrivate:
                     HandlePrivateMessage((ChatMessagePrivatePacket) packet);
                     break;
 
-                case GamePacketTypes.ChatMessageGlobal:
+                case P3DPacketTypes.ChatMessageGlobal:
                     HandleChatMessage((ChatMessageGlobalPacket) packet);
                     break;
 
-                case GamePacketTypes.Ping:
+                case P3DPacketTypes.Ping:
                     LastPing = DateTime.UtcNow;
                     break;
 
-                case GamePacketTypes.GameStateMessage:
+                case P3DPacketTypes.GameStateMessage:
                     HandleGameStateMessage((GameStateMessagePacket) packet);
                     break;
 
 
-                case GamePacketTypes.TradeRequest:
+                case P3DPacketTypes.TradeRequest:
                     HandleTradeRequest((TradeRequestPacket) packet);
                     break;
 
-                case GamePacketTypes.TradeJoin:
+                case P3DPacketTypes.TradeJoin:
                     HandleTradeJoin((TradeJoinPacket) packet);
                     break;
 
-                case GamePacketTypes.TradeQuit:
+                case P3DPacketTypes.TradeQuit:
                     HandleTradeQuit((TradeQuitPacket) packet);
                     break;
 
-                case GamePacketTypes.TradeOffer:
+                case P3DPacketTypes.TradeOffer:
                     HandleTradeOffer((TradeOfferPacket) packet);
                     break;
 
-                case GamePacketTypes.TradeStart:
+                case P3DPacketTypes.TradeStart:
                     HandleTradeStart((TradeStartPacket) packet);
                     break;
 
 
-                case GamePacketTypes.BattleRequest:
+                case P3DPacketTypes.BattleRequest:
                     HandleBattleRequest((BattleRequestPacket) packet);
                     break;
 
-                case GamePacketTypes.BattleJoin:
+                case P3DPacketTypes.BattleJoin:
                     HandleBattleJoin((BattleJoinPacket) packet);
                     break;
 
-                case GamePacketTypes.BattleQuit:
+                case P3DPacketTypes.BattleQuit:
                     HandleBattleQuit((BattleQuitPacket) packet);
                     break;
 
-                case GamePacketTypes.BattleOffer:
+                case P3DPacketTypes.BattleOffer:
                     HandleBattleOffer((BattleOfferPacket) packet);
                     break;
 
-                case GamePacketTypes.BattleStart:
+                case P3DPacketTypes.BattleStart:
                     HandleBattleStart((BattleStartPacket) packet);
                     break;
 
-                case GamePacketTypes.BattleClientData:
+                case P3DPacketTypes.BattleClientData:
                     HandleBattleClientData((BattleClientDataPacket) packet);
                     break;
 
-                case GamePacketTypes.BattleHostData:
+                case P3DPacketTypes.BattleHostData:
                     HandleBattleHostData((BattleHostDataPacket) packet);
                     break;
 
-                case GamePacketTypes.BattlePokemonData:
+                case P3DPacketTypes.BattlePokemonData:
                     HandleBattlePokemonData((BattlePokemonDataPacket) packet);
                     break;
 
 
-                case GamePacketTypes.ServerDataRequest:
+                case P3DPacketTypes.ServerDataRequest:
                     HandleServerDataRequest((ServerDataRequestPacket) packet);
                     break;
             }
         }
 
 
-        public void SendPacket(P3DPacket packet, int originID)
+        public void SendPacket(ProtobufPacket packet, int originID)
         {
-            packet.Origin = originID;
+            var protoOrigin = packet as P3DPacket;
+            if(protoOrigin == null)
+                throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
 
-            Stream.SendPacket(ref packet);
+            protoOrigin.Origin = originID;
+
+            Stream.SendPacket(ref protoOrigin);
 
 #if DEBUG
-            Sended.Add(packet);
+            Sended.Add(protoOrigin);
 #endif
         }
 
@@ -302,7 +307,7 @@ namespace PokeD.Server.Clients.P3D
             if(IsInitialized)
                 return;
 
-            _server.AddPlayer(this);
+            _module.AddClient(this);
             IsInitialized = true;
         }
 
@@ -325,11 +330,8 @@ namespace PokeD.Server.Clients.P3D
                 PokemonSkin,
                 PokemonFacing.ToString(CultureInfo));
         }
-        public GameDataPacket GetDataPacket()
-        {
-            return new GameDataPacket { DataItems = GenerateDataItems() };
-        }
-        
+        public GameDataPacket GetDataPacket() => new GameDataPacket { DataItems = GenerateDataItems() };
+
 
         private void DisconnectAndDispose()
         {

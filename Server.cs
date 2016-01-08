@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-using Aragas.Core.Data;
 using Aragas.Core.Interfaces;
 using Aragas.Core.Wrappers;
 
@@ -15,15 +14,9 @@ using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
 
-using PokeD.Core.Data;
-using PokeD.Core.Packets;
-using PokeD.Core.Packets.Chat;
-using PokeD.Core.Packets.Server;
+using PokeD.Core.Data.PokeD.Monster;
 
 using PokeD.Server.Clients;
-using PokeD.Server.Clients.P3D;
-using PokeD.Server.Clients.Protobuf;
-using PokeD.Server.Clients.SCON;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
 
@@ -34,56 +27,19 @@ namespace PokeD.Server
     {
         const string FileName = "Server.json";
 
-
         #region Settings
 
-        [JsonProperty("Port")]
-        public ushort Port { get; private set; } = 15124;
-
-        [JsonProperty("ProtobufPort")]
-        public ushort ProtobufPort { get; private set; } = 15125;
-
-        [JsonProperty("SCONPort")]
-        public ushort SCONPort { get; private set; } = 15126;
-
-        [JsonProperty("ServerName", NullValueHandling = NullValueHandling.Ignore)]
-        public string ServerName { get; private set; } = "Put name here";
-
-        [JsonProperty("ServerMessage", NullValueHandling = NullValueHandling.Ignore)]
-        public string ServerMessage { get; private set; } = "Put description here";
-
-        [JsonProperty("MaxPlayers")]
-        public int MaxPlayers { get; private set; } = 1000;
-
-        [JsonProperty("EncryptionEnabled")]
-        public bool EncryptionEnabled { get; set; } = true;
-
-        [JsonProperty("SCON_Enabled")]
-        public bool SCON_Enabled { get; set; } = true;
-
-        [JsonProperty("SCON_Password"), JsonConverter(typeof(PasswordHandler))]
-        public PasswordStorage SCON_Password { get; private set; } = new PasswordStorage();
-
         [JsonProperty("World")]
-        World World { get; set; } = new World();
+        public World World { get; set; } = new World();
 
         [JsonProperty("CustomWorldEnabled")]
         public bool CustomWorldEnabled { get; private set; } = true;
 
-        [JsonProperty("MoveCorrectionEnabled")]
-        bool MoveCorrectionEnabled { get; set; } = true;
-
         #endregion Settings
 
-
-        ITCPListener P3DListener { get; set; }
-        ITCPListener ProtobufListener { get; set; }
-        ITCPListener SCONListener { get; set; }
-
+        List<IServerModule> Modules { get; } = new List<IServerModule>();
         
         IThread ListenToConnectionsThread { get; set; }
-        IThread PlayerWatcherThread { get; set; }
-        IThread PlayerCorrectionThread { get; set; }
 
 
         [JsonIgnore]
@@ -96,7 +52,12 @@ namespace PokeD.Server
         IDatabase Database { get; set; }
 
 
-        public Server() { }
+        public Server()
+        {
+            Modules.Add(new ModuleP3D(this));
+            Modules.Add(new ModuleSCON(this));
+            Modules.Add(new ModulePokeD(this));
+        }
 
         private static AsymmetricCipherKeyPair GenerateKeyPair()
         {
@@ -115,40 +76,29 @@ namespace PokeD.Server
             if(!status)
                 Logger.Log(LogType.Warning, "Failed to load Server settings!");
 
-            if (EncryptionEnabled)
-            {
-                Logger.Log(LogType.Info, "Generating RSA key pair.");
-                RSAKeyPair = GenerateKeyPair();
-            }
+
+            Logger.Log(LogType.Info, "Generating RSA key pair.");
+            RSAKeyPair = GenerateKeyPair();
+
 
             const string databasePath = "server";
             Logger.Log(LogType.Info, $"Loading {databasePath}.");
             Database = DatabaseWrapper.Create(databasePath);
             Database.CreateTable<Player>();
 
-            LoadNPCs();
+
+            //LoadNPCs();
 
 
-            Logger.Log(LogType.Info, $"Starting {ServerName}.");
-
-
+            Logger.Log(LogType.Info, $"Starting Server.");
+            
             ListenToConnectionsThread = ThreadWrapper.CreateThread(ListenToConnectionsCycle);
             ListenToConnectionsThread.Name = "ListenToConnectionsThread";
             ListenToConnectionsThread.IsBackground = true;
             ListenToConnectionsThread.Start();
 
-            if (MoveCorrectionEnabled)
-            {
-                PlayerWatcherThread = ThreadWrapper.CreateThread(PlayerWatcherCycle);
-                PlayerWatcherThread.Name = "PlayerWatcherThread";
-                PlayerWatcherThread.IsBackground = true;
-                PlayerWatcherThread.Start();
-
-                PlayerCorrectionThread = ThreadWrapper.CreateThread(PlayerCorrectionCycle);
-                PlayerCorrectionThread.Name = "PlayerCorrectionThread";
-                PlayerCorrectionThread.IsBackground = true;
-                PlayerCorrectionThread.Start();
-            }
+            foreach (var module in Modules)
+                module.Start();
 
             return status;
         }
@@ -158,22 +108,19 @@ namespace PokeD.Server
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save Server settings!");
 
-            Logger.Log(LogType.Info, $"Stopping {ServerName}.");
+            Logger.Log(LogType.Info, $"Stopping Server.");
 
 
             if (ListenToConnectionsThread.IsRunning)
                 ListenToConnectionsThread.Abort();
 
-            if (PlayerWatcherThread.IsRunning)
-                PlayerWatcherThread.Abort();
-
-            if (PlayerCorrectionThread.IsRunning)
-                PlayerCorrectionThread.Abort();
+            foreach (var module in Modules)
+                module.Stop();
 
 
             Dispose();
 
-            Logger.Log(LogType.Info, $"Stopped {ServerName}.");
+            Logger.Log(LogType.Info, $"Stopped Server.");
 
             return status;
         }
@@ -182,42 +129,22 @@ namespace PokeD.Server
         public static long ClientConnectionsThreadTime { get; private set; }
         private void ListenToConnectionsCycle()
         {
-            P3DListener = TCPListenerWrapper.CreateTCPListener(Port);
-            P3DListener.Start();
-
-            if (ProtobufPort != 0)
-            {
-                ProtobufListener = TCPListenerWrapper.CreateTCPListener(ProtobufPort);
-                ProtobufListener.Start();
-            }
-
-            if (SCON_Enabled && SCONPort != 0)
-            {
-                SCONListener = TCPListenerWrapper.CreateTCPListener(SCONPort);
-                SCONListener.Start();
-            }
+            foreach (var module in Modules)
+                module.StartListen();
+            
 
             var watch = Stopwatch.StartNew();
             while (!IsDisposing)
             {
-                if (P3DListener.AvailableClients)
-                    PlayersJoining.Add(new P3DPlayer(P3DListener.AcceptTCPClient(), this));
-
-                if (ProtobufListener != null && ProtobufListener.AvailableClients)
-                    if (ProtobufListener.AvailableClients)
-                        PlayersJoining.Add(new ProtobufPlayer(ProtobufListener.AcceptTCPClient(), this));
-
-                if (SCONListener != null && SCONListener.AvailableClients)
-                    if (SCONListener.AvailableClients)
-                        SCONClients.Add(new SCONClient(SCONListener.AcceptTCPClient(), this));
-
+                foreach (var module in Modules)
+                    module.CheckListener();
 
 
                 if (watch.ElapsedMilliseconds < 250)
                 {
                     ClientConnectionsThreadTime = watch.ElapsedMilliseconds;
 
-                    var time = (int)(250 - watch.ElapsedMilliseconds);
+                    var time = (int) (250 - watch.ElapsedMilliseconds);
                     if (time < 0) time = 0;
                     ThreadWrapper.Sleep(time);
                 }
@@ -228,233 +155,12 @@ namespace PokeD.Server
         }
 
 
-        public static long PlayerWatcherThreadTime { get; private set; }
-        private void PlayerWatcherCycle()
-        {
-            var watch = Stopwatch.StartNew();
-            while (!IsDisposing)
-            {
-                var players = new List<IClient>(Players.GetConcreteTypeEnumerator<P3DPlayer, ProtobufPlayer>());
-
-                foreach (var player in players.Where(player => player.LevelFile != null && !NearPlayers.ContainsKey(player.LevelFile)))
-                    NearPlayers.TryAdd(player.LevelFile, null);
-
-                foreach (var level in NearPlayers.Keys)
-                {
-                    var playerList = new List<IClient>();
-                    foreach (var player in players.Where(player => level == player.LevelFile))
-                        playerList.Add(player);
-
-                    var array = playerList.ToArray();
-                    NearPlayers.AddOrUpdate(level, array, (s, players1) => players1 = array);
-                }
-
-
-
-                if (watch.ElapsedMilliseconds < 400)
-                {
-                    PlayerWatcherThreadTime = watch.ElapsedMilliseconds;
-
-                    var time = (int)(400 - watch.ElapsedMilliseconds);
-                    if (time < 0) time = 0;
-                    ThreadWrapper.Sleep(time);
-                }
-                watch.Reset();
-                watch.Start();
-            }
-        }
-
-
-        public static long PlayerCorrectionThreadTime { get; private set; }
-        private void PlayerCorrectionCycle()
-        {
-            var watch = Stopwatch.StartNew();
-            while (!IsDisposing)
-            {
-                foreach (var nearPlayers in NearPlayers.Where(nearPlayers => nearPlayers.Value != null))
-                    foreach (var player in nearPlayers.Value.Where(player => player.Moving))
-                        foreach (var playerToSend in nearPlayers.Value.Where(playerToSend => player != playerToSend))
-                            playerToSend.SendPacket(player.GetDataPacket(), player.ID);
-
-                /*
-                for (int i = 0; i < Players.Count; i++)
-                {
-                    var player1 = Players[i];
-                    for (int j = 0; j < Players.Count; j++)
-                    {
-                        var player2 = Players[j];
-
-                        if(player1 != player2)
-                            if (player1.IsMoving)
-                                SendToClient(player2, player1.GetDataPacket(), player1.ID);
-                        //var nearPlayer = Players[i];
-                        //if (nearPlayer.IsMoving)
-                        //    SendToAllClients(nearPlayer.GetDataPacket(), nearPlayer.ID);
-                    }
-                    //if (nearPlayer.IsMoving)
-                    //    SendToAllClients(nearPlayer.GetDataPacket(), nearPlayer.ID);
-                }
-                */
-
-
-                if (watch.ElapsedMilliseconds < 5)
-                {
-                    PlayerCorrectionThreadTime = watch.ElapsedMilliseconds;
-
-                    var time = (int)(5 - watch.ElapsedMilliseconds);
-                    if (time < 0) time = 0;
-                    ThreadWrapper.Sleep(time);
-                }
-                watch.Reset();
-                watch.Start();
-            }
-        }
-
-
-        Stopwatch UpdateWatch = Stopwatch.StartNew();
         public void Update()
         {
-            UpdateNPC();
-
-
-            #region Player Filtration
-
-            for (var i = 0; i < PlayersToAdd.Count; i++)
-            {
-                var playerToAdd = PlayersToAdd[i];
-
-                Players.Add(playerToAdd);
-                PlayersToAdd.Remove(playerToAdd);
-
-                if (playerToAdd.ID != 0)
-                {
-                    Logger.Log(LogType.Server, $"The player {playerToAdd.Name} joined the game from IP {playerToAdd.IP}.");
-                    SendToAllClients(new ChatMessageGlobalPacket { Message = $"Player {playerToAdd.Name} joined the game!" });
-                }
-            }
-
-            for (var i = 0; i < PlayersToRemove.Count; i++)
-            {
-                var playerToRemove = PlayersToRemove[i];
-
-                Players.Remove(playerToRemove);
-                PlayersJoining.Remove(playerToRemove);
-                PlayersToRemove.Remove(playerToRemove);
-
-                if (playerToRemove.ID != 0)
-                {
-                    SendToAllClients(new DestroyPlayerPacket { PlayerID = playerToRemove.ID });
-
-                    Logger.Log(LogType.Server, $"The player {playerToRemove.Name} disconnected, playtime was {DateTime.Now - playerToRemove.ConnectionTime:hh\\:mm\\:ss}.");
-                    SendToAllClients(new ChatMessageGlobalPacket { Message = $"Player {playerToRemove.Name} disconnected!" });
-                }
-
-                playerToRemove.Dispose();
-            }
-
-            #endregion Player Filtration
-
+            //UpdateNPC();
             
-            #region Player Updating
-
-            // Update actual players
-            for (var i = 0; i < Players.Count; i++)
-                Players[i]?.Update();
-            
-            // Update joining players
-            for (var i = 0; i < PlayersJoining.Count; i++)
-                PlayersJoining[i]?.Update();
-
-            // Update SCON clients
-            for (var i = 0; i < SCONClients.Count; i++)
-                SCONClients[i]?.Update();
-
-            #endregion Player Updating
-
-
-            #region Packet Sending
-
-            PlayerPacketP3DOrigin packetToPlayer;
-            while (!IsDisposing && PacketsToPlayer.TryDequeue(out packetToPlayer))
-                packetToPlayer.Player.SendPacket(packetToPlayer.Packet, packetToPlayer.OriginID);
-            
-            PacketP3DOrigin packetToAllPlayers;
-            while (!IsDisposing && PacketsToAllPlayers.TryDequeue(out packetToAllPlayers))
-                for (var i = 0; i < Players.Count; i++)
-                    Players[i].SendPacket(packetToAllPlayers.Packet, packetToAllPlayers.OriginID);
-
-            #endregion Packet Sending
-
-
-
-            if (UpdateWatch.ElapsedMilliseconds < 1000)
-                return;
-
-            for (var i = 0; i < Players.Count; i++)
-            {
-                var player = Players[i];
-                if(player == null) continue;
-
-                if (!player.UseCustomWorld)
-                    SendToClient(player, new WorldDataPacket { DataItems = World.GenerateDataItems() }, -1);
-            }
-
-            UpdateWatch.Reset();
-            UpdateWatch.Start();
-        }
-
-
-        public void SendToClient(int destinationID, P3DPacket packet, int originID)
-        {
-            SendToClient(GetClient(destinationID), packet, originID);
-        }
-        public void SendToClient(IClient player, P3DPacket packet, int originID)
-        {
-            if (player != null)
-                PacketsToPlayer.Enqueue(new PlayerPacketP3DOrigin(player, ref packet, originID));
-        }
-        public void SendToAllClients(P3DPacket packet, int originID = -1)
-        {
-            if (originID != -1 && (packet is ChatMessageGlobalPacket || packet is ChatMessagePrivatePacket))
-                if (MutedPlayers.ContainsKey(originID) && MutedPlayers[originID].Count > 0)
-                {
-                    for (var i = 0; i < Players.Count; i++)
-                    {
-                        var player = Players[i];
-                        if (!MutedPlayers[originID].Contains(player.ID))
-                            PacketsToPlayer.Enqueue(new PlayerPacketP3DOrigin(player, ref packet, originID));
-                    }
-
-                    return;
-                }
-
-            PacketsToAllPlayers.Enqueue(new PacketP3DOrigin(ref packet, originID));
-        }
-        
-
-        public void SendPrivateChatMessageToClient(int destinationID, string message, int originID)
-        {
-            SendPrivateChatMessageToClient(GetClient(destinationID), message, originID);
-        }
-        public void SendPrivateChatMessageToClient(IClient player, string message, int originID)
-        {
-            if (player != null)
-                PacketsToPlayer.Enqueue(new PlayerPacketP3DOrigin(player, new ChatMessagePrivatePacket { DataItems = new DataItems(message) }, originID));
-        }
-
-        public void SendServerMessageToAllClients(string message)
-        {
-            for (var i = 0; i < Players.Count; i++)
-                Players[i].SendPacket(new ServerMessagePacket { Message = message }, -1);
-        }
-        public void SendGlobalChatMessageToAllClients(string message)
-        {
-            for (var i = 0; i < Players.Count; i++)
-            {
-                var player = Players[i];
-                if(player.ChatReceiving)
-                    player.SendPacket(new ChatMessageGlobalPacket { Message = message }, -1);
-            }
+            foreach (var module in Modules)
+                module.Update();
         }
 
         
@@ -466,39 +172,50 @@ namespace PokeD.Server
             IsDisposing = true;
 
 
-            for (var i = 0; i < PlayersJoining.Count; i++)
-                PlayersJoining[i].Dispose();
+            World.Dispose();
+        }
 
-            for (var i = 0; i < Players.Count; i++)
-            {
-                Players[i].SendPacket(new ServerClosePacket { Reason = "Closing server!" }, -1);
-                Players[i].Dispose();
-            }
-            for (var i = 0; i < PlayersToAdd.Count; i++)
-            {
-                PlayersToAdd[i].SendPacket(new ServerClosePacket { Reason = "Closing server!" }, -1);
-                PlayersToAdd[i].Dispose();
-            }
+        public void ClientConnected(IServerModule caller, IClient client)
+        {
+            foreach (var module in Modules.Where(module => caller != module))
+                module.OtherConnected(client);
+        }
+        public void ClientDisconnected(IServerModule caller, IClient client)
+        {
+            foreach (var module in Modules.Where(module => caller != module))
+                module.OtherDisconnected(client);
+        }
 
-            // Do not dispose PlayersToRemove!
+        public void ClientServerMessage(IServerModule caller, string message)
+        {
+            foreach (var module in Modules.Where(module => caller != module))
+                module.SendServerMessage(message);
+        }
+        public void ClientPrivateMessage(IServerModule caller, IClient sender, IClient destClient, string message)
+        {
+            foreach (var module in Modules.Where(module => caller != module))
+                module.SendPrivateMessage(sender, destClient, message);
+        }
+        public void ClientGlobalMessage(IServerModule caller, IClient sender, string message)
+        {
+            foreach (var module in Modules.Where(module => caller != module))
+                module.SendGlobalMessage(sender, message);
+        }
 
-
-            Players?.Clear();
-            PlayersJoining?.Clear();
-            PlayersToAdd?.Clear();
-            PlayersToRemove?.Clear();
-
-            if (PacketsToPlayer != null)
-                PacketsToPlayer = null;
-            
-            if (PacketsToAllPlayers != null)
-                PacketsToAllPlayers = null;
-
-            World?.Dispose();
-
-            NearPlayers?.Clear();
-
-            MutedPlayers?.Clear();
+        public void ClientTradeOffer(IServerModule caller, IClient client, Monster monster, IClient destClient)
+        {
+            foreach (var module in Modules.Where(module => caller != module))
+                module.SendTradeRequest(client, monster, destClient);
+        }
+        public void ClientTradeConfirm(IServerModule caller, IClient client, IClient destClient)
+        {
+            foreach (var module in Modules.Where(module => caller != module))
+                module.SendTradeConfirm(client, destClient);
+        }
+        public void ClientTradeCancel(IServerModule caller, IClient client, IClient destClient)
+        {
+            foreach (var module in Modules.Where(module => caller != module))
+                module.SendTradeCancel(client, destClient);
         }
     }
 }

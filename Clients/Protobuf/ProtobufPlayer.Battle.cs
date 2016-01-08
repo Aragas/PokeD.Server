@@ -1,6 +1,7 @@
+/*
 using System;
 
-using PokeD.Core.Packets.Battle;
+using PokeD.Core.Packets.P3D.Battle;
 
 namespace PokeD.Server.Clients.Protobuf
 {
@@ -22,3 +23,4 @@ namespace PokeD.Server.Clients.Protobuf
         }
     }
 }
+*/

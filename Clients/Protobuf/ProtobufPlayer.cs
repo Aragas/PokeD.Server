@@ -1,9 +1,9 @@
-﻿using System;
+﻿/*
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
 using Aragas.Core.Data;
-using Aragas.Core.Interfaces;
 using Aragas.Core.IO;
 using Aragas.Core.Packets;
 using Aragas.Core.Wrappers;
@@ -16,13 +16,14 @@ using Org.BouncyCastle.Crypto.Prng;
 using PokeD.Core.Extensions;
 using PokeD.Core.IO;
 using PokeD.Core.Packets;
-using PokeD.Core.Packets.Battle;
-using PokeD.Core.Packets.Chat;
-using PokeD.Core.Packets.Client;
-using PokeD.Core.Packets.Encryption;
-using PokeD.Core.Packets.Server;
-using PokeD.Core.Packets.Shared;
-using PokeD.Core.Packets.Trade;
+using PokeD.Core.Packets.P3D.Battle;
+using PokeD.Core.Packets.P3D.Chat;
+using PokeD.Core.Packets.P3D.Client;
+using PokeD.Core.Packets.P3D.Encryption;
+using PokeD.Core.Packets.P3D.Server;
+using PokeD.Core.Packets.P3D.Shared;
+using PokeD.Core.Packets.P3D.Trade;
+
 using PokeD.Server.Data;
 using PokeD.Server.Database;
 
@@ -77,7 +78,7 @@ namespace PokeD.Server.Clients.Protobuf
         public Prefix Prefix { get; private set; }
 
         [JsonIgnore]
-        public bool EncryptionEnabled => _server.EncryptionEnabled;
+        public bool EncryptionEnabled => false;// _server.EncryptionEnabled;
 
         [JsonIgnore]
         public string IP => ClientWrapper.IP;
@@ -130,8 +131,9 @@ namespace PokeD.Server.Clients.Protobuf
                     var dataLength = Stream.ReadVarInt();
                     if (dataLength == 0)
                     {
-                        Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Length size is 0. Disconnecting IClient {Name}.");
-                        _server.RemovePlayer(this, "Packet Length size is 0!");
+                        Logger.Log(LogType.GlobalError,
+                            $"Protobuf Reading Error: Packet Length size is 0. Disconnecting IClient {Name}.");
+                        //_server.RemovePlayer(this, "Packet Length size is 0!");
                         return;
                     }
 
@@ -159,7 +161,7 @@ namespace PokeD.Server.Clients.Protobuf
                 UpdateWatch.Start();
             }
             else
-                _server.RemovePlayer(this);
+                ; //_server.RemovePlayer(this);
         }
 
         private void HandleData(byte[] data)
@@ -171,11 +173,11 @@ namespace PokeD.Server.Clients.Protobuf
                     var id = reader.Read<VarInt>();
                     var origin = reader.Read<VarInt>();
 
-                    if (GamePacketResponses.Packets.Length > id)
+                    if (P3DPacketResponses.Packets.Length > id)
                     {
-                        if (GamePacketResponses.Packets[id] != null)
+                        if (P3DPacketResponses.Packets[id] != null)
                         {
-                            var packet = GamePacketResponses.Packets[id]().ReadPacket(reader) as ProtobufOriginPacket;
+                            var packet = P3DPacketResponses.Packets[id]().ReadPacket(reader) as ProtobufOriginPacket;
                             packet.Origin = origin;
 
                             HandlePacket(packet);
@@ -187,13 +189,13 @@ namespace PokeD.Server.Clients.Protobuf
                         else
                         {
                             Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: GamePacketResponses.Packets[{id}] is null. Disconnecting IClient {Name}.");
-                            _server.RemovePlayer(this, $"Packet ID {id} is not correct!");
+                            //_server.RemovePlayer(this, $"Packet ID {id} is not correct!");
                         }
                     }
                     else
                     {
                         Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
-                        _server.RemovePlayer(this, $"Packet ID {id} is not correct!");
+                        //_server.RemovePlayer(this, $"Packet ID {id} is not correct!");
                     }
                 }
             }
@@ -202,83 +204,83 @@ namespace PokeD.Server.Clients.Protobuf
         }
         private void HandlePacket(ProtobufPacket packet)
         {
-            switch ((GamePacketTypes) (int) packet.ID)
+            switch ((P3DPacketTypes) (int) packet.ID)
             {
-                case GamePacketTypes.JoiningGameRequest:
+                case P3DPacketTypes.JoiningGameRequest:
                     HandleJoiningGameRequest((JoiningGameRequestPacket) packet);
                     break;
 
 
-                case GamePacketTypes.EncryptionResponse:
+                case P3DPacketTypes.EncryptionResponse:
                     HandleEncryptionResponse((EncryptionResponsePacket) packet);
                     break;
 
 
-                case GamePacketTypes.GameData:
+                case P3DPacketTypes.GameData:
                     HandleGameData((GameDataPacket) packet);
                     break;
 
-                case GamePacketTypes.ChatMessagePrivate:
+                case P3DPacketTypes.ChatMessagePrivate:
                     HandlePrivateMessage((ChatMessagePrivatePacket) packet);
                     break;
-                case GamePacketTypes.ChatMessageGlobal:
+                case P3DPacketTypes.ChatMessageGlobal:
                     HandleChatMessage((ChatMessageGlobalPacket) packet);
                     break;
 
-                case GamePacketTypes.Ping:
+                case P3DPacketTypes.Ping:
                     LastPing = DateTime.UtcNow;
                     break;
 
-                case GamePacketTypes.GameStateMessage:
+                case P3DPacketTypes.GameStateMessage:
                     HandleGameStateMessage((GameStateMessagePacket) packet);
                     break;
 
 
-                case GamePacketTypes.TradeRequest:
+                case P3DPacketTypes.TradeRequest:
                     HandleTradeRequest((TradeRequestPacket) packet);
                     break;
-                case GamePacketTypes.TradeJoin:
+                case P3DPacketTypes.TradeJoin:
                     HandleTradeJoin((TradeJoinPacket) packet);
                     break;
-                case GamePacketTypes.TradeQuit:
+                case P3DPacketTypes.TradeQuit:
                     HandleTradeQuit((TradeQuitPacket) packet);
                     break;
-                case GamePacketTypes.TradeOffer:
+                case P3DPacketTypes.TradeOffer:
                     HandleTradeOffer((TradeOfferPacket) packet);
                     break;
-                case GamePacketTypes.TradeStart:
+                case P3DPacketTypes.TradeStart:
                     HandleTradeStart((TradeStartPacket) packet);
                     break;
 
 
-                case GamePacketTypes.BattleRequest:
+                case P3DPacketTypes.BattleRequest:
                     HandleBattleRequest((BattleRequestPacket) packet);
                     break;
-                case GamePacketTypes.BattleJoin:
+                case P3DPacketTypes.BattleJoin:
                     HandleBattleJoin((BattleJoinPacket) packet);
                     break;
-                case GamePacketTypes.BattleQuit:
+                case P3DPacketTypes.BattleQuit:
                     HandleBattleQuit((BattleQuitPacket) packet);
                     break;
-                case GamePacketTypes.BattleOffer:
+                case P3DPacketTypes.BattleOffer:
                     HandleBattleOffer((BattleOfferPacket) packet);
                     break;
-                case GamePacketTypes.BattleStart:
+                case P3DPacketTypes.BattleStart:
                     HandleBattleStart((BattleStartPacket) packet);
                     break;
 
-                case GamePacketTypes.BattleClientData:
+                case P3DPacketTypes.BattleClientData:
                     HandleBattleClientData((BattleClientDataPacket) packet);
                     break;
-                case GamePacketTypes.BattleHostData:
+                case P3DPacketTypes.BattleHostData:
                     HandleBattleHostData((BattleHostDataPacket) packet);
                     break;
-                case GamePacketTypes.BattlePokemonData:
+                case P3DPacketTypes.BattlePokemonData:
                     HandleBattlePokemonData((BattlePokemonDataPacket) packet);
                     break;
 
 
-                case GamePacketTypes.ServerDataRequest:
+                case P3DPacketTypes.ServerDataRequest:
                     HandleServerDataRequest((ServerDataRequestPacket) packet);
                     break;
             }
@@ -300,15 +302,17 @@ namespace PokeD.Server.Clients.Protobuf
         {
             packet.Origin = originID;
             var proto = packet as ProtobufPacket;
+            if (proto == null)
+                throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
 
-           Stream.SendPacket(ref proto);
+            Stream.SendPacket(ref proto);
 
 #if DEBUG
             Sended.Add(packet);
 #endif
         }
 
-        public void SendPacket(P3DPacket packet, int originID)
+        public void SendPacket(ProtobufPacket packet, int originID)
         {
             SendPacket(packet as ProtobufOriginPacket, originID);
         }
@@ -368,3 +372,4 @@ namespace PokeD.Server.Clients.Protobuf
         }
     }
 }
+*/

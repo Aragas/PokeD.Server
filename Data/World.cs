@@ -5,7 +5,7 @@ using Aragas.Core.Interfaces;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-using PokeD.Core.Data;
+using PokeD.Core.Data.P3D;
 
 namespace PokeD.Server.Data
 {

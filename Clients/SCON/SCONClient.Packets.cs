@@ -10,7 +10,7 @@ using Org.BouncyCastle.Crypto.Prng;
 using PCLStorage;
 
 using PokeD.Core;
-using PokeD.Core.Data.Structs;
+using PokeD.Core.Data.SCON;
 using PokeD.Core.Extensions;
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
@@ -37,7 +37,7 @@ namespace PokeD.Server.Clients.SCON
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                var publicKey = _server.RSAKeyPair.PublicKeyToByteArray();
+                var publicKey = _module.Server.RSAKeyPair.PublicKeyToByteArray();
 
                 VerificationToken = new byte[4];
                 var drg = new DigestRandomGenerator(new Sha512Digest());
@@ -55,7 +55,7 @@ namespace PokeD.Server.Clients.SCON
             {
                 if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
                 {                 
-                    var pkcs = new PKCS1Signer(_server.RSAKeyPair);
+                    var pkcs = new PKCS1Signer(_module.Server.RSAKeyPair);
 
                     var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
                     for (int i = 0; i < VerificationToken.Length; i++)
@@ -83,13 +83,13 @@ namespace PokeD.Server.Clients.SCON
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.RemoteClientEnabled))
             {
-                if (_server.SCON_Password.Hash == packet.PasswordHash)
+                if (_module.SCON_Password.Hash == packet.PasswordHash)
                 {
                     Authorized = true;
                     SendPacket(new AuthorizationCompletePacket());
 
                     IsInitialized = true;
-                    _server.AddSCON(this);
+                    _module.AddClient(this);
                 }
                 else
                     SendPacket(new AuthorizationDisconnectPacket { Reason = "Password not correct!" });
@@ -106,7 +106,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            _server.ExecuteCommand(packet.Command);
+            _module.ExecuteCommand(packet.Command);
         }
 
         private void HandleStartChatReceiving(StartChatReceivingPacket packet)
@@ -138,7 +138,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            SendPacket(new PlayerInfoListResponsePacket { PlayerInfoList = new PlayerInfoList(_server.GetAllClientsInfo()) });
+            SendPacket(new PlayerInfoListResponsePacket { PlayerInfos = _module.Server.GetAllClientsInfo() });
         }
 
         private void HandleLogListRequest(LogListRequestPacket packet)
@@ -155,7 +155,7 @@ namespace PokeD.Server.Clients.SCON
             foreach (var file in list)
                 logs.Add(new Log { LogFileName = file.Name });
             
-            SendPacket(new LogListResponsePacket { LogList = new LogList(logs.ToArray()) });
+            SendPacket(new LogListResponsePacket { Logs = logs.ToArray() });
         }
         private void HandleLogFileRequest(LogFileRequestPacket packet)
         {
@@ -187,7 +187,7 @@ namespace PokeD.Server.Clients.SCON
             foreach (var file in list)
                 crashLogs.Add(new Log {LogFileName = file.Name});
 
-            SendPacket(new CrashLogListResponsePacket {CrashLogList = new LogList(crashLogs.ToArray())});
+            SendPacket(new CrashLogListResponsePacket { CrashLogs = crashLogs.ToArray() });
         }
 
         private void HandleCrashLogFileRequest(CrashLogFileRequestPacket packet)
@@ -214,7 +214,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            SendPacket(new PlayerDatabaseListResponsePacket { PlayerDatabaseList = new PlayerDatabaseList() });
+            SendPacket(new PlayerDatabaseListResponsePacket { PlayerDatabases = new PlayerDatabase[0] });
         }
 
         private void HandleBanListRequest(BanListRequestPacket packet)
@@ -225,7 +225,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            SendPacket(new BanListResponsePacket { BanList = new BanList() });
+            SendPacket(new BanListResponsePacket { Bans = new Ban[0] });
         }
 
         private void HandleUploadLuaToServer(UploadLuaToServerPacket packet)
@@ -234,7 +234,7 @@ namespace PokeD.Server.Clients.SCON
         }
         private void HandleReloadNPCs(ReloadNPCsPacket packet)
         {
-            _server.ReloadNPCs();
+            //_module.Server.ReloadNPCs();
         }
     }
 }

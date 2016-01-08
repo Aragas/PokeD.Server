@@ -1,7 +1,7 @@
-﻿using PokeD.Core.Packets.Battle;
-using PokeD.Core.Packets.Chat;
-using PokeD.Core.Packets.Shared;
-using PokeD.Core.Packets.Trade;
+﻿using PokeD.Core.Packets.P3D.Battle;
+using PokeD.Core.Packets.P3D.Chat;
+using PokeD.Core.Packets.P3D.Shared;
+using PokeD.Core.Packets.P3D.Trade;
 
 namespace PokeD.Server.Clients.NPC
 {

@@ -3,13 +3,13 @@ using System.Linq;
 
 using Aragas.Core.Data;
 
-using PokeD.Core.Data;
-using PokeD.Core.Packets.Battle;
-using PokeD.Core.Packets.Chat;
-using PokeD.Core.Packets.Client;
-using PokeD.Core.Packets.Server;
-using PokeD.Core.Packets.Shared;
-using PokeD.Core.Packets.Trade;
+using PokeD.Core.Data.P3D;
+using PokeD.Core.Packets.P3D.Battle;
+using PokeD.Core.Packets.P3D.Chat;
+using PokeD.Core.Packets.P3D.Client;
+using PokeD.Core.Packets.P3D.Server;
+using PokeD.Core.Packets.P3D.Shared;
+using PokeD.Core.Packets.P3D.Trade;
 
 namespace PokeD.Server.Clients.P3D
 {
@@ -112,10 +112,10 @@ namespace PokeD.Server.Clients.P3D
         private void HandleGameData(GameDataPacket packet)
         {
             ParseGameData(packet);
-            _server.UpdateDBPlayer(this);
+            _module.Server.UpdateDBPlayer(this);
 
             if(!Moving)
-                _server.SendToAllClients(packet, packet.Origin);
+                _module.P3DPlayerSendToAllClients(packet, packet.Origin);
 
             // if GameJoltID == 0, initialize in login
             if (!IsInitialized)// && GameJoltID != 0)
@@ -135,32 +135,35 @@ namespace PokeD.Server.Clients.P3D
             else
             {
                 Logger.LogChatMessage(Name, packet.Message);
-                _server.SendToAllClients(new ChatMessageGlobalPacket { Message = packet.Message }, packet.Origin);
+                _module.SendGlobalMessage(this, packet.Message);
             }
         }
         private void HandlePrivateMessage(ChatMessagePrivatePacket packet)
         {
-            var destinationPlayerID = _server.GetClientID(packet.DestinationPlayerName);
-            if (destinationPlayerID != -1)
+            var destClient = _module.Server.GetClient(packet.DestinationPlayerName);
+            if (destClient != null)
             {
-                _server.SendToClient(destinationPlayerID, new ChatMessagePrivatePacket { DataItems = new DataItems(packet.Message) }, packet.Origin);
-                _server.SendToClient(packet.Origin, new ChatMessagePrivatePacket { DataItems = packet.DataItems }, packet.Origin);
+                _module.SendPrivateMessage(this, destClient, packet.Message);
+                _module.SendPrivateMessage(destClient, this, packet.Message);
+
+                //_module.SendToClient(destinationPlayerID, new ChatMessagePrivatePacket { DataItems = new DataItems(packet.Message) }, packet.Origin);
+                //_module.SendToClient(packet.Origin, new ChatMessagePrivatePacket { DataItems = packet.DataItems }, packet.Origin);
             }
             else
-                _server.SendToClient(packet.Origin, new ChatMessageGlobalPacket { Message = $"The player with the name \"{packet.DestinationPlayerName}\" doesn't exist." }, -1);
+                SendPacket(new ChatMessageGlobalPacket { Message = $"The player with the name \"{packet.DestinationPlayerName}\" doesn't exist." }, -1);
         }
 
 
         private void HandleGameStateMessage(GameStateMessagePacket packet)
         {
-            var playerName = _server.GetClientName(packet.Origin);
+            var playerName = _module.Server.GetClientName(packet.Origin);
 
             if (!string.IsNullOrEmpty(playerName))
             {
                 var message = $"The player {playerName} {packet.EventMessage}";
 
                 Logger.Log(LogType.Server, message);
-                _server.SendGlobalChatMessageToAllClients(message);
+                _module.SendServerMessage(message);
             }
         }
 
@@ -168,24 +171,30 @@ namespace PokeD.Server.Clients.P3D
         private void HandleTradeRequest(TradeRequestPacket packet)
         {
             // XNOR
-            if(IsGameJoltPlayer == _server.GetClient(packet.DestinationPlayerID).IsGameJoltPlayer)
-                _server.SendToClient(packet.DestinationPlayerID, new TradeRequestPacket(), packet.Origin);
+            if (IsGameJoltPlayer == _module.Server.GetClient(packet.DestinationPlayerID).IsGameJoltPlayer)
+            {
+                _module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeRequestPacket(), packet.Origin);
+                //_module.SendTradeRequest(this, packet.DataItems, packet.Origin);
+            }
         }
         private void HandleTradeJoin(TradeJoinPacket packet)
         {
-            _server.SendToClient(packet.DestinationPlayerID, new TradeJoinPacket(), packet.Origin);
+            _module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeJoinPacket(), packet.Origin);
         }
         private void HandleTradeQuit(TradeQuitPacket packet)
         {
-            _server.SendToClient(packet.DestinationPlayerID, new TradeQuitPacket(), packet.Origin);
+            //_module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeQuitPacket(), packet.Origin);
+            _module.SendTradeCancel(this, _module.Server.GetClient(packet.DestinationPlayerID));
         }
         private void HandleTradeOffer(TradeOfferPacket packet)
         {
-            _server.SendToClient(packet.DestinationPlayerID, new TradeOfferPacket { DataItems = new DataItems(packet.TradeData) }, packet.Origin);
+            //_module.SendToClient(packet.DestinationPlayerID, new TradeOfferPacket { DataItems = new DataItems(packet.TradeData) }, packet.Origin);
+            _module.SendTradeRequest(this, ModuleP3D.DataItemsToMonster(packet.DataItems), _module.Server.GetClient(packet.DestinationPlayerID));
         }
         private void HandleTradeStart(TradeStartPacket packet)
         {
-            _server.SendToClient(packet.DestinationPlayerID, new TradeStartPacket(), packet.Origin);
+            //_module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeStartPacket(), packet.Origin);
+            _module.SendTradeConfirm(this, _module.Server.GetClient(packet.DestinationPlayerID));
         }
 
 
@@ -195,7 +204,7 @@ namespace PokeD.Server.Clients.P3D
             BattleLastPacket = DateTime.UtcNow;
             Battling = true;
 
-            _server.SendToClient(packet.DestinationPlayerID, new BattleClientDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
+            _module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleClientDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
         }
         private void HandleBattleHostData(BattleHostDataPacket packet)
         {
@@ -203,51 +212,51 @@ namespace PokeD.Server.Clients.P3D
             BattleLastPacket = DateTime.UtcNow;
             Battling = true;
 
-            _server.SendToClient(packet.DestinationPlayerID, new BattleHostDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
+            _module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleHostDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
         }
         private void HandleBattleJoin(BattleJoinPacket packet)
         {
-            _server.SendToClient(packet.DestinationPlayerID, new BattleJoinPacket() , packet.Origin);
+            _module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleJoinPacket() , packet.Origin);
         }
         private void HandleBattleOffer(BattleOfferPacket packet)
         {
-            _server.SendToClient(packet.DestinationPlayerID, new BattleOfferPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
+            _module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleOfferPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
         }
         private void HandleBattlePokemonData(BattlePokemonDataPacket packet)
         {
             BattleLastPacket = DateTime.UtcNow;
 
-            _server.SendToClient(packet.DestinationPlayerID, new BattlePokemonDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
+            _module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattlePokemonDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
         }
         private void HandleBattleQuit(BattleQuitPacket packet)
         {
             Battling = false;
 
-            _server.SendToClient(packet.DestinationPlayerID, new BattleQuitPacket(), packet.Origin);
+            _module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleQuitPacket(), packet.Origin);
         }
         private void HandleBattleRequest(BattleRequestPacket packet)
         {
-            _server.SendToClient(packet.DestinationPlayerID, new BattleRequestPacket(), packet.Origin);
+            _module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleRequestPacket(), packet.Origin);
         }
         private void HandleBattleStart(BattleStartPacket packet)
         {
-            _server.SendToClient(packet.DestinationPlayerID, new BattleStartPacket(), packet.Origin);
+            _module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleStartPacket(), packet.Origin);
         }
 
 
         private void HandleServerDataRequest(ServerDataRequestPacket packet)
         {
             var spacket = new ServerInfoDataPacket();
-            spacket.CurrentPlayers = _server.PlayersCount;
-            spacket.MaxPlayers = _server.MaxPlayers;
-            spacket.ServerName = _server.ServerName;
-            spacket.ServerMessage = _server.ServerMessage;
-            if (_server.PlayersCount > 0)
-                spacket.PlayerNames = _server.GetAllClientsInfo().Select(client => client.Name).ToArray();
+            spacket.CurrentPlayers = _module.Clients.Count;
+            spacket.MaxPlayers = _module.MaxPlayers;
+            spacket.ServerName = _module.ServerName;
+            spacket.ServerMessage = _module.ServerMessage;
+            if (_module.Server.AllClients().Count > 0)
+                spacket.PlayerNames = _module.Server.GetAllClientsInfo().Select(client => client.Name).ToArray();
 
             SendPacket(spacket, ID);
 
-            _server.RemovePlayer(this);
+            _module.RemoveClient(this);
         }
     }
 }

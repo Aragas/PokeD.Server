@@ -1,8 +1,10 @@
-﻿using System;
+﻿/*
+
+using System;
 
 using Newtonsoft.Json;
 
-using PokeD.Core.Packets.Chat;
+using PokeD.Core.Packets.P3D.Chat;
 
 using PokeD.Server.Data;
 
@@ -160,37 +162,37 @@ namespace PokeD.Server.Clients.Protobuf
         private void ExecuteMuteCommand(string message)
         {
             var name = message.Remove(0, 5);
-            switch (_server.MutePlayer(ID, name))
+            //switch (_server.MutePlayer(ID, name))
             {
-                case MuteStatus.Completed:
+            //    case MuteStatus.Completed:
                     SendCommandResponse($"Successfull muted {name} !");
-                    break;
+            //        break;
 
-                case MuteStatus.MutedYourself:
+            //    case MuteStatus.MutedYourself:
                     SendCommandResponse("You can't mute yourself!");
-                    break;
+            //        break;
 
-                case MuteStatus.PlayerNotFound:
+            //    case MuteStatus.PlayerNotFound:
                     SendCommandResponse($"Player {name} not found.");
-                    break;
+            //        break;
             }
         }
 
         private void ExecuteUnmuteCommand(string name)
         {
-            switch (_server.UnMutePlayer(ID, name))
+            //switch (_server.UnMutePlayer(ID, name))
             {
-                case MuteStatus.Completed:
+            //    case MuteStatus.Completed:
                     SendCommandResponse($"Successfull unmuted {name} !");
-                    break;
+            //        break;
 
-                case MuteStatus.IsNotMuted:
+            //    case MuteStatus.IsNotMuted:
                     SendCommandResponse($"Player {name} is not muted!");
-                    break;
+            //        break;
 
-                case MuteStatus.PlayerNotFound:
+            //    case MuteStatus.PlayerNotFound:
                     SendCommandResponse($"Player {name} not found.");
-                    break;
+            //        break;
             }
         }
 
@@ -200,3 +202,4 @@ namespace PokeD.Server.Clients.Protobuf
         }
     }
 }
+*/

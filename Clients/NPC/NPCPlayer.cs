@@ -3,15 +3,16 @@ using System.Collections.Generic;
 using System.Globalization;
 
 using Aragas.Core.Data;
+using Aragas.Core.Packets;
 using Aragas.Core.Wrappers;
 
-using PokeD.Core.Data;
+using PokeD.Core.Data.P3D;
 using PokeD.Core.Extensions;
 using PokeD.Core.Packets;
-using PokeD.Core.Packets.Battle;
-using PokeD.Core.Packets.Chat;
-using PokeD.Core.Packets.Shared;
-using PokeD.Core.Packets.Trade;
+using PokeD.Core.Packets.P3D.Battle;
+using PokeD.Core.Packets.P3D.Chat;
+using PokeD.Core.Packets.P3D.Shared;
+using PokeD.Core.Packets.P3D.Trade;
 
 using PokeD.Server.Data;
 using PokeD.Server.Database;
@@ -81,10 +82,7 @@ namespace PokeD.Server.Clients.NPC
             _server = server;
         }
 
-        public Vector3 Vector3(double x, double y, double z)
-        {
-            return new Vector3(x, y, z);
-        }
+        public Vector3 Vector3(double x, double y, double z) => new Vector3(x, y, z);
 
         public void Update()
         {
@@ -99,84 +97,93 @@ namespace PokeD.Server.Clients.NPC
             _lua.CallFunction("OnPrivateMessage", playerID, message);
         }
 
-
-        public void SendPacket(P3DPacket packet, int originID)
+        public int GetLocalPlayers()
         {
+            return 0;
+        }
+
+
+        public void SendPacket(ProtobufPacket packet, int originID)
+        {
+            var protoOrigin = packet as P3DPacket;
+            if (protoOrigin == null)
+                throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
+
 #if DEBUG
-            Received.Add(packet);
+            Received.Add(protoOrigin);
 #endif
 
-            HandlePacket(packet);
+            HandlePacket(protoOrigin);
         }
 
         private void HandlePacket(P3DPacket packet)
         {
-            switch ((GamePacketTypes) (int) packet.ID)
+            switch ((P3DPacketTypes) (int) packet.ID)
             {
-                case GamePacketTypes.ChatMessagePrivate:
+                case P3DPacketTypes.ChatMessagePrivate:
                     HandlePrivateMessage((ChatMessagePrivatePacket) packet);
                     break;
 
-                case GamePacketTypes.ChatMessageGlobal:
+                case P3DPacketTypes.ChatMessageGlobal:
                     HandleChatMessage((ChatMessageGlobalPacket) packet);
                     break;
 
 
-                case GamePacketTypes.GameStateMessage:
+                case P3DPacketTypes.GameStateMessage:
                     HandleGameStateMessage((GameStateMessagePacket) packet);
                     break;
 
 
-                case GamePacketTypes.TradeRequest:
+                case P3DPacketTypes.TradeRequest:
                     HandleTradeRequest((TradeRequestPacket) packet);
                     break;
 
-                case GamePacketTypes.TradeJoin:
+                case P3DPacketTypes.TradeJoin:
                     HandleTradeJoin((TradeJoinPacket) packet);
                     break;
 
-                case GamePacketTypes.TradeQuit:
+                case P3DPacketTypes.TradeQuit:
                     HandleTradeQuit((TradeQuitPacket) packet);
                     break;
 
-                case GamePacketTypes.TradeOffer:
+                case P3DPacketTypes.TradeOffer:
                     HandleTradeOffer((TradeOfferPacket) packet);
                     break;
 
-                case GamePacketTypes.TradeStart:
+                case P3DPacketTypes.TradeStart:
                     HandleTradeStart((TradeStartPacket) packet);
                     break;
 
 
-                case GamePacketTypes.BattleRequest:
+                case P3DPacketTypes.BattleRequest:
                     HandleBattleRequest((BattleRequestPacket) packet);
                     break;
 
-                case GamePacketTypes.BattleJoin:
+                case P3DPacketTypes.BattleJoin:
                     HandleBattleJoin((BattleJoinPacket) packet);
                     break;
 
-                case GamePacketTypes.BattleQuit:
+                case P3DPacketTypes.BattleQuit:
                     HandleBattleQuit((BattleQuitPacket) packet);
                     break;
 
-                case GamePacketTypes.BattleOffer:
+                case P3DPacketTypes.BattleOffer:
                     HandleBattleOffer((BattleOfferPacket) packet);
                     break;
 
-                case GamePacketTypes.BattleStart:
+                case P3DPacketTypes.BattleStart:
                     HandleBattleStart((BattleStartPacket) packet);
                     break;
 
-                case GamePacketTypes.BattleClientData:
+                case P3DPacketTypes.BattleClientData:
                     HandleBattleClientData((BattleClientDataPacket) packet);
                     break;
 
-                case GamePacketTypes.BattleHostData:
+                case P3DPacketTypes.BattleHostData:
                     HandleBattleHostData((BattleHostDataPacket) packet);
                     break;
 
-                case GamePacketTypes.BattlePokemonData:
+                case P3DPacketTypes.BattlePokemonData:
                     HandleBattlePokemonData((BattlePokemonDataPacket) packet);
                     break;
             }
@@ -221,11 +228,11 @@ namespace PokeD.Server.Clients.NPC
 
         public void SayPlayerPM(int playerID, string message)
         {
-            _server.SendPrivateChatMessageToClient(playerID, message, ID);
+            //_server.SendPrivateChatMessageToClient(playerID, message, ID);
         }
         public void SayGlobal(string message)
         {
-            _server.SendGlobalChatMessageToAllClients(message);
+            //_server.SendGlobalChatMessageToAllClients(message);
         }
     }
 }

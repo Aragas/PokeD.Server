@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using PokeD.Core.Data.Structs;
+using PokeD.Core.Data.SCON;
 
 using PokeD.Server.Clients;
 

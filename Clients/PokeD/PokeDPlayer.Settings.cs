@@ -1,20 +1,14 @@
-using System;
-
-using Aragas.Core.Data;
-
-using Newtonsoft.Json;
+﻿using System;
 
 using PokeD.Core.Packets.P3D.Chat;
 
 using PokeD.Server.Data;
 
-namespace PokeD.Server.Clients.P3D
+namespace PokeD.Server.Clients.PokeD
 {
-    public partial class P3DPlayer
+    partial class PokeDPlayer
     {
-        [JsonProperty("UseCustomWorld")]
         public bool UseCustomWorld { get; private set; }
-        [JsonProperty("CustomWorld")]
         World CustomWorld { get; set; }
 
 
@@ -26,20 +20,8 @@ namespace PokeD.Server.Clients.P3D
             if (command.StartsWith("help"))
                 ExecuteHelpCommand();
 
-            else if (command.StartsWith("login "))
-                ExecuteLoginCommand(command.Remove(0, 6));
-
             else if (command.StartsWith("world "))
                 ExecuteWorldCommand(command.Remove(0, 6));
-
-            else if (command.StartsWith("mute "))
-                ExecuteMuteCommand(message.Remove(0, 5));
-
-            else if (command.StartsWith("unmute "))
-                ExecuteUnmuteCommand(message.Remove(0, 7));
-
-            else if (command.StartsWith("move ") && false)
-                ExecuteMoveCommand(message.Remove(0, 5));
 
             else
                 SendCommandResponse("Invalid command!");
@@ -164,108 +146,6 @@ namespace PokeD.Server.Clients.P3D
             else
                 SendCommandResponse("Invalid command!");
         }
-
-        private void ExecuteMuteCommand(string message)
-        {
-            var name = message.Remove(0, 5);
-            switch (_module.MutePlayer(ID, name))
-            {
-                case MuteStatus.Completed:
-                    SendCommandResponse($"Successfull muted {name} !");
-                    break;
-
-                case MuteStatus.MutedYourself:
-                    SendCommandResponse("You can't mute yourself!");
-                    break;
-
-                case MuteStatus.PlayerNotFound:
-                    SendCommandResponse($"Player {name} not found.");
-                    break;
-            }
-        }
-
-        private void ExecuteUnmuteCommand(string name)
-        {
-            switch (_module.UnMutePlayer(ID, name))
-            {
-                case MuteStatus.Completed:
-                    SendCommandResponse($"Successfull unmuted {name} !");
-                    break;
-
-                case MuteStatus.IsNotMuted:
-                    SendCommandResponse($"Player {name} is not muted!");
-                    break;
-
-                case MuteStatus.PlayerNotFound:
-                    SendCommandResponse($"Player {name} not found.");
-                    break;
-            }
-        }
-
-        private void ExecuteMoveCommand(string command)
-        {
-            if (command.StartsWith("set "))
-            {
-                command = command.Remove(0, 4);
-
-                if (command.StartsWith("updaterate "))
-                {
-                    command = command.Remove(0, 11).Trim();
-
-                    int updateRate;
-                    if (command.StartsWith("normal"))
-                    {
-                        //MovingUpdateRate = 60;
-                        SendCommandResponse("Set moving correction updaterate to Normal!");
-                    }
-                    else if (command.StartsWith("fast"))
-                    {
-                        //MovingUpdateRate = 30;
-                        SendCommandResponse("Set moving correction updaterate to Fast!");
-                    }
-                    else if (int.TryParse(command, out updateRate) && updateRate >= 0 && updateRate <= 100)
-                    {
-                        //MovingUpdateRate = updateRate;
-                        SendCommandResponse($"Set moving correction updaterate to {updateRate}!");
-                    }
-                    else
-                        SendCommandResponse("Number invalid!");
-                }
-
-                else
-                    SendCommandResponse("Invalid command!");
-            }
-
-            else
-                SendCommandResponse("Invalid command!"); 
-        }
-
-        private void ExecuteLoginCommand(string command)
-        {
-            if (command.StartsWith("password "))
-            {
-                command = command.Remove(0, 9);
-
-                var hash = new PasswordStorage(command).Hash;
-
-                if (Password.Hash == hash)
-                    Initialize();
-                else
-                    _module.RemoveClient(this, "Password not correct!");
-            }
-
-            else if(command.StartsWith("register "))
-            {
-                command = command.Remove(0, 9);
-
-                Password = new PasswordStorage(command);
-                Initialize();
-            }
-
-            else
-                SendCommandResponse("Invalid command!");
-        }
-
 
         private void SendCommandResponse(string message)
         {

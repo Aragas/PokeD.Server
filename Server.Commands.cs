@@ -13,10 +13,10 @@ namespace PokeD.Server
             var command = message.ToLower();
 
             if (message.StartsWith("say "))
-                SendGlobalChatMessageToAllClients(message.Remove(0, 4));
+                ;//SendGlobalChatMessageToAllClients(message.Remove(0, 4));
 
             else if (message.StartsWith("message "))
-                SendServerMessageToAllClients(message.Remove(0, 8));
+                ;//SendServerMessageToAllClients(message.Remove(0, 8));
 
             else if (command.StartsWith("help server"))    // help from program
                 ExecuteHelpCommand(message.Remove(0, 11));

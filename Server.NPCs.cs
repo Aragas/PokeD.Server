@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
-
-using PokeD.Core.Packets.Server;
+﻿/*
+using System.Collections.Generic;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.NPC;
@@ -10,7 +9,7 @@ namespace PokeD.Server
 {
     public partial class Server
     {
-        List<IClient> NPCs { get; set; } = new List<IClient>();
+        public List<IClient> NPCs { get; set; } = new List<IClient>();
 
 
         private bool LoadNPCs()
@@ -37,8 +36,8 @@ namespace PokeD.Server
 
             NPCs.Add(npc);
 
-            SendToAllClients(new CreatePlayerPacket { PlayerID = npc.ID }, -1);
-            SendToAllClients(npc.GetDataPacket(), npc.ID);
+            //SendToAllClients(new CreatePlayerPacket { PlayerID = npc.ID }, -1);
+            //SendToAllClients(npc.GetDataPacket(), npc.ID);
 
         }
         private void RemoveNPC(IClient npc)
@@ -47,7 +46,7 @@ namespace PokeD.Server
 
             NPCs.Remove(npc);
 
-            SendToAllClients(new DestroyPlayerPacket { PlayerID = npc.ID });
+            //SendToAllClients(new DestroyPlayerPacket { PlayerID = npc.ID });
         }
 
         private void LoadDBNPC(IClient npc)
@@ -82,3 +81,4 @@ namespace PokeD.Server
         }
     }
 }
+*/
