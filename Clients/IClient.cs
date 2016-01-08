@@ -27,7 +27,7 @@ namespace PokeD.Server.Clients
 
         GameDataPacket GetDataPacket();
 
-        void SendPacket(ProtobufPacket packet, int originID);
+        void SendPacket(ProtobufPacket packet, int originID = 0);
 
         void LoadFromDB(Player data);
     }

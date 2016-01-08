@@ -10,9 +10,10 @@ using PokeD.Core.Data.PokeD.Trainer;
 using PokeD.Core.Data.PokeD.Trainer.Data;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.P3D.Shared;
+using PokeD.Core.Packets.PokeD.Authorization;
 using PokeD.Core.Packets.PokeD.Battle;
 using PokeD.Core.Packets.PokeD.Overworld;
-
+using PokeD.Core.Packets.PokeD.Trade;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
 
@@ -147,6 +148,14 @@ namespace PokeD.Server.Clients.PokeD
         {
             switch ((PokeDPacketTypes) (int) packet.ID)
             {
+                case PokeDPacketTypes.AuthorizationRequest:
+                    HandleAuthorizationRequest((AuthorizationRequestPacket) packet);
+                    break;
+                case PokeDPacketTypes.EncryptionResponse:
+                    HandleEncryptionResponse((EncryptionResponsePacket) packet);
+                    break;
+
+
                 case PokeDPacketTypes.Position:
                     HandlePosition((PositionPacket) packet);
                     break;
@@ -159,7 +168,7 @@ namespace PokeD.Server.Clients.PokeD
                     HandleBattleRequest((BattleRequestPacket) packet);
                     break;
                 case PokeDPacketTypes.BattleAccept:
-                    HandleBattleAccept((BattleAcceptPacket)packet);
+                    HandleBattleAccept((BattleAcceptPacket) packet);
                     break;
 
                 case PokeDPacketTypes.BattleAttack:
@@ -173,6 +182,17 @@ namespace PokeD.Server.Clients.PokeD
                     break;
                 case PokeDPacketTypes.BattleFlee:
                     HandleBattleFlee((BattleFleePacket) packet);
+                    break;
+
+
+                case PokeDPacketTypes.TradeOffer:
+                    HandleTradeOffer((TradeOfferPacket) packet);
+                    break;
+                case PokeDPacketTypes.TradeAccept:
+                    HandleTradeAccept((TradeAcceptPacket) packet);
+                    break;
+                case PokeDPacketTypes.TradeRefuse:
+                    HandleTradeRefuse((TradeRefusePacket) packet);
                     break;
             }
         }
@@ -234,6 +254,15 @@ namespace PokeD.Server.Clients.PokeD
         public static string ToP3DLevelFile(string location)
         {
             return "mainmenu";
+        }
+
+        private void Initialize()
+        {
+            if (IsInitialized)
+                return;
+
+            Module.AddClient(this);
+            IsInitialized = true;
         }
     }
 }

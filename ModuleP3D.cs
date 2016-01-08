@@ -62,7 +62,6 @@ namespace PokeD.Server
 
         [JsonIgnore]
         public Server Server { get; }
-
         bool IsDisposing { get; set; }
 
         ITCPListener Listener { get; set; }
@@ -270,9 +269,6 @@ namespace PokeD.Server
         }
         public void RemoveClient(IClient client, string reason = "")
         {
-            //if(update)
-            //    Server.UpdateDBPlayer(client, true);
-
             if (!string.IsNullOrEmpty(reason))
                 client.SendPacket(new KickedPacket { Reason = reason }, -1);
 
@@ -382,8 +378,7 @@ namespace PokeD.Server
 
         public void SendServerMessage(string message)
         {
-            for (var i = 0; i < Clients.Count; i++)
-                Clients[i].SendPacket(new ChatMessageGlobalPacket { Message = message }, -1);
+            P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, -1);
             
             Server.ClientServerMessage(this, message);
         }
@@ -571,18 +566,18 @@ namespace PokeD.Server
             var dict = DataItemsToDictionary(data);
 
             var id = short.Parse(dict["Pokemon"]);
-            var name = string.IsNullOrEmpty(dict["NickName"]) ? string.Empty : dict["NickName"];
             var gender = (MonsterGender)int.Parse(dict["Gender"]);
             var isShiny = int.Parse(dict["isShiny"]) != 0;
+            var abilities = new[] { short.Parse(dict["Ability"]) };
             var nature = byte.Parse(dict["Nature"]);
 
-            var dat = new MonsterInstanceData(id, name, gender, isShiny, nature)
+            var dat = new MonsterInstanceData(id, gender, isShiny, abilities, nature)
             {
                 Experience = int.Parse(dict["Experience"]),
-                Abilities = new[] {short.Parse(dict["Ability"])},
                 Friendship = byte.Parse(dict["Friendship"]),
                 CatchInfo = new MonsterCatchInfo()
                 {
+                    Nickname = string.IsNullOrEmpty(dict["NickName"]) ? string.Empty : dict["NickName"],
                     PokeballID  = byte.Parse(dict["CatchBall"]),
                     Method      = dict["CatchMethod"],
                     Location    = dict["CatchLocation"],
