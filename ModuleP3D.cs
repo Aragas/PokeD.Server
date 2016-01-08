@@ -73,6 +73,9 @@ namespace PokeD.Server
 
         [JsonIgnore]
         public ClientList Clients { get; } = new ClientList();
+        [JsonIgnore]
+        public bool ClientsVisible { get; } = true;
+
         List<IClient> PlayersJoining { get; } = new List<IClient>();
         List<IClient> PlayersToAdd { get; } = new List<IClient>();
         List<IClient> PlayersToRemove { get; } = new List<IClient>();
@@ -81,7 +84,7 @@ namespace PokeD.Server
         ConcurrentQueue<PlayerPacketP3DOrigin> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerPacketP3DOrigin>();
         ConcurrentQueue<PacketP3DOrigin> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<PacketP3DOrigin>();
 
-        ConcurrentDictionary<string, IClient[]> NearPlayers { get; } = new ConcurrentDictionary<string, IClient[]>();
+        ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; } = new ConcurrentDictionary<string, P3DPlayer[]>();
 
 
         public ModuleP3D(Server server) { Server = server; }
@@ -134,7 +137,7 @@ namespace PokeD.Server
             var watch = Stopwatch.StartNew();
             while (!IsDisposing)
             {
-                var players = new List<IClient>(Clients.GetConcreteTypeEnumerator<P3DPlayer>());
+                var players = new List<P3DPlayer>(Clients.GetTypeEnumerator<P3DPlayer>());
                 //var players = new List<IClient>(Clients.GetConcreteTypeEnumerator<P3DPlayer, ProtobufPlayer>());
 
                 foreach (var player in players.Where(player => player.LevelFile != null && !NearPlayers.ContainsKey(player.LevelFile)))
@@ -142,7 +145,7 @@ namespace PokeD.Server
 
                 foreach (var level in NearPlayers.Keys)
                 {
-                    var playerList = new List<IClient>();
+                    var playerList = new List<P3DPlayer>();
                     foreach (var player in players.Where(player => level == player.LevelFile))
                         playerList.Add(player);
 
@@ -224,15 +227,27 @@ namespace PokeD.Server
         }
 
 
+        public void PreAdd(IClient client)
+        {
+            if (Server.PeekDBID(client) != -1)
+            {
+                P3DPlayerSendToClient(client, new IDPacket { PlayerID = client.ID }, -1);
+                P3DPlayerSendToClient(client, new WorldDataPacket { DataItems = Server.World.GenerateDataItems() }, -1);
+            }
+        }
         public void AddClient(IClient client)
         {
-            if (IsGameJoltIDUsed(client))
+            if (IsGameJoltIDUsed(client as P3DPlayer))
             {
                 RemoveClient(client, "You are already on server!");
                 return;
             }
 
-            Server.LoadDBPlayer(client);
+            if (!Server.LoadDBPlayer(client))
+            {
+                RemoveClient(client, "Wrong password or you are already on server!");
+                return;
+            }
 
             P3DPlayerSendToClient(client, new IDPacket { PlayerID = client.ID }, -1);
             P3DPlayerSendToClient(client, new WorldDataPacket { DataItems = Server.World.GenerateDataItems() }, -1);
@@ -240,11 +255,10 @@ namespace PokeD.Server
             // Send to player his ID
             P3DPlayerSendToClient(client, new CreatePlayerPacket { PlayerID = client.ID }, -1);
             // Send to player all Players ID
-            var clients = Server.AllClients();
-            for (var i = 0; i < clients.Count; i++)
+            foreach (var aClient in Server.AllClients())
             {
-                P3DPlayerSendToClient(client, new CreatePlayerPacket { PlayerID = clients[i].ID }, -1);
-                P3DPlayerSendToClient(client, clients[i].GetDataPacket(), clients[i].ID);
+                P3DPlayerSendToClient(client, new CreatePlayerPacket { PlayerID = aClient.ID }, -1);
+                P3DPlayerSendToClient(client, aClient.GetDataPacket(), aClient.ID);
             }
             // Send to Players player ID
             P3DPlayerSendToAllClients(new CreatePlayerPacket { PlayerID = client.ID }, -1);
@@ -256,7 +270,8 @@ namespace PokeD.Server
         }
         public void RemoveClient(IClient client, string reason = "")
         {
-            Server.UpdateDBPlayer(client);
+            //if(update)
+            //    Server.UpdateDBPlayer(client, true);
 
             if (!string.IsNullOrEmpty(reason))
                 client.SendPacket(new KickedPacket { Reason = reason }, -1);
@@ -346,8 +361,7 @@ namespace PokeD.Server
                 var player = Clients[i];
                 if (player == null) continue;
 
-                if (!player.UseCustomWorld)
-                    P3DPlayerSendToClient(player, new WorldDataPacket { DataItems = Server.World.GenerateDataItems() }, -1);
+                P3DPlayerSendToClient(player, new WorldDataPacket { DataItems = Server.World.GenerateDataItems() }, -1);
             }
 
             UpdateWatch.Reset();
@@ -369,17 +383,13 @@ namespace PokeD.Server
         public void SendServerMessage(string message)
         {
             for (var i = 0; i < Clients.Count; i++)
-            {
-                var player = Clients[i];
-                if (player.ChatReceiving)
-                    player.SendPacket(new ChatMessageGlobalPacket { Message = message }, -1);
-            }
-
+                Clients[i].SendPacket(new ChatMessageGlobalPacket { Message = message }, -1);
+            
             Server.ClientServerMessage(this, message);
         }
         public void SendPrivateMessage(IClient sender, IClient destClient, string message)
         {
-            if (destClient.GetType() == typeof (P3DPlayer))
+            if (destClient is P3DPlayer)
                 P3DPlayerSendToClient(destClient, new ChatMessagePrivatePacket { DataItems = new DataItems(message) }, sender.ID);
             else
                 Server.ClientPrivateMessage(this, sender, destClient, message);
@@ -393,7 +403,7 @@ namespace PokeD.Server
 
         public void SendTradeRequest(IClient sender, Monster monster, IClient destClient)
         {
-            if (destClient.GetType() == typeof (P3DPlayer))
+            if (destClient is P3DPlayer)
             {
                 P3DPlayerSendToClient(destClient, new TradeRequestPacket(), sender.ID);
 
@@ -405,14 +415,14 @@ namespace PokeD.Server
         }
         public void SendTradeConfirm(IClient sender, IClient destClient)
         {
-            if (destClient.GetType() == typeof(P3DPlayer))
+            if (destClient is P3DPlayer)
                 P3DPlayerSendToClient(destClient, new TradeStartPacket(), sender.ID);
             else
                 Server.ClientTradeConfirm(this, sender, destClient);
         }
         public void SendTradeCancel(IClient sender, IClient destClient)
         {
-            if (destClient.GetType() == typeof(P3DPlayer))
+            if (destClient is P3DPlayer)
                 P3DPlayerSendToClient(destClient, new TradeQuitPacket(), sender.ID);
             else
                 Server.ClientTradeCancel(this, sender, destClient);
@@ -460,11 +470,11 @@ namespace PokeD.Server
             PacketsToAllPlayers.Enqueue(new PacketP3DOrigin(ref packet, originID));
         }
 
-        private bool IsGameJoltIDUsed(IClient client)
+        private bool IsGameJoltIDUsed(P3DPlayer client)
         {
             for (int i = 0; i < Clients.Count; i++)
             {
-                var player = Clients[i];
+                var player = Clients[i] as P3DPlayer;
                 if (player.IsGameJoltPlayer && client.GameJoltID == player.GameJoltID)
                     return true;
             }
@@ -506,6 +516,15 @@ namespace PokeD.Server
 
             return MuteStatus.PlayerNotFound;
         }
+
+        public void P3DPlayerChangePassword(IClient client, string oldPassword, string newPassword)
+        {
+            if (client.PasswordHash == oldPassword)
+                client.PasswordHash = newPassword;
+
+            Server.UpdateDBPlayer(client, true);
+        }
+
 
 
         public void Dispose()

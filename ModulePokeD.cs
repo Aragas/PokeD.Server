@@ -127,6 +127,19 @@ namespace PokeD.Server
         ITCPListener Listener { get; set; }
 
 
+        [JsonIgnore]
+        public ClientList Clients { get; } = new ClientList();
+        [JsonIgnore]
+        public bool ClientsVisible { get; } = true;
+        List<BattleInstance> Battles { get; } = new List<BattleInstance>();
+
+
+        public ModulePokeD(Server server)
+        {
+            Server = server;
+        }
+
+
         public void Start()
         {
             var status = FileSystemWrapper.LoadSettings(FileName, this);
@@ -150,17 +163,6 @@ namespace PokeD.Server
         }
 
 
-        [JsonIgnore]
-        public ClientList Clients { get; } = new ClientList();
-        List<BattleInstance> Battles { get; } = new List<BattleInstance>();
-
-
-        public ModulePokeD(Server server)
-        {
-            Server = server;
-        }
-
-
         public void StartListen()
         {
             Listener = TCPListenerWrapper.CreateTCPListener(Port);
@@ -176,12 +178,20 @@ namespace PokeD.Server
 
         public void AddClient(IClient client)
         {
+            if (!Server.LoadDBPlayer(client))
+            {
+                RemoveClient(client, "Wrong password!");
+                return;
+            }
+
             Clients.Add(client);
 
             Server.ClientConnected(this, client);
         }
         public void RemoveClient(IClient client, string reason = "")
         {
+            Server.UpdateDBPlayer(client, true);
+
             //Clients.Remove(client);
             //
             //Server.ClientDisconnected(this, client);
@@ -193,6 +203,7 @@ namespace PokeD.Server
             if (!b)
             {
                 var client = new PokeDPlayer(null, this);
+                Server.PeekDBID(client);
                 Server.LoadDBPlayer(client);
                 Clients.Add(client);
 

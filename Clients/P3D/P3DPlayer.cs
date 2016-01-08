@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 
 using Aragas.Core.Data;
 using Aragas.Core.Packets;
 using Aragas.Core.Wrappers;
-
-using Newtonsoft.Json;
 
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Extensions;
@@ -16,7 +13,6 @@ using PokeD.Core.Packets;
 using PokeD.Core.Packets.P3D.Battle;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Client;
-using PokeD.Core.Packets.P3D.Server;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
 
@@ -29,81 +25,51 @@ namespace PokeD.Server.Clients.P3D
     {
         CultureInfo CultureInfo => CultureInfo.InvariantCulture;
 
-        #region Game Values
+        #region P3D Values
 
-        [JsonIgnore]
         public int ID { get; set; }
 
-        [JsonIgnore]
         public string GameMode { get; private set; }
-        [JsonIgnore]
         public bool IsGameJoltPlayer { get; private set; }
-        [JsonIgnore]
         public long GameJoltID { get; private set; }
-        [JsonIgnore]
         private char DecimalSeparator { get; set; }
 
 
         private string _name;
-        [JsonIgnore]
         public string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {_name}" : _name; } private set { _name = value; } }
 
-        [JsonIgnore]
+
         public string LevelFile { get; private set; }
-        [JsonIgnore]
         public Vector3 Position { get; private set; }
-        [JsonIgnore]
         public int Facing { get; private set; }
-        [JsonIgnore]
         public bool Moving { get; private set; }
-        [JsonIgnore]
+
         public string Skin { get; private set; }
-        [JsonIgnore]
         public string BusyType { get; private set; }
-        [JsonIgnore]
+
         public bool PokemonVisible { get; private set; }
-        [JsonIgnore]
         public Vector3 PokemonPosition { get; private set; }
-        [JsonIgnore]
         public string PokemonSkin { get; private set; }
-        [JsonIgnore]
         public int PokemonFacing { get; private set; }
 
-        #endregion Game Values
+        #endregion P3D Values
 
-        #region Other Values
+        #region Values
 
-        [JsonProperty("Password")]
-        public PasswordStorage Password { get; set; }
-        bool PasswordCorrect { get; set; }
-
-        [JsonProperty("Prefix")]
         public Prefix Prefix { get; private set; }
+        public string PasswordHash { get; set; }
 
-        [JsonIgnore]
-        public string IP => ClientWrapper.IP;
+        public string IP => Stream.Host;
 
-        [JsonIgnore]
         public DateTime ConnectionTime { get; } = DateTime.Now;
 
-        [JsonIgnore]
-        public DateTime LastMessage { get; private set; }
-        [JsonIgnore]
-        public DateTime LastPing { get; private set; }
-
-        [JsonProperty("ChatReceiving")]
-        public bool ChatReceiving => true;
-
         bool IsInitialized { get; set; }
-        bool IsDisposed { get; set; }
 
-        #endregion Other Values
+        #endregion Values
 
-        ITCPClient ClientWrapper { get; }
         P3DStream Stream { get; }
-
-
-        readonly ModuleP3D _module;
+        
+        ModuleP3D Module { get; }
 
 
 #if DEBUG
@@ -116,13 +82,11 @@ namespace PokeD.Server.Clients.P3D
 
         public P3DPlayer(ITCPClient clientWrapper, IServerModule server)
         {
-            ClientWrapper = clientWrapper;
-            Stream = new P3DStream(ClientWrapper);
-            _module = (ModuleP3D) server;
+            Stream = new P3DStream(clientWrapper);
+            Module = (ModuleP3D) server;
         }
 
 
-        Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
         public void Update()
         {
             if (Stream.Connected)
@@ -130,30 +94,13 @@ namespace PokeD.Server.Clients.P3D
                 if (Stream.DataAvailable > 0)
                 {
                     var data = Stream.ReadLine();
-                    LastMessage = DateTime.UtcNow;
+                    //LastMessage = DateTime.UtcNow;
 
                     HandleData(data);
                 }
-
-
-
-                // Stuff that is done every 1 second
-                if (UpdateWatch.ElapsedMilliseconds < 1000)
-                    return;
-
-                BattleUpdate();
-
-                if (!Battling && _module.Server.CustomWorldEnabled && UseCustomWorld)
-                {
-                    CustomWorld.Update();
-                    SendPacket(new WorldDataPacket { DataItems = CustomWorld.GenerateDataItems() }, -1);
-                }
-
-                UpdateWatch.Reset();
-                UpdateWatch.Start();
             }
             else
-                _module.RemoveClient(this);
+                Module.RemoveClient(this);
         }
 
         private void HandleData(string data)
@@ -207,7 +154,7 @@ namespace PokeD.Server.Clients.P3D
                     break;
 
                 case P3DPacketTypes.Ping:
-                    LastPing = DateTime.UtcNow;
+                    //LastPing = DateTime.UtcNow;
                     break;
 
                 case P3DPacketTypes.GameStateMessage:
@@ -278,16 +225,16 @@ namespace PokeD.Server.Clients.P3D
 
         public void SendPacket(ProtobufPacket packet, int originID)
         {
-            var protoOrigin = packet as P3DPacket;
-            if(protoOrigin == null)
+            var p3dPacket = packet as P3DPacket;
+            if(p3dPacket == null)
                 throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
 
-            protoOrigin.Origin = originID;
+            p3dPacket.Origin = originID;
 
-            Stream.SendPacket(ref protoOrigin);
+            Stream.SendPacket(ref p3dPacket);
 
 #if DEBUG
-            Sended.Add(protoOrigin);
+            Sended.Add(p3dPacket);
 #endif
         }
 
@@ -297,8 +244,6 @@ namespace PokeD.Server.Clients.P3D
                 ID = data.Id;
 
             Prefix = data.Prefix;
-
-            UseCustomWorld = data.IsUsingCustomWorld;
         }
 
 
@@ -307,7 +252,7 @@ namespace PokeD.Server.Clients.P3D
             if(IsInitialized)
                 return;
 
-            _module.AddClient(this);
+            Module.AddClient(this);
             IsInitialized = true;
         }
 
@@ -333,20 +278,10 @@ namespace PokeD.Server.Clients.P3D
         public GameDataPacket GetDataPacket() => new GameDataPacket { DataItems = GenerateDataItems() };
 
 
-        private void DisconnectAndDispose()
+        public void Dispose()
         {
             Stream.Disconnect();
             Stream.Dispose();
-        }
-        public void Dispose()
-        {
-            if (IsDisposed)
-                return;
-
-            IsDisposed = true;
-
-
-            DisconnectAndDispose();
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 using Aragas.Core.Interfaces;
 
@@ -11,7 +11,8 @@ namespace PokeD.Server
     public interface IServerModule : IUpdatable, IDisposable
     {
         Server Server { get; }
-        ClientList Clients { get; } 
+        ClientList Clients { get; }
+        bool ClientsVisible { get; } 
 
         void Start();
         void Stop();

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 using Aragas.Core.Interfaces;
 using Aragas.Core.Wrappers;
@@ -14,9 +13,6 @@ using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
 
-using PokeD.Core.Data.PokeD.Monster;
-
-using PokeD.Server.Clients;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
 
@@ -31,9 +27,6 @@ namespace PokeD.Server
 
         [JsonProperty("World")]
         public World World { get; set; } = new World();
-
-        [JsonProperty("CustomWorldEnabled")]
-        public bool CustomWorldEnabled { get; private set; } = true;
 
         #endregion Settings
 
@@ -57,6 +50,7 @@ namespace PokeD.Server
             Modules.Add(new ModuleP3D(this));
             Modules.Add(new ModuleSCON(this));
             Modules.Add(new ModulePokeD(this));
+            Modules.Add(new ModuleNPC(this));
         }
 
         private static AsymmetricCipherKeyPair GenerateKeyPair()
@@ -85,9 +79,6 @@ namespace PokeD.Server
             Logger.Log(LogType.Info, $"Loading {databasePath}.");
             Database = DatabaseWrapper.Create(databasePath);
             Database.CreateTable<Player>();
-
-
-            //LoadNPCs();
 
 
             Logger.Log(LogType.Info, $"Starting Server.");
@@ -157,8 +148,6 @@ namespace PokeD.Server
 
         public void Update()
         {
-            //UpdateNPC();
-            
             foreach (var module in Modules)
                 module.Update();
         }
@@ -173,49 +162,6 @@ namespace PokeD.Server
 
 
             World.Dispose();
-        }
-
-        public void ClientConnected(IServerModule caller, IClient client)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.OtherConnected(client);
-        }
-        public void ClientDisconnected(IServerModule caller, IClient client)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.OtherDisconnected(client);
-        }
-
-        public void ClientServerMessage(IServerModule caller, string message)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.SendServerMessage(message);
-        }
-        public void ClientPrivateMessage(IServerModule caller, IClient sender, IClient destClient, string message)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.SendPrivateMessage(sender, destClient, message);
-        }
-        public void ClientGlobalMessage(IServerModule caller, IClient sender, string message)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.SendGlobalMessage(sender, message);
-        }
-
-        public void ClientTradeOffer(IServerModule caller, IClient client, Monster monster, IClient destClient)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.SendTradeRequest(client, monster, destClient);
-        }
-        public void ClientTradeConfirm(IServerModule caller, IClient client, IClient destClient)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.SendTradeConfirm(client, destClient);
-        }
-        public void ClientTradeCancel(IServerModule caller, IClient client, IClient destClient)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.SendTradeCancel(client, destClient);
         }
     }
 }

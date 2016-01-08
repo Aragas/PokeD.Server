@@ -6,6 +6,7 @@ using Aragas.Core.IO;
 using Aragas.Core.Packets;
 using Aragas.Core.Wrappers;
 
+using PokeD.Core.Data.PokeD.Trainer;
 using PokeD.Core.Data.PokeD.Trainer.Data;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.P3D.Shared;
@@ -15,14 +16,11 @@ using PokeD.Core.Packets.PokeD.Overworld;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
 
-using Trainer = PokeD.Core.Data.PokeD.Trainer.Trainer;
-
 namespace PokeD.Server.Clients.PokeD
 {
     public partial class PokeDPlayer : IClient
     {
-        private Trainer PlayerRef { get; } = new Trainer("1123123", TrainerGender.Female);
-
+        Trainer PlayerRef { get; } = new Trainer("1123123", TrainerGender.Female);
 
         #region Game Values
 
@@ -52,45 +50,36 @@ namespace PokeD.Server.Clients.PokeD
         #region Other Values
 
         public Prefix Prefix { get; private set; }
+        public string PasswordHash { get; set; }
 
-        public bool EncryptionEnabled => _module.EncryptionEnabled;
-
-        //public string IP => ClientWrapper.IP; // TODO
+        //public string IP => Stream.Host; // TODO
         public string IP => "";
 
         public DateTime ConnectionTime { get; } = DateTime.Now;
 
         public DateTime LastMessage { get; private set; }
-        public DateTime LastPing { get; private set; }
 
-        public bool ChatReceiving => true;
+        bool EncryptionEnabled => Module.EncryptionEnabled;
 
-        private bool IsInitialized { get; set; }
-        private bool IsDisposed { get; set; }
-
-
+        bool IsInitialized { get; set; }
+        
         #endregion Other Values
 
-        ITCPClient ClientWrapper { get; }
         ProtobufStream Stream { get; }
-
-
-        readonly ModulePokeD _module;
+        
+        ModulePokeD Module { get; }
 
 #if DEBUG
         // -- Debug -- //
-        List<P3DPacket> ReceivedFromServer { get; } = new List<P3DPacket>();
-        List<P3DPacket> SendedToServer { get; } = new List<P3DPacket>();
-        List<PokeDPacket> ReceivedFromClient { get; } = new List<PokeDPacket>();
-        List<PokeDPacket> SendedToClient { get; } = new List<PokeDPacket>();
+        List<PokeDPacket> Received { get; } = new List<PokeDPacket>();
+        List<PokeDPacket> Sended { get; } = new List<PokeDPacket>();
         // -- Debug -- //
 #endif
 
         public PokeDPlayer(ITCPClient clientWrapper, IServerModule modulo)
         {
-            ClientWrapper = clientWrapper;
-            Stream = new ProtobufStream(ClientWrapper);
-            _module = (ModulePokeD) modulo;
+            Stream = new ProtobufStream(clientWrapper);
+            Module = (ModulePokeD) modulo;
         }
 
 
@@ -104,7 +93,7 @@ namespace PokeD.Server.Clients.PokeD
                     if (dataLength == 0)
                     {
                         Logger.Log(LogType.GlobalError, $"PokeD Reading Error: Packet Length size is 0. Disconnecting IClient {Name}.");
-                        _module.RemoveClient(this, "Packet Length size is 0!");
+                        Module.RemoveClient(this, "Packet Length size is 0!");
                         return;
                     }
 
@@ -115,7 +104,7 @@ namespace PokeD.Server.Clients.PokeD
                 }
             }
             else
-                _module.RemoveClient(this);
+                Module.RemoveClient(this);
         }
 
         private void HandleData(byte[] data)
@@ -135,19 +124,19 @@ namespace PokeD.Server.Clients.PokeD
                             HandlePacket(packet);
 
 #if DEBUG
-                            ReceivedFromClient.Add(packet);
+                            Received.Add(packet);
 #endif
                         }
                         else
                         {
                             Logger.Log(LogType.GlobalError, $"PokeD Reading Error: PokeDPacketResponses.Packets[{id}] is null. Disconnecting IClient {Name}.");
-                            _module.RemoveClient(this, $"Packet ID {id} is not correct!");
+                            Module.RemoveClient(this, $"Packet ID {id} is not correct!");
                         }
                     }
                     else
                     {
                         Logger.Log(LogType.GlobalError, $"PokeD Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
-                        _module.RemoveClient(this, $"Packet ID {id} is not correct!");
+                        Module.RemoveClient(this, $"Packet ID {id} is not correct!");
                     }
                 }
             }
@@ -188,25 +177,16 @@ namespace PokeD.Server.Clients.PokeD
             }
         }
 
-        public void SendPacket(ProtobufPacket packet, int originID)
+        public void SendPacket(ProtobufPacket packet, int originID = 0)
         {
-            if(packet is PokeDPacket)
-                SendPacket((PokeDPacket) packet);
-            else
-            {
-                //HandleP3DPacket(packet); 
-            }
-#if DEBUG
-            ReceivedFromServer.Add(packet as P3DPacket);
-#endif
-        }
-        private void SendPacket(PokeDPacket packet)
-        {
-            var proto = packet as ProtobufPacket;
-            Stream.SendPacket(ref proto);
+            var pokeDPacket = packet as PokeDPacket;
+            if (pokeDPacket == null)
+                throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
+
+            Stream.SendPacket(ref packet);
 
 #if DEBUG
-            SendedToClient.Add(packet);
+            Sended.Add(pokeDPacket);
 #endif
         }
 
@@ -216,10 +196,7 @@ namespace PokeD.Server.Clients.PokeD
                 ID = data.Id;
 
             Prefix = data.Prefix;
-
-            UseCustomWorld = data.IsUsingCustomWorld;
         }
-
 
         public GameDataPacket GetDataPacket()
         {
@@ -246,23 +223,13 @@ namespace PokeD.Server.Clients.PokeD
 
             return packet;
         }
-
-
-        private void DisconnectAndDispose()
+        
+        public void Dispose()
         {
             Stream.Disconnect();
             Stream.Dispose();
         }
-        public void Dispose()
-        {
-            if (IsDisposed)
-                return;
 
-            IsDisposed = true;
-
-
-            DisconnectAndDispose();
-        }
 
         public static string ToP3DLevelFile(string location)
         {

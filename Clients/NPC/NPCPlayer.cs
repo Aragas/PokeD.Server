@@ -27,12 +27,10 @@ namespace PokeD.Server.Clients.NPC
 
         public int ID { get; set; }
 
-        public string GameMode => "NPC";
-        public bool IsGameJoltPlayer => false;
-        public long GameJoltID => 0;
         private char DecimalSeparator { get; set; } = '.';
         public string Name { get; set; } = string.Empty;
-        public Prefix Prefix { get; } = Prefix.NPC;
+        public Prefix Prefix { get; set; } = Prefix.NPC;
+        public string PasswordHash { get; set; } = string.Empty;
 
         public string LevelFile { get; set; } = string.Empty;
         public Vector3 Position { get; set; }
@@ -49,21 +47,15 @@ namespace PokeD.Server.Clients.NPC
 
         #region Other Values
 
-        public string IP => string.Empty;
+        public string IP => "NPC";
 
         public DateTime ConnectionTime { get; } = DateTime.MinValue;
-
-        public bool UseCustomWorld => false;
-
-        public bool ChatReceiving => true;
-
-        bool IsDisposed { get; set; }
-
+        
         #endregion Other Values
 
 
-        readonly ILua _lua;
-        readonly Server _server;
+        ILua Lua { get; }
+        IServerModule Module { get; }
 
 
 #if DEBUG
@@ -71,30 +63,30 @@ namespace PokeD.Server.Clients.NPC
 #endif
 
 
-        public NPCPlayer(string name, ILua lua, Server server)
+        public NPCPlayer(string name, ILua lua, IServerModule module)
         {
             Name = name;
-            _lua = lua;
-            _lua["Vector3"] = new Vector3();
-            _lua["NPC"] = this;
-            _lua.ReloadFile();
+            Lua = lua;
+            Lua["Vector3"] = new Vector3();
+            Lua["NPC"] = this;
+            Lua.ReloadFile();
 
-            _server = server;
+            Module = module;
         }
 
         public Vector3 Vector3(double x, double y, double z) => new Vector3(x, y, z);
 
         public void Update()
         {
-            _lua.CallFunction("OnUpdate");
+            Lua.CallFunction("OnUpdate");
         }
-        public void BattleUpdate(BattleDataTable battleData)
-        {
-            _lua.CallFunction("OnBattleUpdate", battleData);
-        }
+        //public void BattleUpdate(BattleDataTable battleData)
+        //{
+        //    Lua.CallFunction("OnBattleUpdate", battleData);
+        //}
         public void GotMessage(int playerID, string message)
         {
-            _lua.CallFunction("OnPrivateMessage", playerID, message);
+            Lua.CallFunction("OnPrivateMessage", playerID, message);
         }
 
         public int GetLocalPlayers()
@@ -189,14 +181,20 @@ namespace PokeD.Server.Clients.NPC
             }
         }
 
-        public void LoadFromDB(Player data) { throw new NotImplementedException(); }
+        public void LoadFromDB(Player data)
+        {
+            if (ID == 0)
+                ID = data.Id;
+
+            Prefix = data.Prefix;
+        }
         
         private DataItems GenerateDataItems()
         {
             return new DataItems(
-                GameMode,
-                IsGameJoltPlayer ? "1" : "0",
-                GameJoltID.ToString(CultureInfo),
+                "NPC",  // Gamemode
+                "1",    // IsGameJolt
+                "0",    // GameJolt ID
                 DecimalSeparator.ToString(),
                 $"[{Prefix}] {Name}",
                 LevelFile,
@@ -214,10 +212,7 @@ namespace PokeD.Server.Clients.NPC
         
         public void Dispose()
         {
-            if (IsDisposed)
-                return;
 
-            IsDisposed = true;
         }
 
 

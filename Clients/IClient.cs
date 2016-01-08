@@ -14,18 +14,15 @@ namespace PokeD.Server.Clients
     public interface IClient : IUpdatable, IDisposable
     {
         int ID { get; set; }
+
         string Name { get; }
         Prefix Prefix { get; }
-        bool IsGameJoltPlayer { get; }
-        long GameJoltID { get; }
-        bool Moving { get; }
+        string PasswordHash { get; set; }
         Vector3 Position { get; }
         string LevelFile { get; }
 
         string IP { get; }
         DateTime ConnectionTime { get; }
-        bool UseCustomWorld { get; }
-        bool ChatReceiving { get; }
 
 
         GameDataPacket GetDataPacket();

@@ -33,19 +33,7 @@ namespace PokeD.Server
 
         private void ExecuteWorldCommand(string command)
         {
-            if (command.StartsWith("enable") || command.StartsWith("enable custom"))
-            {
-                CustomWorldEnabled = true;
-                InputWrapper.ConsoleWrite("Enabled Custom World!");
-            }
-
-            else if (command.StartsWith("disable") || command.StartsWith("disable custom"))
-            {
-                CustomWorldEnabled = false;
-                InputWrapper.ConsoleWrite("Disabled Custom World!");
-            }
-
-            else if (command.StartsWith("set "))
+            if (command.StartsWith("set "))
             {
                 command = command.Remove(0, 4);
 
@@ -141,9 +129,6 @@ namespace PokeD.Server
                 InputWrapper.ConsoleWrite("Invalid command!");
         }
 
-        private static void ExecuteHelpCommand(string command)
-        {
-
-        }
+        private static void ExecuteHelpCommand(string command) { }
     }
 }

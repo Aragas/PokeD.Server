@@ -10,7 +10,7 @@ namespace PokeD.Server.Clients.NPC
         private const string Identifier = "npc_b_";
         private const string Extension = ".lua";
 
-        public static List<IClient> LoadNPCs(Server server)
+        public static List<IClient> LoadNPCs(IServerModule server)
         {
             return new List<IClient>(FileSystemWrapper.LuaFolder.GetFilesAsync().Result
                 .Where(file => file.Name.ToLower().StartsWith(Identifier) && file.Name.ToLower().EndsWith(Extension))

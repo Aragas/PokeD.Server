@@ -18,7 +18,7 @@ namespace PokeD.Server.Clients.NPC
         }
         private void HandlePrivateMessage(ChatMessagePrivatePacket packet)
         {
-            var destinationPlayerID = _server.GetClientID(packet.DestinationPlayerName);
+            var destinationPlayerID = Module.Server.GetClientID(packet.DestinationPlayerName);
             if (destinationPlayerID != -1)
             {
             }
@@ -30,7 +30,7 @@ namespace PokeD.Server.Clients.NPC
 
         private void HandleGameStateMessage(GameStateMessagePacket packet)
         {
-            var playerName = _server.GetClientName(packet.Origin);
+            var playerName = Module.Server.GetClientName(packet.Origin);
             if (!string.IsNullOrEmpty(playerName))
             {
             }

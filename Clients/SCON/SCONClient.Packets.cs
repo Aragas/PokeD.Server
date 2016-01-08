@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-
+using System.Linq;
 using Aragas.Core.Wrappers;
 
 using Org.BouncyCastle.Crypto.Digests;
@@ -23,7 +23,7 @@ namespace PokeD.Server.Clients.SCON
 {
     public partial class SCONClient
     {
-        AuthorizationStatus AuthorizationStatus { get; set; }
+        AuthorizationStatus AuthorizationStatus { get; }
 
         byte[] VerificationToken { get; set; }
         bool Authorized { get; set; }
@@ -37,7 +37,7 @@ namespace PokeD.Server.Clients.SCON
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                var publicKey = _module.Server.RSAKeyPair.PublicKeyToByteArray();
+                var publicKey = Module.Server.RSAKeyPair.PublicKeyToByteArray();
 
                 VerificationToken = new byte[4];
                 var drg = new DigestRandomGenerator(new Sha512Digest());
@@ -51,51 +51,41 @@ namespace PokeD.Server.Clients.SCON
             if (Authorized)
                 return;
 
-            if (AuthorizationStatus.HasFlag(AuthorizationStatus.RemoteClientEnabled))
+            if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
-                {                 
-                    var pkcs = new PKCS1Signer(_module.Server.RSAKeyPair);
+                var pkcs = new PKCS1Signer(Module.Server.RSAKeyPair);
 
-                    var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
-                    for (int i = 0; i < VerificationToken.Length; i++)
-                        if (decryptedToken[i] != VerificationToken[i])
-                        {
-                            SendPacket(new AuthorizationDisconnectPacket {Reason = "Unable to authenticate."});
-                            return;
-                        }
-                    Array.Clear(VerificationToken, 0, VerificationToken.Length);
+                var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
+                for (int i = 0; i < VerificationToken.Length; i++)
+                    if (decryptedToken[i] != VerificationToken[i])
+                    {
+                        SendPacket(new AuthorizationDisconnectPacket { Reason = "Unable to authenticate." });
+                        return;
+                    }
+                Array.Clear(VerificationToken, 0, VerificationToken.Length);
 
-                    var sharedKey = pkcs.DeSignData(packet.SharedSecret);
+                var sharedKey = pkcs.DeSignData(packet.SharedSecret);
 
-                    Stream.InitializeEncryption(sharedKey);
-                }
-                else
-                    SendPacket(new AuthorizationDisconnectPacket { Reason = "Encryption not enabled!" });
+                Stream.InitializeEncryption(sharedKey);
             }
             else
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Remote Client not enabled!" });
+                SendPacket(new AuthorizationDisconnectPacket { Reason = "Encryption not enabled!" });
         }
         private void HandleAuthorizationPassword(AuthorizationPasswordPacket packet)
         {
-            if(Authorized)
+            if (Authorized)
                 return;
 
-            if (AuthorizationStatus.HasFlag(AuthorizationStatus.RemoteClientEnabled))
+            if (Module.SCON_Password.Hash == packet.PasswordHash)
             {
-                if (_module.SCON_Password.Hash == packet.PasswordHash)
-                {
-                    Authorized = true;
-                    SendPacket(new AuthorizationCompletePacket());
+                Authorized = true;
+                SendPacket(new AuthorizationCompletePacket());
 
-                    IsInitialized = true;
-                    _module.AddClient(this);
-                }
-                else
-                    SendPacket(new AuthorizationDisconnectPacket { Reason = "Password not correct!" });
+                IsInitialized = true;
+                Module.AddClient(this);
             }
             else
-                SendPacket(new AuthorizationDisconnectPacket {Reason = "Remote Client not enabled!"});
+                SendPacket(new AuthorizationDisconnectPacket { Reason = "Password not correct!" });
         }
 
         private void HandleExecuteCommand(ExecuteCommandPacket packet)
@@ -106,7 +96,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            _module.ExecuteCommand(packet.Command);
+            Module.ExecuteCommand(packet.Command);
         }
 
         private void HandleStartChatReceiving(StartChatReceivingPacket packet)
@@ -117,7 +107,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            ChatReceiving = true;
+           // ChatReceiving = true;
         }
         private void HandleStopChatReceiving(StopChatReceivingPacket packet)
         {
@@ -127,7 +117,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            ChatReceiving = false;
+            //ChatReceiving = false;
         }
 
         private void HandlePlayerInfoListRequest(PlayerInfoListRequestPacket packet)
@@ -138,7 +128,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            SendPacket(new PlayerInfoListResponsePacket { PlayerInfos = _module.Server.GetAllClientsInfo() });
+            SendPacket(new PlayerInfoListResponsePacket { PlayerInfos = Module.Server.GetAllClientsInfo().ToArray() });
         }
 
         private void HandleLogListRequest(LogListRequestPacket packet)
@@ -189,7 +179,6 @@ namespace PokeD.Server.Clients.SCON
 
             SendPacket(new CrashLogListResponsePacket { CrashLogs = crashLogs.ToArray() });
         }
-
         private void HandleCrashLogFileRequest(CrashLogFileRequestPacket packet)
         {
             if (!Authorized)
@@ -234,7 +223,7 @@ namespace PokeD.Server.Clients.SCON
         }
         private void HandleReloadNPCs(ReloadNPCsPacket packet)
         {
-            //_module.Server.ReloadNPCs();
+            //Module.Server.ReloadNPCs();
         }
     }
 }

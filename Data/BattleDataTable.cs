@@ -5,6 +5,7 @@ using Aragas.Core.Wrappers;
 
 namespace PokeD.Server.Data
 {
+    /*
     public class Pokemon
     {
         public enum Move { }
@@ -142,4 +143,5 @@ namespace PokeD.Server.Data
             return dictionary;
         }
     }
+    */
 }

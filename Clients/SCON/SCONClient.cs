@@ -6,10 +6,7 @@ using Aragas.Core.IO;
 using Aragas.Core.Packets;
 using Aragas.Core.Wrappers;
 
-using Newtonsoft.Json;
-
 using PokeD.Core.Packets;
-using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
@@ -25,68 +22,50 @@ namespace PokeD.Server.Clients.SCON
 {
     public partial class SCONClient : IClient
     {
-        #region Values
+        #region P3D Values
 
-        [JsonIgnore]
         public int ID { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
 
-        [JsonIgnore]
-        public Prefix Prefix { get { throw new NotImplementedException(); } }
-
-        [JsonIgnore]
         public string Name { get { throw new NotImplementedException(); } }
 
-        [JsonIgnore]
-        public string IP => ClientWrapper.IP;
 
-        [JsonIgnore]
-        public DateTime ConnectionTime { get; } = DateTime.Now;
-
-        [JsonIgnore]
-        public bool UseCustomWorld { get { throw new NotImplementedException(); } }
-
-        [JsonIgnore]
-        public long GameJoltID { get { throw new NotImplementedException(); } }
-
-        [JsonIgnore]
-        public bool IsGameJoltPlayer { get { throw new NotImplementedException(); } }
-
-        [JsonIgnore]
         public string LevelFile { get { throw new NotImplementedException(); } }
-
-        [JsonIgnore]
         public Vector3 Position { get { throw new NotImplementedException(); } }
 
-        [JsonProperty("ChatReceiving")]
-        public bool ChatReceiving { get; private set; }
+        #endregion P3D Values
 
-        [JsonIgnore]
-        public bool Moving { get { throw new NotImplementedException(); } }
+        #region Values
+
+        public Prefix Prefix { get { throw new NotImplementedException(); } }
+        public string PasswordHash { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
+
+        public string IP => Stream.Host;
+
+        public DateTime ConnectionTime { get; } = DateTime.Now;
+
+        bool EncryptionEnabled => Module.EncryptionEnabled;
 
         bool IsInitialized { get; set; }
-        bool IsDisposed { get; set; }
 
         #endregion Values
 
-        ITCPClient ClientWrapper { get; }
         ProtobufStream Stream { get; }
 
-        readonly ModuleSCON _module;
+        ModuleSCON Module { get; }
 
 #if DEBUG
         // -- Debug -- //
-        List<ProtobufPacket> Received { get; } = new List<ProtobufPacket>();
-        List<ProtobufPacket> Sended { get; } = new List<ProtobufPacket>();
+        List<SCONPacket> Received { get; } = new List<SCONPacket>();
+        List<SCONPacket> Sended { get; } = new List<SCONPacket>();
         // -- Debug -- //
 #endif
 
         public SCONClient(ITCPClient clientWrapper, IServerModule server)
         {
-            ClientWrapper = clientWrapper;
-            Stream = new ProtobufStream(ClientWrapper);
-            _module = (ModuleSCON) server;
+            Stream = new ProtobufStream(clientWrapper);
+            Module = (ModuleSCON) server;
 
-            AuthorizationStatus = AuthorizationStatus.RemoteClientEnabled | (_module.EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0);
+            AuthorizationStatus = (EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0);
         }
 
         public void Update()
@@ -96,21 +75,22 @@ namespace PokeD.Server.Clients.SCON
                 if (Stream.DataAvailable > 0)
                 {
                     var dataLength = Stream.ReadVarInt();
-                    if (dataLength == 0)
+                    if (dataLength != 0)
+                    {
+                        var data = Stream.ReadByteArray(dataLength);
+
+                        HandleData(data);
+                    }
+                    else
                     {
                         Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Length size is 0. Disconnecting.");
-                        SendPacket(new AuthorizationDisconnectPacket {Reason = "Packet Length size is 0!"});
-                        _module.RemoveClient(this);
-                        return;
+                        SendPacket(new AuthorizationDisconnectPacket { Reason = "Packet Length size is 0!" });
+                        Module.RemoveClient(this);
                     }
-
-                    var data = Stream.ReadByteArray(dataLength);
-
-                    HandleData(data);
                 }
             }
             else
-                _module.RemoveClient(this);
+                Module.RemoveClient(this);
         }
 
         private void HandleData(byte[] data)
@@ -120,20 +100,22 @@ namespace PokeD.Server.Clients.SCON
                 using (PacketDataReader reader = new ProtobufDataReader(data))
                 {
                     var id = reader.Read<VarInt>();
-                    var origin = reader.Read<VarInt>();
 
                     if (SCONPacketResponses.Packets.Length > id)
                     {
                         if (SCONPacketResponses.Packets[id] != null)
                         {
-                            var packet = SCONPacketResponses.Packets[id]().ReadPacket(reader) as ProtobufOriginPacket;
-                            packet.Origin = origin;
-
-                            HandlePacket(packet);
+                            var packet = SCONPacketResponses.Packets[id]().ReadPacket(reader) as SCONPacket;
+                            if (packet != null)
+                            {
+                                HandlePacket(packet);
 
 #if DEBUG
-                            Received.Add(packet);
+                                Received.Add(packet);
 #endif
+                            }
+                            else
+                                Logger.Log(LogType.GlobalError, $"SCON Reading Error: packet is null. Packet ID {id}"); // TODO: Disconnect?
                         }
                         else
                             Logger.Log(LogType.GlobalError, $"SCON Reading Error: SCONPacketResponses.Packets[{id}] is null.");
@@ -141,8 +123,8 @@ namespace PokeD.Server.Clients.SCON
                     else
                     {
                         Logger.Log(LogType.GlobalError, $"SCON Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting.");
-                        SendPacket(new AuthorizationDisconnectPacket {Reason = $"Packet ID {id} is not correct!"});
-                        _module.RemoveClient(this);
+                        SendPacket(new AuthorizationDisconnectPacket { Reason = $"Packet ID {id} is not correct!" });
+                        Module.RemoveClient(this);
                     }
                 }
             }
@@ -230,44 +212,24 @@ namespace PokeD.Server.Clients.SCON
 
         public void SendPacket(ProtobufPacket packet, int originID = 0)
         {
-            if (packet is P3DPacket)
-            {
-                // TODO: Nope.
-                var messagePacket = packet as ChatMessageGlobalPacket;
-                if (messagePacket != null)
-                    SendPacket(new ChatMessagePacket { Player = _module.Server.GetClientName(messagePacket.Origin), Message = messagePacket.Message });
-            }
-            else
-                Stream.SendPacket(ref packet);
-            
-                
+            var sconPacket = packet as SCONPacket;
+            if (sconPacket == null)
+                throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
+
+            Stream.SendPacket(ref packet);
+     
 #if DEBUG
-            Sended.Add(packet);
+            Sended.Add(sconPacket);
 #endif
         }
 
-        public void LoadFromDB(Player data) { throw new NotImplementedException(); }
+        public void LoadFromDB(Player data) { }
 
 
-        private void DisconnectAndDispose()
-        {
-            if (IsDisposed)
-                return;
-
-            IsDisposed = true;
-
-
-            Stream.Dispose();
-        }
         public void Dispose()
         {
-            if (IsDisposed)
-                return;
-
-            IsDisposed = true;
-
-
-            DisconnectAndDispose();
+            Stream.Disconnect();
+            Stream.Dispose();
         }
     }
 }

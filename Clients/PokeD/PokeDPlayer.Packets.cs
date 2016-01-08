@@ -18,7 +18,7 @@ namespace PokeD.Server.Clients.PokeD
         private void HandleBattleRequest(BattleRequestPacket packet)
         {
             if(Battle == null)
-                Battle = _module.CreateBattle(packet.PlayerIDs, packet.Message);
+                Battle = Module.CreateBattle(packet.PlayerIDs, packet.Message);
             else
                 SendPacket(new BattleCancelledPacket {Reason = "You are already in battle!"});
         }

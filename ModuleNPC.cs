@@ -1,84 +1,100 @@
-﻿using Aragas.Core.Data;
-using Aragas.Core.Wrappers;
+﻿using Aragas.Core.Wrappers;
 
 using Newtonsoft.Json;
 
 using PokeD.Core.Data.PokeD.Monster;
 
 using PokeD.Server.Clients;
-using PokeD.Server.Clients.SCON;
+using PokeD.Server.Clients.NPC;
 
 namespace PokeD.Server
 {
-    public class ModuleSCON : IServerModule
+    public class ModuleNPC : IServerModule
     {
-        const string FileName = "ModuleSCON.json";
+        const string FileName = "ModuleNPC.json";
 
         #region Settings
 
-        [JsonProperty("Port")]
-        public ushort Port { get; private set; } = 15126;
 
-        [JsonProperty("SCON_Password"), JsonConverter(typeof(PasswordHandler))]
-        public PasswordStorage SCON_Password { get; private set; } = new PasswordStorage();
-
-        [JsonProperty("EncryptionEnabled")]
-        public bool EncryptionEnabled { get; private set; } = true;
         
         #endregion Settings
 
         [JsonIgnore]
         public Server Server { get; }
 
-        ITCPListener Listener { get; set; }
-
         [JsonIgnore]
         public ClientList Clients { get; } = new ClientList();
         [JsonIgnore]
-        public bool ClientsVisible { get; } = false;
+        public bool ClientsVisible { get; } = true;
 
 
-        public ModuleSCON(Server server) { Server = server; }
+        public ModuleNPC(Server server) { Server = server; }
 
 
         public void Start()
         {
             var status = FileSystemWrapper.LoadSettings(FileName, this);
             if (!status)
-                Logger.Log(LogType.Warning, "Failed to load SCON settings!");
+                Logger.Log(LogType.Warning, "Failed to load NPC settings!");
 
-            Logger.Log(LogType.Info, $"Starting SCON.");
+            LoadNPCs();
+
+            Logger.Log(LogType.Info, $"Starting NPC.");
 
         }
         public void Stop()
         {
             var status = FileSystemWrapper.SaveSettings(FileName, this);
             if (!status)
-                Logger.Log(LogType.Warning, "Failed to save SCON settings!");
+                Logger.Log(LogType.Warning, "Failed to save NPC settings!");
             
-            Logger.Log(LogType.Info, $"Stopping SCON.");
+            Logger.Log(LogType.Info, $"Stopping NPC.");
 
             Dispose();
 
-            Logger.Log(LogType.Info, $"Stopped SCON.");
+            Logger.Log(LogType.Info, $"Stopped NPC.");
         }
         
         
-        public void StartListen()
-        {
-            Listener = TCPListenerWrapper.CreateTCPListener(Port);
-            Listener.Start();
-        }
-        public void CheckListener()
-        {
-            if (Listener != null && Listener.AvailableClients)
-                if (Listener.AvailableClients)
-                    AddClient(new SCONClient(Listener.AcceptTCPClient(), this));
-        }
+        public void StartListen() { }
+        public void CheckListener() { }
 
 
-        public void AddClient(IClient client) { Clients.Add(client); }
-        public void RemoveClient(IClient client, string reason = "") { Clients.Remove(client); }
+        private bool LoadNPCs()
+        {
+            Logger.Log(LogType.Info, "Loading NPC's.");
+            var npcs = NPCLoader.LoadNPCs(this);
+
+            foreach (var npc in npcs)
+                AddClient(npc);
+
+            return true;
+        }
+        public bool ReloadNPCs()
+        {
+            for (int i = 0; i < Clients.Count; i++)
+                RemoveClient(Clients[i]);
+
+            return LoadNPCs();
+        }
+
+        public void AddClient(IClient client)
+        {
+            Server.PeekDBID(client);
+            Server.LoadDBPlayer(client);
+
+            Clients.Add(client);
+
+            Server.ClientConnected(this, client);
+        }
+        public void RemoveClient(IClient client, string reason = "")
+        {
+            Server.UpdateDBPlayer(client, true);
+
+            Clients.Remove(client);
+
+            Server.ClientDisconnected(this, client);
+        }
 
 
         public void Update()
