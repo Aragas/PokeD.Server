@@ -138,6 +138,7 @@ namespace PokeD.Server.Clients.P3D
             }
             else
             {
+                PasswordHash = GameJoltID.ToString();
                 Module.PreAdd(this);
                 Initialize();
             }
