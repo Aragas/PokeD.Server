@@ -122,16 +122,24 @@ namespace PokeD.Server.Clients.P3D
             SendPacket(GetDataPacket(), ID);
 
             // We assume that if we get a GameData, it's a client that wanna play
-            if (!FirstGameData)
+            if (FirstGameData)
+                return;
+            FirstGameData = true;
+
+            if (!IsGameJoltPlayer)
             {
                 Module.PreAdd(this);
-                FirstGameData = true;
 
-                SendPacket(new ChatMessageGlobalPacket { Message = "Please use /login %PASSWORD% for logging in or registering" }, -1);
-                SendPacket(new ChatMessageGlobalPacket { Message = "Please note that chat data  isn't sended secure to server" }, -1);
-                SendPacket(new ChatMessageGlobalPacket { Message = "So it can be seen via traffic sniffing" }, -1);
-                SendPacket(new ChatMessageGlobalPacket { Message = "Don't use your regular passwords" }, -1);
-                SendPacket(new ChatMessageGlobalPacket { Message = "On server it's stored fully secure via SHA-512" }, -1);
+                SendPacket(new ChatMessageGlobalPacket {Message = "Please use /login %PASSWORD% for logging in or registering"}, -1);
+                SendPacket(new ChatMessageGlobalPacket {Message = "Please note that chat data  isn't sended secure to server"}, -1);
+                SendPacket(new ChatMessageGlobalPacket {Message = "So it can be seen via traffic sniffing"}, -1);
+                SendPacket(new ChatMessageGlobalPacket {Message = "Don't use your regular passwords"}, -1);
+                SendPacket(new ChatMessageGlobalPacket {Message = "On server it's stored fully secure via SHA-512"}, -1);
+            }
+            else
+            {
+                Module.PreAdd(this);
+                Initialize();
             }
         }
 

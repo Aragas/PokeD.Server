@@ -23,7 +23,7 @@ namespace PokeD.Server
 
                 public PlayerJson(string name, int ping, bool online) { Name = name; Ping = ping; Online = online; }
             }
-            public List<PlayerJson> Players { get; set; }
+            public List<PlayerJson> Players { get; }
 
             public OnlineResponseJson(IEnumerable<PlayerJson> players) { Players = new List<PlayerJson>(players); }
         }
