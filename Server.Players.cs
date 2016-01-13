@@ -15,7 +15,7 @@ namespace PokeD.Server
         ///// Get all connected IClient Names.
         ///// </summary>
         ///// <returns>Returns null if there are no IClient connected.</returns>
-        public IEnumerable<PlayerInfo> GetAllClientsInfo() => Modules.SelectMany(module => module.Clients.GetAllClientsInfo());
+        public IEnumerable<PlayerInfo> GetAllClientsInfo() => Modules.Where(module => module.ClientsVisible).SelectMany(module => module.Clients.GetAllClientsInfo());
 
 
         /// <summary>
