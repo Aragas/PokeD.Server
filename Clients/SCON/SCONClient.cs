@@ -84,8 +84,7 @@ namespace PokeD.Server.Clients.SCON
                     else
                     {
                         Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet Length size is 0. Disconnecting.");
-                        SendPacket(new AuthorizationDisconnectPacket { Reason = "Packet Length size is 0!" });
-                        Module.RemoveClient(this);
+                        Module.RemoveClient(this, "Packet Length size is 0!");
                     }
                 }
             }
@@ -123,8 +122,7 @@ namespace PokeD.Server.Clients.SCON
                     else
                     {
                         Logger.Log(LogType.GlobalError, $"SCON Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting.");
-                        SendPacket(new AuthorizationDisconnectPacket { Reason = $"Packet ID {id} is not correct!" });
-                        Module.RemoveClient(this);
+                        Module.RemoveClient(this, $"Packet ID {id} is not correct!");
                     }
                 }
             }

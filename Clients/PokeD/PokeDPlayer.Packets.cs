@@ -5,9 +5,11 @@ using Org.BouncyCastle.Crypto.Prng;
 
 using PokeD.Core;
 using PokeD.Core.Data.PokeD.Monster;
+using PokeD.Core.Data.PokeD.Trainer;
 using PokeD.Core.Extensions;
 using PokeD.Core.Packets.PokeD.Authorization;
 using PokeD.Core.Packets.PokeD.Battle;
+using PokeD.Core.Packets.PokeD.Chat;
 using PokeD.Core.Packets.PokeD.Overworld;
 using PokeD.Core.Packets.PokeD.Trade;
 
@@ -24,6 +26,8 @@ namespace PokeD.Server.Clients.PokeD
             if (IsInitialized)
                 return;
 
+            PlayerRef = new Trainer(packet.Name);
+
             SendPacket(new AuthorizationResponsePacket { AuthorizationStatus = AuthorizationStatus });
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
@@ -34,10 +38,10 @@ namespace PokeD.Server.Clients.PokeD
                 var drg = new DigestRandomGenerator(new Sha512Digest());
                 drg.NextBytes(VerificationToken);
 
-                SendPacket(new EncryptionRequestPacket { PublicKey = publicKey, VerificationToken = VerificationToken });
+                SendPacket(new EncryptionRequestPacket {PublicKey = publicKey, VerificationToken = VerificationToken});
             }
             else
-                Initialize();
+                Module.PreAdd(this); //Initialize();
         }
         private void HandleEncryptionResponse(EncryptionResponsePacket packet)
         {
@@ -60,14 +64,45 @@ namespace PokeD.Server.Clients.PokeD
                 var sharedKey = pkcs.DeSignData(packet.SharedSecret);
 
                 Stream.InitializeEncryption(sharedKey);
-                Initialize();
+                Module.PreAdd(this);
+                //Initialize();
             }
             else
                 SendPacket(new AuthorizationDisconnectPacket { Reason = "Encryption not enabled!" });
         }
 
+
         private void HandlePosition(PositionPacket packet) { }
         private void HandleTrainerInfo(TrainerInfoPacket packet) { }
+
+        private void HandleChatServerMessage(ChatServerMessagePacket packet) { }
+        private void HandleChatGlobalMessage(ChatGlobalMessagePacket packet)
+        {
+            if (packet.Message.StartsWith("/"))
+            {
+                if (!packet.Message.ToLower().StartsWith("/login"))
+                    SendPacket(new ChatGlobalMessagePacket { Message = packet.Message }, ID);
+
+                ExecuteCommand(packet.Message);
+            }
+            else if (IsInitialized)
+            {
+                Logger.LogChatMessage(Name, packet.Message);
+                Module.SendGlobalMessage(this, packet.Message);
+            }
+        }
+        private void HandleChatPrivateMessage(ChatPrivateMessagePacket packet)
+        {
+            var destClient = Module.Server.GetClient(packet.PlayerID);
+            if (destClient != null)
+            {
+                Module.SendPrivateMessage(this, destClient, packet.Message);
+                Module.PokeDPlayerSendToClient(this, new ChatPrivateMessagePacket { Message = packet.Message });
+            }
+            else
+                SendPacket(new ChatGlobalMessagePacket { Message = $"The player with the name \"{destClient.Name}\" doesn't exist." }, -1);
+        }
+
 
         private void HandleBattleRequest(BattleRequestPacket packet)
         {

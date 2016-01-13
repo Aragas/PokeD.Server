@@ -39,6 +39,7 @@
     <Compile Include="Clients\NPC\NPCPlayer.cs" />
     <Compile Include="Clients\NPC\NPCPlayer.Packets.cs" />
     <Compile Include="Clients\IClient.cs" />
+    <Compile Include="Clients\PokeD\PokeDPlayer.Settings.cs" />
     <Compile Include="Clients\PokeD\PokeDPlayer.Battle.cs" />
     <Compile Include="Clients\PokeD\PokeDPlayer.cs" />
     <Compile Include="Clients\PokeD\PokeDPlayer.Packets.cs" />
@@ -60,6 +61,7 @@
     <Compile Include="Data\Weather.cs" />
     <Compile Include="Data\World.cs" />
     <Compile Include="ModuleNPC.cs" />
+    <Compile Include="ModuleNancy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Clients\SCON\SCONClient.cs" />
     <Compile Include="ModuleP3D.cs" />

@@ -193,7 +193,8 @@ namespace PokeD.Server.Clients.P3D
         }
         private void HandleTradeJoin(TradeJoinPacket packet)
         {
-            Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeJoinPacket(), packet.Origin);
+            Module.P3DPlayerSendToClient(packet.Origin, new TradeJoinPacket(), packet.DestinationPlayerID);
+            //Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeJoinPacket(), packet.Origin);
         }
         private void HandleTradeQuit(TradeQuitPacket packet)
         {

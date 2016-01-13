@@ -11,6 +11,7 @@ using Aragas.Core.Wrappers;
 using Newtonsoft.Json;
 
 using PokeD.Core.Data.P3D;
+using PokeD.Core.Data.PokeD;
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Data.PokeD.Monster.Data;
 using PokeD.Core.Packets;
@@ -391,9 +392,25 @@ namespace PokeD.Server
         }
         public void SendGlobalMessage(IClient sender, string message)
         {
-            P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
+            if (!(sender is P3DPlayer))
+            {
+                P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
+            }
+            else
+            {
+                P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
 
-            Server.ClientGlobalMessage(this, sender, message);
+                Server.ClientGlobalMessage(this, sender, message);
+            }
+
+            //if (sender is P3DPlayer)
+            //    P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
+            //else
+            //    Server.ClientGlobalMessage(this, sender, message);
+
+            //P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
+            //
+            //Server.ClientGlobalMessage(this, sender, message);
         }
 
         public void SendTradeRequest(IClient sender, Monster monster, IClient destClient)
@@ -413,7 +430,7 @@ namespace PokeD.Server
             if (destClient is P3DPlayer)
                 P3DPlayerSendToClient(destClient, new TradeStartPacket(), sender.ID);
             else
-                Server.ClientTradeConfirm(this, sender, destClient);
+                Server.ClientTradeConfirm(this, destClient, sender);
         }
         public void SendTradeCancel(IClient sender, IClient destClient)
         {
@@ -568,10 +585,10 @@ namespace PokeD.Server
             var id = short.Parse(dict["Pokemon"]);
             var gender = (MonsterGender)int.Parse(dict["Gender"]);
             var isShiny = int.Parse(dict["isShiny"]) != 0;
-            var abilities = new[] { short.Parse(dict["Ability"]) };
+            var ability = short.Parse(dict["Ability"]);
             var nature = byte.Parse(dict["Nature"]);
 
-            var dat = new MonsterInstanceData(id, gender, isShiny, abilities, nature)
+            var dat = new MonsterInstanceData(id, gender, isShiny, ability, nature)
             {
                 Experience = int.Parse(dict["Experience"]),
                 Friendship = byte.Parse(dict["Friendship"]),
@@ -582,9 +599,9 @@ namespace PokeD.Server
                     Method      = dict["CatchMethod"],
                     Location    = dict["CatchLocation"],
                     TrainerName = dict["CatchTrainer"],
-                    TrainerID   = (short) int.Parse(dict["OT"]).BitsGet(0, 16) == short.MaxValue
-                                ? (short) int.Parse(dict["OT"]).BitsGet(16, 32)
-                                : (short) int.Parse(dict["OT"]).BitsGet(0, 16)
+                    TrainerID   = (ushort) int.Parse(dict["OT"]).BitsGet(0, 16) == ushort.MaxValue
+                                ? (ushort) int.Parse(dict["OT"]).BitsGet(16, 32)
+                                : (ushort) int.Parse(dict["OT"]).BitsGet(0, 16)
                 }
             };
 
@@ -595,10 +612,10 @@ namespace PokeD.Server
             var move2 = dict["Attack3"].Split(',');
             var move3 = dict["Attack4"].Split(',');
             dat.Moves = new MonsterMoves(
-                new Move(int.Parse(move0[0]), int.Parse(move0[2]) - int.Parse(move0[1])),
-                new Move(int.Parse(move1[0]), int.Parse(move1[2]) - int.Parse(move1[1])),
-                new Move(int.Parse(move2[0]), int.Parse(move2[2]) - int.Parse(move2[1])),
-                new Move(int.Parse(move3[0]), int.Parse(move3[2]) - int.Parse(move3[1])));
+                move0.Length != 1 ? new Move(int.Parse(move0[0]), int.Parse(move0[2]) - int.Parse(move0[1])) : Move.Empty,
+                move1.Length != 1 ? new Move(int.Parse(move1[0]), int.Parse(move1[2]) - int.Parse(move1[1])) : Move.Empty,
+                move2.Length != 1 ? new Move(int.Parse(move2[0]), int.Parse(move2[2]) - int.Parse(move2[1])) : Move.Empty,
+                move3.Length != 1 ? new Move(int.Parse(move3[0]), int.Parse(move3[2]) - int.Parse(move3[1])) : Move.Empty);
 
             dat.CurrentHP = short.Parse(dict["HP"]);
 
@@ -625,7 +642,7 @@ namespace PokeD.Server
         public static DataItems MonsterToDataItems(Monster monster)
         {
             var dict = new Dictionary<string, string>();
-            dict.Add("Pokemon", $"[{monster.ID}]");
+            dict.Add("Pokemon", $"[{monster.Species}]");
             dict.Add("Experience", $"[{monster.Experience}]");
             dict.Add("Gender", $"[{((int)monster.Gender)}]");
             dict.Add("EggSteps", $"[{monster.EggSteps}]");
@@ -633,8 +650,8 @@ namespace PokeD.Server
             dict.Add("ItemData", $"[]");
             dict.Add("NickName", $"[{monster.DisplayName}]");
             dict.Add("Level", $"[{(monster.Level > 0 ? monster.Level - 1 : monster.Level)}]");
-            dict.Add("OT", $"[{(monster.CatchInfo.TrainerID < 0 ? (short)-monster.CatchInfo.TrainerID : monster.CatchInfo.TrainerID)}]");
-            dict.Add("Ability", $"[{string.Join(",", monster.Abilities.Select(ability => ability.ToString()).ToArray())}]");
+            dict.Add("OT", $"[{(monster.CatchInfo.TrainerID < 0 ? (ushort)-monster.CatchInfo.TrainerID : monster.CatchInfo.TrainerID)}]");
+            dict.Add("Ability", $"[{string.Join(",", monster.Ability)}]");
             dict.Add("Status", $"[]"); // TODO
             dict.Add("Nature", $"[{monster.Nature}]");
             dict.Add("CatchLocation", $"[{monster.CatchInfo.Location}]");
@@ -643,10 +660,16 @@ namespace PokeD.Server
             dict.Add("CatchMethod", $"[{monster.CatchInfo.Method}]");
             dict.Add("Friendship", $"[{monster.Friendship}]");
             dict.Add("isShiny", $"[{(monster.IsShiny ? 1 : 0)}]");
-            dict.Add("Attack1", $"[{monster.Moves.Move_0.ID}, 10, 10]");
-            dict.Add("Attack2", $"[{monster.Moves.Move_1.ID}, 10, 10]");
-            dict.Add("Attack3", $"[{monster.Moves.Move_2.ID}, 10, 10]");
-            dict.Add("Attack4", $"[{monster.Moves.Move_3.ID}, 10, 10]");
+
+            var pp0 = PokeApiV2.GetMoves(new ResourceUri($"api/v1/move/{monster.Moves.Move_0.ID}/"))[0].pp;
+            var pp1 = PokeApiV2.GetMoves(new ResourceUri($"api/v1/move/{monster.Moves.Move_1.ID}/"))[0].pp;
+            var pp2 = PokeApiV2.GetMoves(new ResourceUri($"api/v1/move/{monster.Moves.Move_2.ID}/"))[0].pp;
+            var pp3 = PokeApiV2.GetMoves(new ResourceUri($"api/v1/move/{monster.Moves.Move_3.ID}/"))[0].pp;
+            dict.Add("Attack1", monster.Moves.Move_0.ID == 0 ? $"[]" : $"[{monster.Moves.Move_0.ID}, {pp0}, {pp0}]");
+            dict.Add("Attack2", monster.Moves.Move_1.ID == 0 ? $"[]" : $"[{monster.Moves.Move_1.ID}, {pp1}, {pp1}]");
+            dict.Add("Attack3", monster.Moves.Move_2.ID == 0 ? $"[]" : $"[{monster.Moves.Move_2.ID}, {pp2}, {pp2}]");
+            dict.Add("Attack4", monster.Moves.Move_3.ID == 0 ? $"[]" : $"[{monster.Moves.Move_3.ID}, {pp3}, {pp3}]");
+
             dict.Add("HP", $"[{monster.CurrentHP}]");
             dict.Add("EVs", $"[{monster.InstanceData.EV.HP},{monster.InstanceData.EV.Attack},{monster.InstanceData.EV.Defense},{monster.InstanceData.EV.SpecialAttack},{monster.InstanceData.EV.SpecialDefense},{monster.InstanceData.EV.Speed}]");
             dict.Add("IVs", $"[{monster.InstanceData.IV.HP},{monster.InstanceData.IV.Attack},{monster.InstanceData.IV.Defense},{monster.InstanceData.IV.SpecialAttack},{monster.InstanceData.IV.SpecialDefense},{monster.InstanceData.IV.Speed}]");

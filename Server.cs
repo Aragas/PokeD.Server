@@ -12,7 +12,8 @@ using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
-
+using PokeD.Core.Data.PokeD;
+using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
 
@@ -24,6 +25,9 @@ namespace PokeD.Server
         const string FileName = "Server.json";
 
         #region Settings
+
+        [JsonProperty("PokeApiUrl")]
+        public string PokeApiUrl { get; set; } = "http://pokeapi.co/";
 
         [JsonProperty("World")]
         public World World { get; set; } = new World();
@@ -51,6 +55,7 @@ namespace PokeD.Server
             Modules.Add(new ModuleSCON(this));
             Modules.Add(new ModulePokeD(this));
             Modules.Add(new ModuleNPC(this));
+            Modules.Add(new ModuleNancy(this));
         }
 
         private static AsymmetricCipherKeyPair GenerateKeyPair()
@@ -69,6 +74,11 @@ namespace PokeD.Server
             var status = FileSystemWrapper.LoadSettings(FileName, this);
             if(!status)
                 Logger.Log(LogType.Warning, "Failed to load Server settings!");
+
+
+            if (!PokeApiUrl.EndsWith("/"))
+                PokeApiUrl = PokeApiUrl + "/";
+            ResourceUri.URL = PokeApiUrl;
 
 
             Logger.Log(LogType.Info, "Generating RSA key pair.");
@@ -90,7 +100,7 @@ namespace PokeD.Server
 
             foreach (var module in Modules)
                 module.Start();
-
+            
             return status;
         }
         public bool Stop()

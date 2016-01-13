@@ -12,10 +12,10 @@ namespace PokeD.Server.Clients.P3D
             message = message.Remove(0, 1);
 
             if (command.StartsWith("login "))
-                ExecuteLoginCommand(command.Remove(0, 6));
+                ExecuteLoginCommand(message.Remove(0, 6));
 
             else if(command.StartsWith("changepassword ") && IsInitialized)
-                ExecuteChangePasswordCommand(command.Remove(0, 15));
+                ExecuteChangePasswordCommand(message.Remove(0, 15));
 
             else if (command.StartsWith("help"))
                 ExecuteHelpCommand();
@@ -45,7 +45,7 @@ namespace PokeD.Server.Clients.P3D
             var newPassword = new PasswordStorage(array[1]).Hash;
 
             Module.P3DPlayerChangePassword(this, oldPassword, newPassword);
-            SendPacket(new ChatMessageGlobalPacket { Message = "Please use /login %PASSWORD% for logging in or registering" }, -1);
+            SendCommandResponse("Please use /login %PASSWORD% for logging in or registering");
         }
 
         private void ExecuteHelpCommand()

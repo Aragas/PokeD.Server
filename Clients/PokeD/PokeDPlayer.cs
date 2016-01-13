@@ -7,13 +7,14 @@ using Aragas.Core.Packets;
 using Aragas.Core.Wrappers;
 
 using PokeD.Core.Data.PokeD.Trainer;
-using PokeD.Core.Data.PokeD.Trainer.Data;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.PokeD.Authorization;
 using PokeD.Core.Packets.PokeD.Battle;
+using PokeD.Core.Packets.PokeD.Chat;
 using PokeD.Core.Packets.PokeD.Overworld;
 using PokeD.Core.Packets.PokeD.Trade;
+
 using PokeD.Server.Data;
 using PokeD.Server.Database;
 
@@ -21,7 +22,7 @@ namespace PokeD.Server.Clients.PokeD
 {
     public partial class PokeDPlayer : IClient
     {
-        Trainer PlayerRef { get; } = new Trainer("1123123", TrainerGender.Female);
+        Trainer PlayerRef { get; set; } = new Trainer("1112");
 
         #region Game Values
 
@@ -161,6 +162,17 @@ namespace PokeD.Server.Clients.PokeD
                     break;
                 case PokeDPacketTypes.TrainerInfo:
                     HandleTrainerInfo((TrainerInfoPacket) packet);
+                    break;
+
+
+                case PokeDPacketTypes.ChatServerMessage:
+                    HandleChatServerMessage((ChatServerMessagePacket) packet);
+                    break;
+                case PokeDPacketTypes.ChatGlobalMessage:
+                    HandleChatGlobalMessage((ChatGlobalMessagePacket) packet);
+                    break;
+                case PokeDPacketTypes.ChatPrivateMessage:
+                    HandleChatPrivateMessage((ChatPrivateMessagePacket) packet);
                     break;
 
 

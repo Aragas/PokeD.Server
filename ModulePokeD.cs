@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 
 using Aragas.Core.Data;
@@ -9,6 +10,10 @@ using Aragas.Core.Interfaces;
 using Aragas.Core.Wrappers;
 
 using Newtonsoft.Json;
+
+using PCLStorage;
+
+using PKHeX;
 
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Packets;
@@ -180,10 +185,15 @@ namespace PokeD.Server
         {
             if (Listener != null && Listener.AvailableClients)
                 if (Listener.AvailableClients)
-                    AddClient(new PokeDPlayer(Listener.AcceptTCPClient(), this));
+                    PlayersJoining.Add(new PokeDPlayer(Listener.AcceptTCPClient(), this));
         }
 
 
+        public void PreAdd(IClient client)
+        {
+            if (Server.PeekDBID(client) != -1)
+                PokeDPlayerSendToClient(client, new AuthorizationCompletePacket { PlayerID = client.ID });
+        }
         public void AddClient(IClient client)
         {
             if (!Server.LoadDBPlayer(client))
@@ -194,39 +204,25 @@ namespace PokeD.Server
 
             PlayersToAdd.Add(client);
             PlayersJoining.Remove(client);
-
-            PokeDPlayerSendToClient(client, new AuthorizationCompletePacket { PlayerID = client.ID });
-            //PokeDPlayerSendToClient(client, new PlayerList { PlayerID = client.ID });
         }
         public void RemoveClient(IClient client, string reason = "")
         {
             if (!string.IsNullOrEmpty(reason))
                 client.SendPacket(new DisconnectPacket { Reason = reason });
-
-            PlayersToRemove.Add(client);
+            
+            //PlayersToRemove.Add(client);
         }
 
         bool b = false;
         Stopwatch UpdateWatch = Stopwatch.StartNew();
         public void Update()
         {
-            /*
-            if (!b)
-            {
-                var client = new PokeDPlayer(null, this);
-                Server.PeekDBID(client);
-                Server.LoadDBPlayer(client);
-                Clients.Add(client);
-
-                b = true;
-            }
-
-            for (var i = 0; i < Battles.Count; i++)
-                Battles[i]?.Update();
-
-            for (var i = 0; i < Clients.Count; i++)
-                Clients[i]?.Update();
-            */
+            //for (var i = 0; i < Battles.Count; i++)
+            //    Battles[i]?.Update();
+            //
+            //for (var i = 0; i < Clients.Count; i++)
+            //    Clients[i]?.Update();
+            //*/
 
             #region Player Filtration
 
@@ -295,22 +291,6 @@ namespace PokeD.Server
                     Clients[i].SendPacket(packetToAllPlayers);
 
             #endregion Packet Sending
-
-
-
-            if (UpdateWatch.ElapsedMilliseconds < 1000)
-                return;
-
-            //for (var i = 0; i < Clients.Count; i++)
-            //{
-            //    var player = Clients[i];
-            //    if (player == null) continue;
-            //
-            //    //PokeDPlayerSendToClient(player, new WorldDataPacket { DataItems = Server.World.GenerateDataItems() }, -1);
-            //}
-
-            UpdateWatch.Reset();
-            UpdateWatch.Start();
         }
 
 
@@ -332,52 +312,37 @@ namespace PokeD.Server
         }
         public void SendGlobalMessage(IClient sender, string message)
         {
-            PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() { Message = message });
+            if (!(sender is PokeDPlayer))
+                PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() {Message = message});
+            else
+            {
+                PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() {Message = message});
 
-            Server.ClientGlobalMessage(this, sender, message);
+                Server.ClientGlobalMessage(this, sender, message);
+            }
         }
 
         public void SendTradeRequest(IClient sender, Monster monster, IClient destClient)
         {
             if (destClient is PokeDPlayer)
-                PokeDPlayerSendToClient(destClient, new TradeOfferPacket() { DestinationID = -1, MonsterData = monster.InstanceData });
+            {
+                PokeDPlayerSendToClient(destClient, new TradeOfferPacket() {DestinationID = -1, MonsterData = monster.InstanceData});
+
+                Server.ClientTradeOffer(this, destClient, cm, sender);
+            }
             else
                 Server.ClientTradeOffer(this, sender, monster, destClient);
-
-            /*
-            var monstIns = new MonsterInstanceData(151, MonsterGender.Genderless, false, new short[] {30}, 11)
-            {
-                EV = new MonsterStats(255, 255, 255, 255, 255, 255),
-                IV = new MonsterStats(30, 30, 30, 30, 30, 30),
-
-                CurrentHP = 100,
-                Experience = 1059860,
-
-                CatchInfo = new MonsterCatchInfo()
-                {
-                    Nickname = "TestShit",
-                    PokeballID = 1,
-                    TrainerID = 12345,
-                    Location = "at Aragas's Computer",
-                    TrainerName = "Aragas",
-                    Method = "As a gift from nilllzz"
-                },
-
-                Moves = new MonsterMoves(
-                    new Move(1, 1),
-                    new Move(2, 1),
-                    new Move(3, 1),
-                    new Move(4, 1))
-            };
-            var monst = new Monster(monstIns);
-
-            Server.ClientTradeOffer(this, destClient, monst, sender);
-            */
         }
         public void SendTradeConfirm(IClient sender, IClient destClient)
         {
             if (destClient is PokeDPlayer)
-                PokeDPlayerSendToClient(destClient, new TradeAcceptPacket() { DestinationID = -1 });
+            {
+                PokeDPlayerSendToClient(destClient, new TradeAcceptPacket() {DestinationID = -1});
+
+                Server.ClientTradeConfirm(this, sender, destClient);
+
+                ThreadWrapper.Sleep(5000);
+            }
             else
                 Server.ClientTradeConfirm(this, sender, destClient);
         }
@@ -456,6 +421,51 @@ namespace PokeD.Server
             PacketsToAllPlayers = null;
 
             Battles.Clear();
+        }
+
+        private static byte[] ReadFully(Stream input)
+        {
+            var buffer = new byte[16 * 1024];
+            using (var ms = new MemoryStream())
+            {
+                
+                int read;
+                while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+                    ms.Write(buffer, 0, read);
+                
+                return ms.ToArray();
+            }
+        }
+
+        Monster cm;
+        Monster m1;
+        Monster m2;
+        Monster m3;
+        Monster m4;
+        Monster m5;
+        Monster m6;
+        private void DoTrade()
+        {
+            using (var stream1 = FileSystemWrapper.DatabaseFolder.GetFileAsync("DIGDRI - C7BD3D4D.pk6").Result.OpenAsync(FileAccess.Read).Result)
+            using (var stream2 = FileSystemWrapper.DatabaseFolder.GetFileAsync("PIKACHU - 65B9E4AF.pk6").Result.OpenAsync(FileAccess.Read).Result)
+            using (var stream3 = FileSystemWrapper.DatabaseFolder.GetFileAsync("FLAMARA - 8282DA17.pk6").Result.OpenAsync(FileAccess.Read).Result)
+            using (var stream4 = FileSystemWrapper.DatabaseFolder.GetFileAsync("REEQ - C37F5D34.pk6").Result.OpenAsync(FileAccess.Read).Result)
+            using (var stream5 = FileSystemWrapper.DatabaseFolder.GetFileAsync("GARADOS - CD95CABC.pk6").Result.OpenAsync(FileAccess.Read).Result)
+            using (var stream6 = FileSystemWrapper.DatabaseFolder.GetFileAsync("SMETTBO - 60D115AE.pk6").Result.OpenAsync(FileAccess.Read).Result)
+            //using (var stream1 = FileSystemWrapper.DatabaseFolder.GetFileAsync("1.pk6").Result.OpenAsync(FileAccess.Read).Result)
+            //using (var stream2 = FileSystemWrapper.DatabaseFolder.GetFileAsync("2.pk6").Result.OpenAsync(FileAccess.Read).Result)
+            //using (var stream3 = FileSystemWrapper.DatabaseFolder.GetFileAsync("3.pk6").Result.OpenAsync(FileAccess.Read).Result)
+            //using (var stream4 = FileSystemWrapper.DatabaseFolder.GetFileAsync("4.pk6").Result.OpenAsync(FileAccess.Read).Result)
+            //using (var stream5 = FileSystemWrapper.DatabaseFolder.GetFileAsync("5.pk6").Result.OpenAsync(FileAccess.Read).Result)
+            //using (var stream6 = FileSystemWrapper.DatabaseFolder.GetFileAsync("6.pk6").Result.OpenAsync(FileAccess.Read).Result)
+            {
+                m1 = new Monster(new PK6Wrapped(new PK6(ReadFully(stream1))).ConvertToMonsterInstanceData());
+                m2 = new Monster(new PK6Wrapped(new PK6(ReadFully(stream2))).ConvertToMonsterInstanceData());
+                m3 = new Monster(new PK6Wrapped(new PK6(ReadFully(stream3))).ConvertToMonsterInstanceData());
+                m4 = new Monster(new PK6Wrapped(new PK6(ReadFully(stream4))).ConvertToMonsterInstanceData());
+                m5 = new Monster(new PK6Wrapped(new PK6(ReadFully(stream5))).ConvertToMonsterInstanceData());
+                m6 = new Monster(new PK6Wrapped(new PK6(ReadFully(stream6))).ConvertToMonsterInstanceData());
+            }
         }
 
         private class PlayerPacketPokeD

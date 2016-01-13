@@ -1,45 +1,58 @@
-﻿using Aragas.Core.Data;
+﻿using System.Collections.Generic;
+using System.Linq;
+
 using Aragas.Core.Wrappers;
 
 using Newtonsoft.Json;
 
 using PokeD.Core.Data.PokeD.Monster;
-using PokeD.Core.Packets.SCON.Authorization;
     
 using PokeD.Server.Clients;
-using PokeD.Server.Clients.SCON;
 
 namespace PokeD.Server
 {
-    public class ModuleSCON : IServerModule
+    public class ModuleNancy : IServerModule
     {
-        const string FileName = "ModuleSCON.json";
+        public class OnlineResponseJson
+        {
+            public class PlayerJson
+            {
+                public string Name { get; set; }
+                public int Ping { get; set; }
+                public bool Online { get; set; }
+
+                public PlayerJson(string name, int ping, bool online) { Name = name; Ping = ping; Online = online; }
+            }
+            public List<PlayerJson> Players { get; set; }
+
+            public OnlineResponseJson(IEnumerable<PlayerJson> players) { Players = new List<PlayerJson>(players); }
+        }
+
+
+        const string FileName = "ModuleNancy.json";
 
         #region Settings
 
+        [JsonProperty("Host")]
+        public string Host { get; private set; } = "localhost";
+
         [JsonProperty("Port")]
-        public ushort Port { get; private set; } = 15126;
-
-        [JsonProperty("SCON_Password"), JsonConverter(typeof(PasswordHandler))]
-        public PasswordStorage SCON_Password { get; private set; } = new PasswordStorage();
-
-        [JsonProperty("EncryptionEnabled")]
-        public bool EncryptionEnabled { get; private set; } = true;
+        public ushort Port { get; private set; } = 8765;
         
         #endregion Settings
 
         [JsonIgnore]
         public Server Server { get; }
 
-        ITCPListener Listener { get; set; }
-
         [JsonIgnore]
         public ClientList Clients { get; } = new ClientList();
         [JsonIgnore]
         public bool ClientsVisible { get; } = false;
 
+        private INancyWrapper Nancy { get; set; }
 
-        public ModuleSCON(Server server) { Server = server; }
+
+        public ModuleNancy(Server server) { Server = server; }
 
 
         public void Start()
@@ -63,38 +76,32 @@ namespace PokeD.Server
 
             Logger.Log(LogType.Info, $"Stopped SCON.");
         }
-        
-        
+
+
         public void StartListen()
         {
-            Listener = TCPListenerWrapper.CreateTCPListener(Port);
-            Listener.Start();
+            var data = new NancyData();
+            data.Add("online", GetOnlineClients);
+
+            Nancy = NancyWrapper.CreateNancyWrapper(data);
+            Nancy.Start(Host, Port);
         }
-        public void CheckListener()
+
+        private dynamic GetOnlineClients(dynamic args)
         {
-            if (Listener != null && Listener.AvailableClients)
-                if (Listener.AvailableClients)
-                    AddClient(new SCONClient(Listener.AcceptTCPClient(), this));
+            var response = new OnlineResponseJson(Server.GetAllClientsInfo().Select(playerInfo => new OnlineResponseJson.PlayerJson(playerInfo.Name, playerInfo.Ping, false)));
+            var jsonResponse = JsonConvert.SerializeObject(response, Formatting.None);
+            return jsonResponse;
         }
 
-
-        public void AddClient(IClient client) { Clients.Add(client); }
-        public void RemoveClient(IClient client, string reason = "")
-        {
-            Clients.Remove(client);
-
-            if (!string.IsNullOrEmpty(reason))
-                client.SendPacket(new AuthorizationDisconnectPacket { Reason = reason });
-
-            client.Dispose();
-        }
+        public void CheckListener() { }
 
 
-        public void Update()
-        {
-            for (var i = 0; i < Clients.Count; i++)
-                Clients[i]?.Update();
-        }
+        public void AddClient(IClient client) { }
+        public void RemoveClient(IClient client, string reason = "") { }
+
+
+        public void Update() { }
 
 
         public void OtherConnected(IClient client) { }
@@ -111,11 +118,6 @@ namespace PokeD.Server
         public void ExecuteCommand(string command) { }
 
 
-        public void Dispose()
-        {
-            for (int i = 0; i < Clients.Count; i++)
-                Clients[i].Dispose();
-            Clients.Clear();
-        }
+        public void Dispose() { }
     }
 }
