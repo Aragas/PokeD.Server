@@ -94,9 +94,6 @@
         <Reference Include="crypto, Version=1.7.0.0, Culture=neutral, processorArchitecture=MSIL">
           <HintPath>..\packages\Portable.BouncyCastle.1.7.0.2\lib\portable-net4+sl5+wp8+win8+wpa81+MonoTouch10+MonoAndroid10+xamarinmac20+xamarinios10\crypto.dll</HintPath>
         </Reference>
-        <Reference Include="CsvHelper, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8c4959082be5c823, processorArchitecture=MSIL">
-          <HintPath>..\packages\CsvHelper.2.13.2.0\lib\portable-net40+sl5+win8+wpa+wp8\CsvHelper.dll</HintPath>
-        </Reference>
       </ItemGroup>
     </When>
     <When Condition="!Exists('..\packages')">
