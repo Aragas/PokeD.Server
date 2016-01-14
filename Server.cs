@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-
+using System.Linq;
 using Aragas.Core.Interfaces;
 using Aragas.Core.Wrappers;
 
@@ -92,15 +92,17 @@ namespace PokeD.Server
 
 
             Logger.Log(LogType.Info, $"Starting Server.");
-            
+
+            var toRemove = Modules.Where(module => !module.Start()).ToList();
+            foreach (var module in toRemove)
+                Modules.Remove(module);
+
             ListenToConnectionsThread = ThreadWrapper.CreateThread(ListenToConnectionsCycle);
             ListenToConnectionsThread.Name = "ListenToConnectionsThread";
             ListenToConnectionsThread.IsBackground = true;
             ListenToConnectionsThread.Start();
+          
 
-            foreach (var module in Modules)
-                module.Start();
-            
             return status;
         }
         public bool Stop()

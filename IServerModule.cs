@@ -14,7 +14,7 @@ namespace PokeD.Server
         ClientList Clients { get; }
         bool ClientsVisible { get; } 
 
-        void Start();
+        bool Start();
         void Stop();
 
         void StartListen();

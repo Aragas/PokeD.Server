@@ -15,8 +15,9 @@ namespace PokeD.Server
 
         #region Settings
 
+        [JsonProperty("Enabled")]
+        public bool Enabled { get; private set; } = false;
 
-        
         #endregion Settings
 
         [JsonIgnore]
@@ -31,16 +32,23 @@ namespace PokeD.Server
         public ModuleNPC(Server server) { Server = server; }
 
 
-        public void Start()
+        public bool Start()
         {
             var status = FileSystemWrapper.LoadSettings(FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to load NPC settings!");
 
+            if (!Enabled)
+            {
+                Logger.Log(LogType.Info, $"NPC not enabled!");
+                return false;
+            }
+
             LoadNPCs();
 
             Logger.Log(LogType.Info, $"Starting NPC.");
 
+            return true;
         }
         public void Stop()
         {

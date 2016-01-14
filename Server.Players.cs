@@ -9,12 +9,16 @@ namespace PokeD.Server
 {
     public partial class Server
     {
+        /// <summary>
+        /// Get all connected IClient.
+        /// </summary>
+        /// <returns>Returns null if there are no IClient connected.</returns>
         public IEnumerable<IClient> AllClients() => Modules.Where(module => module.ClientsVisible).SelectMany(module => module.Clients);
 
-        ///// <summary>
-        ///// Get all connected IClient Names.
-        ///// </summary>
-        ///// <returns>Returns null if there are no IClient connected.</returns>
+        /// <summary>
+        /// Get all connected IClient Names.
+        /// </summary>
+        /// <returns>Returns null if there are no IClient connected.</returns>
         public IEnumerable<PlayerInfo> GetAllClientsInfo() => Modules.Where(module => module.ClientsVisible).SelectMany(module => module.Clients.GetAllClientsInfo());
 
 
@@ -36,14 +40,14 @@ namespace PokeD.Server
         /// Get IClient Name by ID.
         /// </summary>
         /// <param name="name">IClient Name.</param>
-        /// <returns>Returns String.Empty if IClient is not found.</returns>
+        /// <returns>Returns -1 if IClient is not found.</returns>
         public int GetClientID(string name) => GetClient(name)?.ID ?? -1;
 
         /// <summary>
         /// Get IClient ID by Name.
         /// </summary>
         /// <param name="id">IClient ID.</param>
-        /// <returns>Returns -1 if IClient is not found.</returns>
+        /// <returns>Returns <see cref="string.Empty"/> if IClient is not found.</returns>
         public string GetClientName(int id) => GetClient(id)?.Name ?? string.Empty;
     }
 }

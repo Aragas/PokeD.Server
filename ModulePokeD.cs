@@ -121,6 +121,9 @@ namespace PokeD.Server
 
         #region Settings
 
+        [JsonProperty("Enabled")]
+        public bool Enabled { get; private set; } = false;
+
         [JsonProperty("Port")]
         public ushort Port { get; private set; } = 15130;
 
@@ -154,13 +157,21 @@ namespace PokeD.Server
         public ModulePokeD(Server server) { Server = server; }
 
 
-        public void Start()
+        public bool Start()
         {
             var status = FileSystemWrapper.LoadSettings(FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to load PokeD settings!");
 
+            if (!Enabled)
+            {
+                Logger.Log(LogType.Info, $"PokeD not enabled!");
+                return false;
+            }
+
             Logger.Log(LogType.Info, $"Starting PokeD.");
+
+            return true;
         }
         public void Stop()
         {

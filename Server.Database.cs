@@ -58,19 +58,19 @@ namespace PokeD.Server
             }
         }
 
-        Stopwatch UpdateDBWatch { get; } = Stopwatch.StartNew();
+        Stopwatch UpdateDBPlayerWatch { get; } = Stopwatch.StartNew();
         public void UpdateDBPlayer(IClient player, bool forceUpdate = false)
         {
             if (player.ID == 0)
                 return;
 
-            if (UpdateDBWatch.ElapsedMilliseconds < 2000 && !forceUpdate)
+            if (UpdateDBPlayerWatch.ElapsedMilliseconds < 2000 && !forceUpdate)
                 return;
 
             Database.Update(new Player(player));
 
-            UpdateDBWatch.Reset();
-            UpdateDBWatch.Start();
+            UpdateDBPlayerWatch.Reset();
+            UpdateDBPlayerWatch.Start();
         }
     }
 }

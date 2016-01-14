@@ -33,6 +33,9 @@ namespace PokeD.Server
 
         #region Settings
 
+        [JsonProperty("Enabled")]
+        public bool Enabled { get; private set; } = false;
+
         [JsonProperty("Host")]
         public string Host { get; private set; } = "localhost";
 
@@ -53,26 +56,33 @@ namespace PokeD.Server
         public ModuleNancy(Server server) { Server = server; }
 
 
-        public void Start()
+        public bool Start()
         {
             var status = FileSystemWrapper.LoadSettings(FileName, this);
             if (!status)
-                Logger.Log(LogType.Warning, "Failed to load SCON settings!");
+                Logger.Log(LogType.Warning, "Failed to load Nancy settings!");
 
-            Logger.Log(LogType.Info, $"Starting SCON.");
+            if (!Enabled)
+            {
+                Logger.Log(LogType.Info, $"Nancy not enabled!");
+                return false;
+            }
 
+            Logger.Log(LogType.Info, $"Starting Nancy.");
+
+            return true;
         }
         public void Stop()
         {
             var status = FileSystemWrapper.SaveSettings(FileName, this);
             if (!status)
-                Logger.Log(LogType.Warning, "Failed to save SCON settings!");
+                Logger.Log(LogType.Warning, "Failed to save Nancy settings!");
             
-            Logger.Log(LogType.Info, $"Stopping SCON.");
+            Logger.Log(LogType.Info, $"Stopping Nancy.");
 
             Dispose();
 
-            Logger.Log(LogType.Info, $"Stopped SCON.");
+            Logger.Log(LogType.Info, $"Stopped Nancy.");
         }
 
 

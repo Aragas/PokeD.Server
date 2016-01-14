@@ -38,6 +38,9 @@ namespace PokeD.Server
 
         #region Settings
 
+        [JsonProperty("Enabled")]
+        public bool Enabled { get; private set; } = false;
+
         [JsonProperty("Port")]
         public ushort Port { get; private set; } = 15124;
 
@@ -90,13 +93,19 @@ namespace PokeD.Server
         public ModuleP3D(Server server) { Server = server; }
 
 
-        public void Start()
+        public bool Start()
         {
             var status = FileSystemWrapper.LoadSettings(FileName, this);
             if (!status)
-                Logger.Log(LogType.Warning, "Failed to load SCON settings!");
+                Logger.Log(LogType.Warning, "Failed to load P3D settings!");
 
-            Logger.Log(LogType.Info, $"Starting SCON.");
+            if (!Enabled)
+            {
+                Logger.Log(LogType.Info, $"P3D not enabled!");
+                return false;
+            }
+
+            Logger.Log(LogType.Info, $"Starting P3D.");
             
             if (MoveCorrectionEnabled)
             {
@@ -110,14 +119,16 @@ namespace PokeD.Server
                 PlayerCorrectionThread.IsBackground = true;
                 PlayerCorrectionThread.Start();
             }
+
+            return true;
         }
         public void Stop()
         {
             var status = FileSystemWrapper.SaveSettings(FileName, this);
             if (!status)
-                Logger.Log(LogType.Warning, "Failed to save SCON settings!");
+                Logger.Log(LogType.Warning, "Failed to save P3D settings!");
 
-            Logger.Log(LogType.Info, $"Stopping SCON.");
+            Logger.Log(LogType.Info, $"Stopping P3D.");
 
             if (PlayerWatcherThread.IsRunning)
                 PlayerWatcherThread.Abort();
@@ -127,7 +138,7 @@ namespace PokeD.Server
 
             Dispose();
 
-            Logger.Log(LogType.Info, $"Stopped SCON.");
+            Logger.Log(LogType.Info, $"Stopped P3D.");
         }
 
 
