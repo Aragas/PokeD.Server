@@ -49,8 +49,6 @@ namespace PokeD.Server
         [JsonIgnore]
         public bool ClientsVisible { get; } = false;
 
-        private INancyWrapper Nancy { get; set; }
-
 
         public ModuleNancy(Server server) { Server = server; }
 
@@ -80,11 +78,11 @@ namespace PokeD.Server
 
         public void StartListen()
         {
-            var data = new NancyData();
-            data.Add("online", GetOnlineClients);
+            var dataApi = new NancyData();
+            dataApi.Add("online", GetOnlineClients);
 
-            Nancy = NancyWrapper.CreateNancyWrapper(data);
-            Nancy.Start(Host, Port);
+            NancyWrapper.SetDataApi(dataApi);
+            NancyWrapper.Start(Host, Port);
         }
 
         private dynamic GetOnlineClients(dynamic args)
@@ -118,6 +116,9 @@ namespace PokeD.Server
         public void ExecuteCommand(string command) { }
 
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+            NancyWrapper.Stop();
+        }
     }
 }
