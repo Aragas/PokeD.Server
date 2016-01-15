@@ -20,8 +20,8 @@ namespace PokeD.Server
         void StartListen();
         void CheckListener();
 
-        void AddClient(IClient client);
-        void RemoveClient(IClient client, string reason = "");
+        //void AddClient(IClient client);
+        //void RemoveClient(IClient client, string reason = "");
 
         void OtherConnected(IClient client);
         void OtherDisconnected(IClient client);

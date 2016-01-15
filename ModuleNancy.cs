@@ -36,7 +36,7 @@ namespace PokeD.Server
         [JsonProperty("Enabled")]
         public bool Enabled { get; private set; } = false;
 
-        [JsonProperty("Host")]
+        [JsonProperty("Host", NullValueHandling = NullValueHandling.Ignore)]
         public string Host { get; private set; } = "localhost";
 
         [JsonProperty("Port")]

@@ -381,10 +381,12 @@ namespace PokeD.Server
         {
             P3DPlayerSendToAllClients(new CreatePlayerPacket { PlayerID = client.ID }, -1);
             P3DPlayerSendToAllClients(client.GetDataPacket(), client.ID);
+            P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = $"Player {client.Name} joined the game!" });
         }
         public void OtherDisconnected(IClient client)
         {
             P3DPlayerSendToAllClients(new DestroyPlayerPacket { PlayerID = client.ID });
+            P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = $"Player {client.Name} disconnected!" });
         }
 
 
@@ -403,16 +405,15 @@ namespace PokeD.Server
         }
         public void SendGlobalMessage(IClient sender, string message)
         {
-            if (!(sender is P3DPlayer))
-            {
-                P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
-            }
-            else
+            if (sender is P3DPlayer)
             {
                 P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
 
                 Server.ClientGlobalMessage(this, sender, message);
             }
+            else
+                P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
+            
 
             //if (sender is P3DPlayer)
             //    P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
