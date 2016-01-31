@@ -12,6 +12,7 @@ using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.PokeD.Authorization;
 using PokeD.Core.Packets.PokeD.Battle;
 using PokeD.Core.Packets.PokeD.Chat;
+using PokeD.Core.Packets.PokeD.Overworld.Map;
 using PokeD.Core.Packets.PokeD.Overworld;
 using PokeD.Core.Packets.PokeD.Trade;
 
@@ -162,6 +163,10 @@ namespace PokeD.Server.Clients.PokeD
                     break;
                 case PokeDPacketTypes.TrainerInfo:
                     HandleTrainerInfo((TrainerInfoPacket) packet);
+                    break;
+
+                case PokeDPacketTypes.TileSetRequest:
+                    HandleTileSetRequest((TileSetRequestPacket) packet);
                     break;
 
 

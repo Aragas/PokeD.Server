@@ -13,13 +13,12 @@ using Newtonsoft.Json;
 
 using PCLStorage;
 
-using PKHeX;
-
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.PokeD.Authorization;
 using PokeD.Core.Packets.PokeD.Battle;
 using PokeD.Core.Packets.PokeD.Chat;
+using PokeD.Core.Packets.PokeD.Overworld.Map;
 using PokeD.Core.Packets.PokeD.Overworld;
 using PokeD.Core.Packets.PokeD.Trade;
 
@@ -118,6 +117,9 @@ namespace PokeD.Server
     public class ModulePokeD : IServerModule
     {
         const string FileName = "ModulePokeD.json";
+
+        static IFolder Maps = FileSystemWrapper.ContentFolder.GetFolderAsync("Maps").Result;
+        static IFolder TileSets = Maps.GetFolderAsync("TileSets").Result;
 
         #region Settings
 
@@ -250,6 +252,8 @@ namespace PokeD.Server
                     PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() { Message = $"Player {playerToAdd.Name} joined the game!" });
 
                     Server.ClientConnected(this, playerToAdd);
+
+                    playerToAdd.SendPacket(new MapPacket() { MapData = Maps.GetFileAsync("0.0.tmx").Result.ReadAllTextAsync().Result });
                 }
             }
 
@@ -263,12 +267,10 @@ namespace PokeD.Server
 
                 if (playerToRemove.ID != 0)
                 {
-                    //PokeDPlayerSendToAllClients(new DestroyPlayerPacket { PlayerID = playerToRemove.ID });
-                    //
-                    //Logger.Log(LogType.Server, $"The player {playerToRemove.Name} disconnected, playtime was {DateTime.Now - playerToRemove.ConnectionTime:hh\\:mm\\:ss}.");
-                    //PokeDPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = $"Player {playerToRemove.Name} disconnected!" });
-                    //
-                    //Server.ClientDisconnected(this, playerToRemove);
+                    Logger.Log(LogType.Server, $"The player {playerToRemove.Name} disconnected, playtime was {DateTime.Now - playerToRemove.ConnectionTime:hh\\:mm\\:ss}.");
+                    PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket { Message = $"Player {playerToRemove.Name} disconnected!" });
+                    
+                    Server.ClientDisconnected(this, playerToRemove);
                 }
 
                 playerToRemove.Dispose();
@@ -382,6 +384,25 @@ namespace PokeD.Server
             PacketsToAllPlayers.Enqueue(packet);
         }
 
+        public void PokeDTileSetRequest(IClient player, IEnumerable<string> tileSetNames)
+        {
+            var tileSets = new List<string>();
+            var images = new List<byte[]>();
+
+
+            foreach (var tileSetName in tileSetNames)
+            {
+                tileSets.Add(TileSets.GetFileAsync($"{tileSetName}.tsx").Result.ReadAllTextAsync().Result);
+                images.Add(ReadFully(TileSets.GetFileAsync($"{tileSetName}.png").Result.OpenAsync(FileAccess.Read).Result));
+            }
+
+            player.SendPacket(new TileSetResponsePacket()
+            {
+                TileSets = tileSets,
+                Images = images
+            });
+        }
+
 
         public BattleInstance CreateBattle(VarInt[] playerIDs, string message)
         {
@@ -430,6 +451,20 @@ namespace PokeD.Server
             Battles.Clear();
         }
 
+
+        private static byte[] ReadFully(Stream stream)
+        {
+            byte[] buffer = new byte[16 * 1024];
+            using (MemoryStream ms = new MemoryStream())
+            {
+                int read;
+                while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    ms.Write(buffer, 0, read);
+                }
+                return ms.ToArray();
+            }
+        }
 
         private class PlayerPacketPokeD
         {

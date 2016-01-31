@@ -10,6 +10,7 @@ using PokeD.Core.Extensions;
 using PokeD.Core.Packets.PokeD.Authorization;
 using PokeD.Core.Packets.PokeD.Battle;
 using PokeD.Core.Packets.PokeD.Chat;
+using PokeD.Core.Packets.PokeD.Overworld.Map;
 using PokeD.Core.Packets.PokeD.Overworld;
 using PokeD.Core.Packets.PokeD.Trade;
 
@@ -74,6 +75,7 @@ namespace PokeD.Server.Clients.PokeD
 
         private void HandlePosition(PositionPacket packet) { }
         private void HandleTrainerInfo(TrainerInfoPacket packet) { }
+        private void HandleTileSetRequest(TileSetRequestPacket packet) { Module.PokeDTileSetRequest(this, packet.TileSetNames); }
 
         private void HandleChatServerMessage(ChatServerMessagePacket packet) { }
         private void HandleChatGlobalMessage(ChatGlobalMessagePacket packet)
