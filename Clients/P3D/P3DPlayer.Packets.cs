@@ -14,6 +14,9 @@ namespace PokeD.Server.Clients.P3D
 {
     public partial class P3DPlayer
     {
+        private static bool PokemonsValid(string pokemonData) => ModuleP3D.DataItemsToMonsters(new DataItems(pokemonData)).All(pokemon => pokemon.IsValid());
+        private static bool PokemonValid(string pokemonData) => ModuleP3D.DataItemsToMonster(new DataItems(pokemonData)).IsValid();
+
         bool FirstGameData { get; set; } = false;
         private void ParseGameData(GameDataPacket packet)
         {
@@ -112,6 +115,7 @@ namespace PokeD.Server.Clients.P3D
         private void HandleGameData(GameDataPacket packet)
         {
             ParseGameData(packet);
+            Module.SendPosition(this);
 
             if(IsInitialized)
                 Module.Server.UpdateDBPlayer(this);
@@ -130,11 +134,11 @@ namespace PokeD.Server.Clients.P3D
             {
                 Module.PreAdd(this);
 
-                SendPacket(new ChatMessageGlobalPacket {Message = "Please use /login %PASSWORD% for logging in or registering"}, -1);
-                SendPacket(new ChatMessageGlobalPacket {Message = "Please note that chat data  isn't sended secure to server"}, -1);
-                SendPacket(new ChatMessageGlobalPacket {Message = "So it can be seen via traffic sniffing"}, -1);
-                SendPacket(new ChatMessageGlobalPacket {Message = "Don't use your regular passwords"}, -1);
-                SendPacket(new ChatMessageGlobalPacket {Message = "On server it's stored fully secure via SHA-512"}, -1);
+                SendPacket(new ChatMessageGlobalPacket { Message = "Please use /login %PASSWORD% for logging in or registering" }, -1);
+                SendPacket(new ChatMessageGlobalPacket { Message = "Please note that chat data  isn't sended secure to server" }, -1);
+                SendPacket(new ChatMessageGlobalPacket { Message = "So it can be seen via traffic sniffing" }, -1);
+                SendPacket(new ChatMessageGlobalPacket { Message = "Don't use your regular passwords" }, -1);
+                SendPacket(new ChatMessageGlobalPacket { Message = "On server it's stored fully secure via SHA-512" }, -1);
             }
             else
             {
@@ -211,7 +215,10 @@ namespace PokeD.Server.Clients.P3D
         }
         private void HandleTradeOffer(TradeOfferPacket packet)
         {
-            Module.SendTradeRequest(this, ModuleP3D.DataItemsToMonster(packet.DataItems), Module.Server.GetClient(packet.DestinationPlayerID));
+            if (PokemonValid(packet.TradeData))
+                Module.SendTradeRequest(this, ModuleP3D.DataItemsToMonster(packet.DataItems), Module.Server.GetClient(packet.DestinationPlayerID));
+            else
+                ;
         }
         private void HandleTradeStart(TradeStartPacket packet)
         {
@@ -233,7 +240,10 @@ namespace PokeD.Server.Clients.P3D
         }
         private void HandleBattleOffer(BattleOfferPacket packet)
         {
-            Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleOfferPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
+            if (PokemonsValid(packet.BattleData))
+                Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleOfferPacket {DataItems = new DataItems(packet.BattleData)}, packet.Origin);
+            else
+                ;
         }
         private void HandleBattlePokemonData(BattlePokemonDataPacket packet)
         {

@@ -54,5 +54,11 @@ namespace PokeD.Server
             foreach (var module in Modules.Where(module => caller != module))
                 module.SendTradeCancel(client, destClient);
         }
+
+        public void ClientPosition(IServerModule caller, IClient sender)
+        {
+            foreach (var module in Modules.Where(module => caller != module))
+                module.SendPosition(sender);
+        }
     }
 }

@@ -27,6 +27,7 @@ using PokeD.Server.Clients.PokeD;
 
 namespace PokeD.Server
 {
+    /*
     public class BattleTrainer
     {
         public IClient Client { get; }
@@ -113,6 +114,7 @@ namespace PokeD.Server
             
         }
     }
+    */
 
     public class ModulePokeD : IServerModule
     {
@@ -153,7 +155,7 @@ namespace PokeD.Server
         ConcurrentQueue<PlayerPacketPokeD> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerPacketPokeD>();
         ConcurrentQueue<PokeDPacket> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<PokeDPacket>();
 
-        List<BattleInstance> Battles { get; } = new List<BattleInstance>();
+        //List<BattleInstance> Battles { get; } = new List<BattleInstance>();
 
 
         public ModulePokeD(Server server) { Server = server; }
@@ -253,7 +255,7 @@ namespace PokeD.Server
 
                     Server.ClientConnected(this, playerToAdd);
 
-                    playerToAdd.SendPacket(new MapPacket() { MapData = Maps.GetFileAsync("0.0.tmx").Result.ReadAllTextAsync().Result });
+                    playerToAdd.SendPacket(new MapPacket() { MapData = Maps.GetFileAsync(playerToAdd.LevelFile).Result.ReadAllTextAsync().Result });
                 }
             }
 
@@ -304,11 +306,31 @@ namespace PokeD.Server
                     Clients[i].SendPacket(packetToAllPlayers);
 
             #endregion Packet Sending
+
+
+
+            if (UpdateWatch.ElapsedMilliseconds < 5000)
+                return;
+
+            for (var i = 0; i < Clients.Count; i++)
+                Clients[i]?.SendPacket(new PingPacket());
+
+            UpdateWatch.Reset();
+            UpdateWatch.Start();
         }
 
 
-        public void OtherConnected(IClient client) { }
-        public void OtherDisconnected(IClient client) { }
+        public void OtherConnected(IClient client)
+        {
+            //PokeDPlayerSendToAllClients(new CreatePlayerPacket { PlayerID = client.ID }, -1);
+            //PokeDPlayerSendToAllClients(client.GetDataPacket(), client.ID);
+            PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() { Message = $"Player {client.Name} joined the game!" });
+        }
+        public void OtherDisconnected(IClient client)
+        {
+            //PokeDPlayerSendToAllClients(new DestroyPlayerPacket { PlayerID = client.ID });
+            PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() { Message = $"Player {client.Name} disconnected!" });
+        }
 
         public void SendServerMessage(string message)
         {
@@ -363,6 +385,17 @@ namespace PokeD.Server
                 Server.ClientTradeCancel(this, sender, destClient);
         }
 
+        public void SendPosition(IClient sender)
+        {
+            if (sender is PokeDPlayer)
+                Server.ClientPosition(this, sender);
+            else
+            {
+                var posData = sender.GetDataPacket();
+                PokeDPlayerSendToAllClients(new PositionPacket() { Position = posData.GetPosition(posData.DecimalSeparator) });
+            }
+        }
+
 
         public void PokeDPlayerSendToClient(int destinationID, PokeDPacket packet)
         {
@@ -372,28 +405,22 @@ namespace PokeD.Server
         }
         public void PokeDPlayerSendToClient(IClient player, PokeDPacket packet)
         {
-            //player.SendPacket(packet);
-
             PacketsToPlayer.Enqueue(new PlayerPacketPokeD(player, ref packet));
         }
         public void PokeDPlayerSendToAllClients(PokeDPacket packet)
         {
-            //for (int i = 0; i < Clients.Count; i++)
-            //    Clients[i].SendPacket(packet);
-
             PacketsToAllPlayers.Enqueue(packet);
         }
-
         public void PokeDTileSetRequest(IClient player, IEnumerable<string> tileSetNames)
         {
-            var tileSets = new List<string>();
-            var images = new List<byte[]>();
+            var tileSets = new List<TileSetResponse>();
+            var images = new List<ImageResponse>();
 
 
             foreach (var tileSetName in tileSetNames)
             {
-                tileSets.Add(TileSets.GetFileAsync($"{tileSetName}.tsx").Result.ReadAllTextAsync().Result);
-                images.Add(ReadFully(TileSets.GetFileAsync($"{tileSetName}.png").Result.OpenAsync(FileAccess.Read).Result));
+                tileSets.Add(new TileSetResponse() { Name = tileSetName, TileSetData = TileSets.GetFileAsync($"{tileSetName}.tsx").Result.ReadAllTextAsync().Result });
+                images.Add(new ImageResponse() { Name = tileSetName, ImageData = ReadFully(TileSets.GetFileAsync($"{tileSetName}.png").Result.OpenAsync(FileAccess.Read).Result) });
             }
 
             player.SendPacket(new TileSetResponsePacket()
@@ -404,12 +431,12 @@ namespace PokeD.Server
         }
 
 
-        public BattleInstance CreateBattle(VarInt[] playerIDs, string message)
-        {
-            var battle = new BattleInstance(playerIDs.Select(playerID => Server.GetClient(playerID)), message);
-            Battles.Add(battle);
-            return battle;
-        }
+        //public BattleInstance CreateBattle(VarInt[] playerIDs, string message)
+        //{
+        //    var battle = new BattleInstance(playerIDs.Select(playerID => Server.GetClient(playerID)), message);
+        //    Battles.Add(battle);
+        //    return battle;
+        //}
 
 
         public void Dispose()
@@ -422,33 +449,32 @@ namespace PokeD.Server
 
             for (var i = 0; i < PlayersJoining.Count; i++)
                 PlayersJoining[i].Dispose();
+            PlayersJoining.Clear();
 
             for (var i = 0; i < Clients.Count; i++)
             {
                 Clients[i].SendPacket(new DisconnectPacket() { Reason = "Closing server!" }, -1);
                 Clients[i].Dispose();
             }
+            Clients.Clear();
+
             for (var i = 0; i < PlayersToAdd.Count; i++)
             {
                 PlayersToAdd[i].SendPacket(new DisconnectPacket() { Reason = "Closing server!" }, -1);
                 PlayersToAdd[i].Dispose();
             }
+            PlayersToAdd.Clear();
 
             // Do not dispose PlayersToRemove!
-
-            for (int i = 0; i < Battles.Count; i++)
-                Battles[i].Dispose();
-
-
-            Clients.Clear();
-            PlayersJoining.Clear();
-            PlayersToAdd.Clear();
             PlayersToRemove.Clear();
 
+            //for (int i = 0; i < Battles.Count; i++)
+            //    Battles[i].Dispose();
+            //Battles.Clear();
+
+            
             PacketsToPlayer = null;
             PacketsToAllPlayers = null;
-
-            Battles.Clear();
         }
 
 

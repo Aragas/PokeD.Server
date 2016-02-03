@@ -150,6 +150,8 @@ namespace PokeD.Server
         public void SendTradeConfirm(IClient sender, IClient destClient) { }
         public void SendTradeCancel(IClient sender, IClient destClient) { }
 
+        public void SendPosition(IClient sender) { }
+
 
 
         public void Dispose()

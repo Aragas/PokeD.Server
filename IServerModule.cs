@@ -34,5 +34,7 @@ namespace PokeD.Server
         void SendTradeRequest(IClient sender, Monster monster, IClient destClient);
         void SendTradeConfirm(IClient sender, IClient destClient);
         void SendTradeCancel(IClient sender, IClient destClient);
+
+        void SendPosition(IClient sender);
     }
 }

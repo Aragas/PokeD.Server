@@ -73,7 +73,13 @@ namespace PokeD.Server.Clients.PokeD
         }
 
 
-        private void HandlePosition(PositionPacket packet) { }
+        private void HandlePosition(PositionPacket packet)
+        {
+            PlayerRef.Position = packet.Position;
+
+
+            Module.SendPosition(this);
+        }
         private void HandleTrainerInfo(TrainerInfoPacket packet) { }
         private void HandleTileSetRequest(TileSetRequestPacket packet) { Module.PokeDTileSetRequest(this, packet.TileSetNames); }
 
@@ -108,17 +114,31 @@ namespace PokeD.Server.Clients.PokeD
 
         private void HandleBattleRequest(BattleRequestPacket packet)
         {
-            if(Battle == null)
-                Battle = Module.CreateBattle(packet.PlayerIDs, packet.Message);
-            else
-                SendPacket(new BattleCancelledPacket {Reason = "You are already in battle!"});
+            //if(Battle == null)
+            //    Battle = Module.CreateBattle(packet.PlayerIDs, packet.Message);
+            //else
+            //    SendPacket(new BattleCancelledPacket {Reason = "You are already in battle!"});
         }
-        private void HandleBattleAccept(BattleAcceptPacket packet) { if(packet.IsAccepted) Battle.AcceptBattle(this); else Battle.CancelBattle(this); }
-
-        private void HandleBattleAttack(BattleAttackPacket packet) { Battle.HandlePacket(this, packet); }
-        private void HandleBattleItem(BattleItemPacket packet) { Battle.HandlePacket(this, packet); }
-        private void HandleBattleSwitch(BattleSwitchPacket packet) { Battle.HandlePacket(this, packet); }
-        private void HandleBattleFlee(BattleFleePacket packet) { Battle.HandlePacket(this, packet); }
+        private void HandleBattleAccept(BattleAcceptPacket packet)
+        {
+            //if(packet.IsAccepted) Battle.AcceptBattle(this); else Battle.CancelBattle(this);
+        }
+        private void HandleBattleAttack(BattleAttackPacket packet)
+        {
+            //Battle.HandlePacket(this, packet);
+        }
+        private void HandleBattleItem(BattleItemPacket packet)
+        {
+            //Battle.HandlePacket(this, packet);
+        }
+        private void HandleBattleSwitch(BattleSwitchPacket packet)
+        {
+            //Battle.HandlePacket(this, packet);
+        }
+        private void HandleBattleFlee(BattleFleePacket packet)
+        {
+            //Battle.HandlePacket(this, packet);
+        }
 
 
         private void HandleTradeOffer(TradeOfferPacket packet)

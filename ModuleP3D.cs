@@ -452,6 +452,17 @@ namespace PokeD.Server
                 Server.ClientTradeCancel(this, sender, destClient);
         }
 
+        public void SendPosition(IClient sender)
+        {
+            if (sender is P3DPlayer)
+            {
+                Server.ClientPosition(this, sender);
+                P3DPlayerSendToAllClients(sender.GetDataPacket(), sender.ID);
+            }
+            else
+                P3DPlayerSendToAllClients(sender.GetDataPacket(), sender.ID);
+        }
+
 
         public void P3DPlayerSendToClient(int destinationID, P3DPacket packet, int originID)
         {
@@ -589,7 +600,12 @@ namespace PokeD.Server
             MutedPlayers.Clear();
         }
 
+        public static Monster[] DataItemsToMonsters(DataItems data)
+        {
+            var strings = data.ToString().Split('|');
 
+            return strings.Select(str => new DataItems(str)).Select(DataItemsToMonster).ToArray();
+        }
         public static Monster DataItemsToMonster(DataItems data)
         {
             var dict = DataItemsToDictionary(data);

@@ -37,7 +37,7 @@ namespace PokeD.Server.Clients.PokeD
 
         public string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {PlayerRef.Name}" : PlayerRef.Name; } private set { PlayerRef.Name = value; } }
 
-        public string LevelFile => ToP3DLevelFile(PlayerRef.Location);
+        public string LevelFile { get; set; }
         public Vector3 Position => PlayerRef.Position;
         public int Facing => PlayerRef.Facing;
         public bool Moving => true;
@@ -232,6 +232,7 @@ namespace PokeD.Server.Clients.PokeD
             if (ID == 0)
                 ID = data.Id;
 
+            LevelFile = data.LevelFile;
             Prefix = data.Prefix;
         }
 
@@ -244,7 +245,7 @@ namespace PokeD.Server.Clients.PokeD
                 GameJoltID = GameJoltID,
                 DecimalSeparator = DecimalSeparator,
                 Name = Name,
-                LevelFile = LevelFile,
+                LevelFile = ToP3DLevelFile(),
                 //Position = Position,
                 Facing = Facing,
                 Moving = Moving,
@@ -255,8 +256,17 @@ namespace PokeD.Server.Clients.PokeD
                 PokemonSkin = PokemonSkin,
                 PokemonFacing = PokemonFacing
             };
-            packet.SetPosition(Position, DecimalSeparator);
-            packet.SetPokemonPosition(PokemonPosition, DecimalSeparator);
+
+            var posOffset = Vector3.Zero;
+            switch (LevelFile)
+            {
+                case "0.0.tmx":
+                    posOffset = new Vector3(+3.0f, 0.0f, -3.0f);
+                    break;
+            }
+
+            packet.SetPosition(Position + posOffset, DecimalSeparator);
+            packet.SetPokemonPosition(PokemonPosition + posOffset, DecimalSeparator);
 
             return packet;
         }
@@ -268,8 +278,16 @@ namespace PokeD.Server.Clients.PokeD
         }
 
 
-        public static string ToP3DLevelFile(string location)
+        private string ToP3DLevelFile()
         {
+            if(string.IsNullOrEmpty(LevelFile))
+                return "barktown.dat";
+
+            switch (LevelFile)
+            {
+                case "0.0.tmx":
+                    return "barktown.dat";
+            }
             return "mainmenu";
         }
 
