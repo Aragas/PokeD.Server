@@ -10,12 +10,14 @@ using PokeD.Core.Packets.P3D.Server;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
 
+using PokeD.Server.Extensions;
+
 namespace PokeD.Server.Clients.P3D
 {
     public partial class P3DPlayer
     {
-        private static bool PokemonsValid(string pokemonData) => ModuleP3D.DataItemsToMonsters(new DataItems(pokemonData)).All(pokemon => pokemon.IsValid());
-        private static bool PokemonValid(string pokemonData) => ModuleP3D.DataItemsToMonster(new DataItems(pokemonData)).IsValid();
+        private static bool PokemonsValid(string pokemonData) => new DataItems(pokemonData).DataItemsToMonsters().All(pokemon => pokemon.IsValid());
+        private static bool PokemonValid(string pokemonData) => new DataItems(pokemonData).ToMonster().IsValid();
 
         bool FirstGameData { get; set; } = false;
         private void ParseGameData(GameDataPacket packet)
@@ -216,7 +218,7 @@ namespace PokeD.Server.Clients.P3D
         private void HandleTradeOffer(TradeOfferPacket packet)
         {
             if (PokemonValid(packet.TradeData))
-                Module.SendTradeRequest(this, ModuleP3D.DataItemsToMonster(packet.DataItems), Module.Server.GetClient(packet.DestinationPlayerID));
+                Module.SendTradeRequest(this, packet.DataItems.ToMonster(), Module.Server.GetClient(packet.DestinationPlayerID));
             else
                 ;
         }

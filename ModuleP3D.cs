@@ -21,6 +21,7 @@ using PokeD.Core.Packets.P3D.Trade;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.P3D;
+using PokeD.Server.Extensions;
 
 namespace PokeD.Server
 {
@@ -430,9 +431,7 @@ namespace PokeD.Server
             if (destClient is P3DPlayer)
             {
                 P3DPlayerSendToClient(destClient, new TradeRequestPacket(), sender.ID);
-
-                var data = MonsterToDataItems(monster);
-                P3DPlayerSendToClient(destClient, new TradeOfferPacket() { DataItems = data }, sender.ID);
+                P3DPlayerSendToClient(destClient, new TradeOfferPacket() { DataItems = monster.ToDataItems() }, sender.ID);
             }
             else
                 Server.ClientTradeOffer(this, sender, monster, destClient);
@@ -600,137 +599,6 @@ namespace PokeD.Server
             MutedPlayers.Clear();
         }
 
-        public static Monster[] DataItemsToMonsters(DataItems data)
-        {
-            var strings = data.ToString().Split('|');
-
-            return strings.Select(str => new DataItems(str)).Select(DataItemsToMonster).ToArray();
-        }
-        public static Monster DataItemsToMonster(DataItems data)
-        {
-            var dict = DataItemsToDictionary(data);
-
-            var id = short.Parse(dict["Pokemon"]);
-            var gender = (MonsterGender)int.Parse(dict["Gender"]);
-            var isShiny = int.Parse(dict["isShiny"]) != 0;
-            var ability = short.Parse(dict["Ability"]);
-            var nature = byte.Parse(dict["Nature"]);
-
-            var dat = new MonsterInstanceData(id, gender, isShiny, ability, nature)
-            {
-                Experience = int.Parse(dict["Experience"]),
-                Friendship = byte.Parse(dict["Friendship"]),
-                CatchInfo = new MonsterCatchInfo()
-                {
-                    Nickname = string.IsNullOrEmpty(dict["NickName"]) ? string.Empty : dict["NickName"],
-                    PokeballID  = byte.Parse(dict["CatchBall"]),
-                    Method      = dict["CatchMethod"],
-                    Location    = dict["CatchLocation"],
-                    TrainerName = dict["CatchTrainer"],
-                    TrainerID   = (ushort) int.Parse(dict["OT"]).BitsGet(0, 16) == ushort.MaxValue
-                                ? (ushort) int.Parse(dict["OT"]).BitsGet(16, 32)
-                                : (ushort) int.Parse(dict["OT"]).BitsGet(0, 16)
-                }
-            };
-
-            dat.HeldItem = short.Parse(dict["Item"]);
-
-            var move0 = dict["Attack1"].Split(',');
-            var move1 = dict["Attack2"].Split(',');
-            var move2 = dict["Attack3"].Split(',');
-            var move3 = dict["Attack4"].Split(',');
-            dat.Moves = new MonsterMoves(
-                move0.Length != 1 ? new Move(int.Parse(move0[0]), int.Parse(move0[2]) - int.Parse(move0[1])) : Move.Empty,
-                move1.Length != 1 ? new Move(int.Parse(move1[0]), int.Parse(move1[2]) - int.Parse(move1[1])) : Move.Empty,
-                move2.Length != 1 ? new Move(int.Parse(move2[0]), int.Parse(move2[2]) - int.Parse(move2[1])) : Move.Empty,
-                move3.Length != 1 ? new Move(int.Parse(move3[0]), int.Parse(move3[2]) - int.Parse(move3[1])) : Move.Empty);
-
-            dat.CurrentHP = short.Parse(dict["HP"]);
-
-            var ev = dict["EVs"].Split(',');
-            var ev0 = (short) (short.Parse(ev[0]) > 1 ? short.Parse(ev[0]) - 1 : short.Parse(ev[0]));
-            var ev1 = (short) (short.Parse(ev[1]) > 1 ? short.Parse(ev[1]) - 1 : short.Parse(ev[1]));
-            var ev2 = (short) (short.Parse(ev[2]) > 1 ? short.Parse(ev[2]) - 1 : short.Parse(ev[2]));
-            var ev3 = (short) (short.Parse(ev[3]) > 1 ? short.Parse(ev[3]) - 1 : short.Parse(ev[3]));
-            var ev4 = (short) (short.Parse(ev[4]) > 1 ? short.Parse(ev[4]) - 1 : short.Parse(ev[4]));
-            var ev5 = (short) (short.Parse(ev[5]) > 1 ? short.Parse(ev[5]) - 1 : short.Parse(ev[5]));
-            dat.EV = new MonsterStats(ev0, ev1, ev2, ev3, ev4, ev5);
-
-            var iv = dict["IVs"].Split(',');
-            var iv0 = (short) (short.Parse(iv[0]) > 1 ? short.Parse(iv[0]) - 1 : short.Parse(iv[0]));
-            var iv1 = (short) (short.Parse(iv[1]) > 1 ? short.Parse(iv[1]) - 1 : short.Parse(iv[1]));
-            var iv2 = (short) (short.Parse(iv[2]) > 1 ? short.Parse(iv[2]) - 1 : short.Parse(iv[2]));
-            var iv3 = (short) (short.Parse(iv[3]) > 1 ? short.Parse(iv[3]) - 1 : short.Parse(iv[3]));
-            var iv4 = (short) (short.Parse(iv[4]) > 1 ? short.Parse(iv[4]) - 1 : short.Parse(iv[4]));
-            var iv5 = (short) (short.Parse(iv[5]) > 1 ? short.Parse(iv[5]) - 1 : short.Parse(iv[5]));
-            dat.IV = new MonsterStats(iv0, iv1, iv2, iv3, iv4, iv5);
-
-            return new Monster(dat);
-        }
-        public static DataItems MonsterToDataItems(Monster monster)
-        {
-            var dict = new Dictionary<string, string>();
-            dict.Add("Pokemon", $"[{monster.Species}]");
-            dict.Add("Experience", $"[{monster.Experience}]");
-            dict.Add("Gender", $"[{((int)monster.Gender)}]");
-            dict.Add("EggSteps", $"[{monster.EggSteps}]");
-            dict.Add("Item", $"[{monster.HeldItem}]");
-            dict.Add("ItemData", $"[]");
-            dict.Add("NickName", $"[{monster.DisplayName}]");
-            dict.Add("Level", $"[{(monster.Level > 0 ? monster.Level - 1 : monster.Level)}]");
-            dict.Add("OT", $"[{(monster.CatchInfo.TrainerID < 0 ? (ushort)-monster.CatchInfo.TrainerID : monster.CatchInfo.TrainerID)}]");
-            dict.Add("Ability", $"[{string.Join(",", monster.Ability)}]");
-            dict.Add("Status", $"[]"); // TODO
-            dict.Add("Nature", $"[{monster.Nature}]");
-            dict.Add("CatchLocation", $"[{monster.CatchInfo.Location}]");
-            dict.Add("CatchTrainer", $"[{monster.CatchInfo.TrainerName}]");
-            dict.Add("CatchBall", $"[{monster.CatchInfo.PokeballID}]");
-            dict.Add("CatchMethod", $"[{monster.CatchInfo.Method}]");
-            dict.Add("Friendship", $"[{monster.Friendship}]");
-            dict.Add("isShiny", $"[{(monster.IsShiny ? 1 : 0)}]");
-
-            var pp0 = PokeApiV2.GetMoves(new ResourceUri($"api/v1/move/{monster.Moves.Move_0.ID}/"))[0].pp;
-            var pp1 = PokeApiV2.GetMoves(new ResourceUri($"api/v1/move/{monster.Moves.Move_1.ID}/"))[0].pp;
-            var pp2 = PokeApiV2.GetMoves(new ResourceUri($"api/v1/move/{monster.Moves.Move_2.ID}/"))[0].pp;
-            var pp3 = PokeApiV2.GetMoves(new ResourceUri($"api/v1/move/{monster.Moves.Move_3.ID}/"))[0].pp;
-            dict.Add("Attack1", monster.Moves.Move_0.ID == 0 ? $"[]" : $"[{monster.Moves.Move_0.ID}, {pp0}, {pp0}]");
-            dict.Add("Attack2", monster.Moves.Move_1.ID == 0 ? $"[]" : $"[{monster.Moves.Move_1.ID}, {pp1}, {pp1}]");
-            dict.Add("Attack3", monster.Moves.Move_2.ID == 0 ? $"[]" : $"[{monster.Moves.Move_2.ID}, {pp2}, {pp2}]");
-            dict.Add("Attack4", monster.Moves.Move_3.ID == 0 ? $"[]" : $"[{monster.Moves.Move_3.ID}, {pp3}, {pp3}]");
-
-            dict.Add("HP", $"[{monster.CurrentHP}]");
-            dict.Add("EVs", $"[{monster.InstanceData.EV.HP},{monster.InstanceData.EV.Attack},{monster.InstanceData.EV.Defense},{monster.InstanceData.EV.SpecialAttack},{monster.InstanceData.EV.SpecialDefense},{monster.InstanceData.EV.Speed}]");
-            dict.Add("IVs", $"[{monster.InstanceData.IV.HP},{monster.InstanceData.IV.Attack},{monster.InstanceData.IV.Defense},{monster.InstanceData.IV.SpecialAttack},{monster.InstanceData.IV.SpecialDefense},{monster.InstanceData.IV.Speed}]");
-            dict.Add("AdditionalData", $"[]");
-            dict.Add("IDValue", $"[PokeD00Conv]");
-
-            return DictionaryToDataItems(dict);
-        }
-        private static Dictionary<string, string> DataItemsToDictionary(DataItems data)
-        {
-            var dict  = new Dictionary<string, string>();
-            var str = data.ToString();
-            str = str.Replace("{", "");
-            //str = str.Replace("}", ",");
-            var array = str.Split('}');
-            foreach (var s in array.Reverse().Skip(1))
-            {
-                var v = s.Split('"');
-                dict.Add(v[1], v[2].Replace("[", "").Replace("]", ""));
-            }
-
-            return dict;
-        }
-        private static DataItems DictionaryToDataItems(Dictionary<string, string> dict)
-        {
-            //var builder = new StringBuilder("1*");
-            var builder = new StringBuilder();
-
-            foreach (var s in dict)
-                builder.Append($"{{\"{s.Key}\"{s.Value}}}");
-            
-            return new DataItems(builder.ToString());
-        }
         
 
         private class PlayerPacketP3DOrigin

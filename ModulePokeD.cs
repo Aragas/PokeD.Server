@@ -4,16 +4,18 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-
+using System.Text;
 using Aragas.Core.Data;
+using Aragas.Core.Extensions;
 using Aragas.Core.Interfaces;
 using Aragas.Core.Wrappers;
 
 using Newtonsoft.Json;
-
+using Org.BouncyCastle.Crypto.Digests;
 using PCLStorage;
 
 using PokeD.Core.Data.PokeD.Monster;
+using PokeD.Core.Extensions;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.PokeD.Authorization;
 using PokeD.Core.Packets.PokeD.Battle;
@@ -24,6 +26,7 @@ using PokeD.Core.Packets.PokeD.Trade;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.PokeD;
+using TMXParserPCL;
 
 namespace PokeD.Server
 {
@@ -255,7 +258,36 @@ namespace PokeD.Server
 
                     Server.ClientConnected(this, playerToAdd);
 
-                    playerToAdd.SendPacket(new MapPacket() { MapData = Maps.GetFileAsync(playerToAdd.LevelFile).Result.ReadAllTextAsync().Result });
+
+                    var mapData = Maps.GetFileAsync(playerToAdd.LevelFile).Result.ReadAllTextAsync().Result;
+
+                    #region Hash
+
+                    Map map;
+                    using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(mapData)))
+                        map = Map.Load(stream);
+                    
+                    var tileSetHashesh = map.TileSets.Select(tileSet => new FileHash()
+                                {
+                                    Name = tileSet.Source.Replace(".tsx", ""),
+                                    Hash = TileSets.GetFileAsync(tileSet.Source).Result.MD5Hash()
+                                });
+
+                    var imageHashesh = map.TileSets.Select(tileSet =>
+                                new FileHash()
+                                {
+                                    Name = tileSet.Source.Replace(".tsx", ""),
+                                    Hash = TileSets.GetFileAsync(tileSet.Source.Replace(".tsx", ".png")).Result.MD5Hash()
+                                });
+                    #endregion Hash
+
+
+                    playerToAdd.SendPacket(new MapPacket()
+                    {
+                        MapData = mapData,
+                        TileSetHashes = tileSetHashesh.ToArray(),
+                        ImageHashes = imageHashesh.ToArray()
+                    });
                 }
             }
 
@@ -420,13 +452,18 @@ namespace PokeD.Server
             foreach (var tileSetName in tileSetNames)
             {
                 tileSets.Add(new TileSetResponse() { Name = tileSetName, TileSetData = TileSets.GetFileAsync($"{tileSetName}.tsx").Result.ReadAllTextAsync().Result });
-                images.Add(new ImageResponse() { Name = tileSetName, ImageData = ReadFully(TileSets.GetFileAsync($"{tileSetName}.png").Result.OpenAsync(FileAccess.Read).Result) });
+
+                var image = new ImageResponse();
+                image.Name = tileSetName;
+                using (var fileStream = TileSets.GetFileAsync($"{tileSetName}.png").Result.OpenAsync(FileAccess.Read).Result)
+                    image.ImageData = fileStream.ReadFully();
+                images.Add(image);
             }
 
             player.SendPacket(new TileSetResponsePacket()
             {
-                TileSets = tileSets,
-                Images = images
+                TileSets = tileSets.ToArray(),
+                Images = images.ToArray()
             });
         }
 
@@ -475,21 +512,6 @@ namespace PokeD.Server
             
             PacketsToPlayer = null;
             PacketsToAllPlayers = null;
-        }
-
-
-        private static byte[] ReadFully(Stream stream)
-        {
-            byte[] buffer = new byte[16 * 1024];
-            using (MemoryStream ms = new MemoryStream())
-            {
-                int read;
-                while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
-                {
-                    ms.Write(buffer, 0, read);
-                }
-                return ms.ToArray();
-            }
         }
 
         private class PlayerPacketPokeD

@@ -53,7 +53,9 @@
     <Compile Include="Data\BattleDataTable.cs" />
     <Compile Include="Clients\NPC\NPCLoader.cs" />
     <Compile Include="Data\Prefix.cs" />
+    <Compile Include="Extensions\DataItemsExtensions.cs" />
     <Compile Include="Extensions\DateTimeExtensions.cs" />
+    <Compile Include="Extensions\MonsterExtensions.cs" />
     <Compile Include="IServerModule.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Clients\P3D\P3DPlayer.Settings.cs" />
@@ -98,6 +100,12 @@
         <Reference Include="crypto, Version=1.7.0.0, Culture=neutral, processorArchitecture=MSIL">
           <HintPath>..\packages\Portable.BouncyCastle.1.7.0.2\lib\portable-net4+sl5+wp8+win8+wpa81+MonoTouch10+MonoAndroid10+xamarinmac20+xamarinios10\crypto.dll</HintPath>
         </Reference>
+        <Reference Include="ICSharpCode.SharpZipLib.Portable, Version=0.86.0.51803, Culture=neutral, processorArchitecture=MSIL">
+          <HintPath>..\packages\SharpZipLib.Portable.0.86.0.0003\lib\portable-net45+netcore45+wp8+win8+wpa81+MonoTouch+MonoAndroid+Xamarin.iOS10\ICSharpCode.SharpZipLib.Portable.dll</HintPath>
+        </Reference>
+        <Reference Include="TMXParserPCL, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+          <HintPath>..\packages\TMXParserPCL.1.0.0\lib\portable-net45+netcore45+wpa81\TMXParserPCL.dll</HintPath>
+        </Reference>
       </ItemGroup>
     </When>
     <When Condition="!Exists('..\packages')">
@@ -114,14 +122,20 @@
         <Reference Include="crypto, Version=1.7.0.0, Culture=neutral, processorArchitecture=MSIL">
           <HintPath>packages\Portable.BouncyCastle.1.7.0.2\lib\portable-net4+sl5+wp8+win8+wpa81+MonoTouch10+MonoAndroid10+xamarinmac20+xamarinios10\crypto.dll</HintPath>
         </Reference>
-        <Reference Include="CsvHelper, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8c4959082be5c823, processorArchitecture=MSIL">
-          <HintPath>packages\CsvHelper.2.13.2.0\lib\portable-net40+sl5+win8+wpa+wp8\CsvHelper.dll</HintPath>
+        <Reference Include="ICSharpCode.SharpZipLib.Portable, Version=0.86.0.51803, Culture=neutral, processorArchitecture=MSIL">
+          <HintPath>packages\SharpZipLib.Portable.0.86.0.0003\lib\portable-net45+netcore45+wp8+win8+wpa81+MonoTouch+MonoAndroid+Xamarin.iOS10\ICSharpCode.SharpZipLib.Portable.dll</HintPath>
+        </Reference>
+        <Reference Include="TMXParserPCL, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+          <HintPath>packages\TMXParserPCL.1.0.0\lib\portable-net45+netcore45+wpa81\TMXParserPCL.dll</HintPath>
         </Reference>
       </ItemGroup>
     </When>
   </Choose>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+
   </ItemGroup>
   <Choose>
     <When Condition="Exists('..\Aragas.Core')">
