@@ -5,20 +5,17 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Aragas.Core.Data;
+
 using Aragas.Core.Extensions;
-using Aragas.Core.Interfaces;
 using Aragas.Core.Wrappers;
 
 using Newtonsoft.Json;
-using Org.BouncyCastle.Crypto.Digests;
+
 using PCLStorage;
 
 using PokeD.Core.Data.PokeD.Monster;
-using PokeD.Core.Extensions;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.PokeD.Authorization;
-using PokeD.Core.Packets.PokeD.Battle;
 using PokeD.Core.Packets.PokeD.Chat;
 using PokeD.Core.Packets.PokeD.Overworld.Map;
 using PokeD.Core.Packets.PokeD.Overworld;
@@ -26,6 +23,7 @@ using PokeD.Core.Packets.PokeD.Trade;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.PokeD;
+
 using TMXParserPCL;
 
 namespace PokeD.Server
@@ -364,11 +362,15 @@ namespace PokeD.Server
             PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() { Message = $"Player {client.Name} disconnected!" });
         }
 
-        public void SendServerMessage(string message)
+        public void SendServerMessage(IClient sender, string message)
         {
-            PokeDPlayerSendToAllClients(new ChatServerMessagePacket() { Message = message });
-
-            Server.ClientServerMessage(this, message);
+            if (sender is PokeDPlayer)
+            {
+                PokeDPlayerSendToAllClients(new ChatServerMessagePacket() { Message = message });
+                Server.ClientServerMessage(this, sender, message);
+            }
+            else
+                PokeDPlayerSendToAllClients(new ChatServerMessagePacket() { Message = message });
         }
         public void SendPrivateMessage(IClient sender, IClient destClient, string message)
         {

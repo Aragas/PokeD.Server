@@ -115,7 +115,7 @@ namespace PokeD.Server
         public void OtherConnected(IClient client) { }
         public void OtherDisconnected(IClient client) { }
 
-        public void SendServerMessage(string message) { }
+        public void SendServerMessage(IClient sender, string message) { }
         public void SendPrivateMessage(IClient sender, IClient destClient, string message) { }
         public void SendGlobalMessage(IClient sender, string message) { }
 

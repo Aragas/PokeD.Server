@@ -23,10 +23,10 @@ namespace PokeD.Server
                 module.OtherDisconnected(client);
         }
 
-        public void ClientServerMessage(IServerModule caller, string message)
+        public void ClientServerMessage(IServerModule caller, IClient sender, string message)
         {
             foreach (var module in Modules.Where(module => caller != module))
-                module.SendServerMessage(message);
+                module.SendServerMessage(sender, message);
         }
         public void ClientPrivateMessage(IServerModule caller, IClient sender, IClient destClient, string message)
         {

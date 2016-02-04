@@ -187,7 +187,7 @@ namespace PokeD.Server.Clients.P3D
                 var message = $"The player {playerName} {packet.EventMessage}";
 
                 Logger.Log(LogType.Server, message);
-                Module.SendServerMessage(message);
+                Module.SendServerMessage(this, message);
             }
         }
 

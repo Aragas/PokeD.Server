@@ -128,13 +128,12 @@ namespace PokeD.Server
         public void OtherDisconnected(IClient client) { }
 
 
-        public void SendServerMessage(string message) { SendServerMessage(message, false); }
-        public void SendServerMessage(string message, bool fromDummy)
+        public void SendServerMessage(IClient sender, string message)
         {
-            if (fromDummy)
-                Server.ClientServerMessage(this, message);
+            if (sender is P3DProxyDummy)
+                Server.ClientServerMessage(this, sender, message);
             else
-                Proxy.SendPacket(new ChatServerMessagePacket() {Message = message});
+                Proxy.SendPacket(new ChatServerMessagePacket() { Message = message });
         }
 
         public void SendPrivateMessage(IClient sender, IClient destClient, string message) { }

@@ -29,7 +29,7 @@ namespace PokeD.Server.Clients.P3DProxy
 
         private void HandleServerMessage(ServerMessagePacket packet)
         {
-            Module.SendServerMessage(packet.Message);
+            Module.SendServerMessage(this, packet.Message);
         }
         private void HandleChatMessage(ChatMessageGlobalPacket packet)
         {

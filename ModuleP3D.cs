@@ -3,17 +3,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 
-using Aragas.Core.Extensions;
 using Aragas.Core.Wrappers;
 
 using Newtonsoft.Json;
 
 using PokeD.Core.Data.P3D;
-using PokeD.Core.Data.PokeD;
 using PokeD.Core.Data.PokeD.Monster;
-using PokeD.Core.Data.PokeD.Monster.Data;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Server;
@@ -391,11 +387,15 @@ namespace PokeD.Server
         }
 
 
-        public void SendServerMessage(string message)
+        public void SendServerMessage(IClient sender, string message)
         {
-            P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, -1);
-            
-            Server.ClientServerMessage(this, message);
+            if (sender is P3DPlayer)
+            {
+                P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, -1);
+                Server.ClientServerMessage(this, sender, message);
+            }
+            else
+                P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, -1);
         }
         public void SendPrivateMessage(IClient sender, IClient destClient, string message)
         {
@@ -409,21 +409,10 @@ namespace PokeD.Server
             if (sender is P3DPlayer)
             {
                 P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
-
                 Server.ClientGlobalMessage(this, sender, message);
             }
             else
                 P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
-            
-
-            //if (sender is P3DPlayer)
-            //    P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
-            //else
-            //    Server.ClientGlobalMessage(this, sender, message);
-
-            //P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
-            //
-            //Server.ClientGlobalMessage(this, sender, message);
         }
 
         public void SendTradeRequest(IClient sender, Monster monster, IClient destClient)
@@ -506,7 +495,7 @@ namespace PokeD.Server
 
         private bool IsGameJoltIDUsed(P3DPlayer client)
         {
-            for (int i = 0; i < Clients.Count; i++)
+            for (var i = 0; i < Clients.Count; i++)
             {
                 var player = Clients[i] as P3DPlayer;
                 if (player.IsGameJoltPlayer && client.GameJoltID == player.GameJoltID)

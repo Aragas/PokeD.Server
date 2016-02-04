@@ -28,7 +28,7 @@ namespace PokeD.Server
 
         void SendPrivateMessage(IClient sender, IClient destClient, string message);
         void SendGlobalMessage(IClient sender, string message);
-        void SendServerMessage(string message);
+        void SendServerMessage(IClient sender, string message);
 
         //void BattleRequest();
         void SendTradeRequest(IClient sender, Monster monster, IClient destClient);
