@@ -201,7 +201,10 @@ namespace PokeD.Server.Clients.P3D
                 if (IsGameJoltPlayer == ((P3DPlayer) destClient).IsGameJoltPlayer)
                     Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeRequestPacket(), packet.Origin);
                 else
-                    return;
+                { 
+                    SendPacket(new ChatMessageGlobalPacket { Message = $"Can not start trade with {destClient.Name}! Online-Offline trade disabled." }, -1);
+                    SendPacket(new TradeQuitPacket(), packet.DestinationPlayerID);
+                }
             }
             else
                 Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeRequestPacket(), packet.Origin);
@@ -209,7 +212,6 @@ namespace PokeD.Server.Clients.P3D
         private void HandleTradeJoin(TradeJoinPacket packet)
         {
             Module.P3DPlayerSendToClient(packet.Origin, new TradeJoinPacket(), packet.DestinationPlayerID);
-            //Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeJoinPacket(), packet.Origin);
         }
         private void HandleTradeQuit(TradeQuitPacket packet)
         {
@@ -220,7 +222,7 @@ namespace PokeD.Server.Clients.P3D
             if (PokemonValid(packet.TradeData))
                 Module.SendTradeRequest(this, packet.DataItems.ToMonster(), Module.Server.GetClient(packet.DestinationPlayerID));
             else
-                ;
+                Module.SendTradeCancel(this, Module.Server.GetClient(packet.DestinationPlayerID));
         }
         private void HandleTradeStart(TradeStartPacket packet)
         {
@@ -245,7 +247,7 @@ namespace PokeD.Server.Clients.P3D
             if (PokemonsValid(packet.BattleData))
                 Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleOfferPacket {DataItems = new DataItems(packet.BattleData)}, packet.Origin);
             else
-                ;
+                SendPacket(new BattleQuitPacket(), packet.DestinationPlayerID);
         }
         private void HandleBattlePokemonData(BattlePokemonDataPacket packet)
         {
