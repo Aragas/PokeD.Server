@@ -121,8 +121,8 @@ namespace PokeD.Server
     {
         const string FileName = "ModulePokeD.json";
 
-        static IFolder Maps = FileSystemWrapper.ContentFolder.GetFolderAsync("Maps").Result;
-        static IFolder TileSets = Maps.GetFolderAsync("TileSets").Result;
+        static IFolder Maps => FileSystemWrapper.ContentFolder.CreateFolderAsync("Maps", CreationCollisionOption.OpenIfExists).Result;
+        static IFolder TileSets => Maps.CreateFolderAsync("TileSets", CreationCollisionOption.OpenIfExists).Result;
 
         #region Settings
 
