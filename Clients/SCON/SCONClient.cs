@@ -47,6 +47,8 @@ namespace PokeD.Server.Clients.SCON
 
         bool IsInitialized { get; set; }
 
+        bool ChatEnabled { get; set; }
+
         #endregion Values
 
         ProtobufStream Stream { get; }
@@ -214,6 +216,10 @@ namespace PokeD.Server.Clients.SCON
             if (sconPacket == null)
                 throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
 
+            if (packet is ChatMessagePacket)
+                if(!ChatEnabled)
+                    return;
+            
             Stream.SendPacket(ref packet);
      
 #if DEBUG

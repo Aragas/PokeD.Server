@@ -107,7 +107,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-           // ChatReceiving = true;
+            ChatEnabled = true;
         }
         private void HandleStopChatReceiving(StopChatReceivingPacket packet)
         {
@@ -117,7 +117,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            //ChatReceiving = false;
+            ChatEnabled = false;
         }
 
         private void HandlePlayerInfoListRequest(PlayerInfoListRequestPacket packet)
