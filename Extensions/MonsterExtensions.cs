@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using PokeD.Core.Data.P3D;
+using PokeD.Core.Data.PokeApi;
 using PokeD.Core.Data.PokeD;
 using PokeD.Core.Data.PokeD.Monster;
 

@@ -14,7 +14,7 @@ using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
 
-using PokeD.Core.Data.PokeD;
+using PokeD.Core.Data.PokeApi;
 
 using PokeD.Server.Data;
 using PokeD.Server.Database;
