@@ -160,10 +160,7 @@ namespace PokeD.Server.Clients.P3D
                 ExecuteCommand(packet.Message);
             }
             else if(IsInitialized)
-            {
-                Logger.LogChatMessage(Name, packet.Message);
                 Module.SendGlobalMessage(this, packet.Message);
-            }
         }
         private void HandlePrivateMessage(ChatMessagePrivatePacket packet)
         {
@@ -186,7 +183,6 @@ namespace PokeD.Server.Clients.P3D
             {
                 var message = $"The player {playerName} {packet.EventMessage}";
 
-                Logger.Log(LogType.Server, message);
                 Module.SendServerMessage(this, message);
             }
         }
