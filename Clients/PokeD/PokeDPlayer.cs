@@ -95,7 +95,7 @@ namespace PokeD.Server.Clients.PokeD
                     var dataLength = Stream.ReadVarInt();
                     if (dataLength == 0)
                     {
-                        Logger.Log(LogType.GlobalError, $"PokeD Reading Error: Packet Length size is 0. Disconnecting IClient {Name}.");
+                        Logger.Log(LogType.Error, $"PokeD Reading Error: Packet Length size is 0. Disconnecting IClient {Name}.");
                         Module.RemoveClient(this, "Packet Length size is 0!");
                         return;
                     }
@@ -132,19 +132,19 @@ namespace PokeD.Server.Clients.PokeD
                         }
                         else
                         {
-                            Logger.Log(LogType.GlobalError, $"PokeD Reading Error: PokeDPacketResponses.Packets[{id}] is null. Disconnecting IClient {Name}.");
+                            Logger.Log(LogType.Error, $"PokeD Reading Error: PokeDPacketResponses.Packets[{id}] is null. Disconnecting IClient {Name}.");
                             Module.RemoveClient(this, $"Packet ID {id} is not correct!");
                         }
                     }
                     else
                     {
-                        Logger.Log(LogType.GlobalError, $"PokeD Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
+                        Logger.Log(LogType.Error, $"PokeD Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
                         Module.RemoveClient(this, $"Packet ID {id} is not correct!");
                     }
                 }
             }
             else
-                Logger.Log(LogType.GlobalError, $"PokeD Reading Error: Packet Data is null.");
+                Logger.Log(LogType.Error, $"PokeD Reading Error: Packet Data is null.");
         }
         private void HandlePacket(PokeDPacket packet)
         {

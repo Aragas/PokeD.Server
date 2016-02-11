@@ -18,7 +18,7 @@ namespace PokeD.Server
                 module.OtherConnected(client);
 
             if(caller.ClientsVisible)
-                Logger.Log(LogType.Server, $"The player {client.Name} joined the game from IP {client.IP}");
+                Logger.Log(LogType.Event, $"The player {client.Name} joined the game from IP {client.IP}");
         }
         public void ClientDisconnected(IServerModule caller, IClient client)
         {
@@ -26,7 +26,7 @@ namespace PokeD.Server
                 module.OtherDisconnected(client);
 
             if (caller.ClientsVisible)
-                Logger.Log(LogType.Server, $"The player {client.Name} disconnected, playtime was {DateTime.Now - client.ConnectionTime:HH\\:mm\\:ss}");
+                Logger.Log(LogType.Event, $"The player {client.Name} disconnected, playtime was {DateTime.Now - client.ConnectionTime:hh\\:mm\\:ss}");
         }
 
         public void ClientServerMessage(IServerModule caller, IClient sender, string message)
@@ -46,7 +46,7 @@ namespace PokeD.Server
             foreach (var module in Modules.Where(module => caller != module))
                 module.SendGlobalMessage(sender, message);
 
-            Logger.Log(LogType.Chat, $"<{sender.Name}>: {message}");
+            Logger.Log(LogType.Chat, $"<{sender.Name}> {message}");
         }
 
         public void ClientTradeOffer(IServerModule caller, IClient client, Monster monster, IClient destClient)

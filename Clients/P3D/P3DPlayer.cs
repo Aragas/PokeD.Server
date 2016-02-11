@@ -123,19 +123,19 @@ namespace PokeD.Server.Clients.P3D
 #endif
                             }
                             else
-                                Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet TryParseData error. Packet ID {id}, Packet Data: {data}.");
+                                Logger.Log(LogType.Error, $"P3D Reading Error: Packet TryParseData error. Packet ID {id}, Packet Data: {data}.");
                         }
                         else
-                            Logger.Log(LogType.GlobalError, $"P3D Reading Error: SCONPacketResponses.Packets[{id}] is null.");
+                            Logger.Log(LogType.Error, $"P3D Reading Error: SCONPacketResponses.Packets[{id}] is null.");
                     }
                     else
-                        Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packets Length {P3DPacketResponses.Packets.Length} > Packet ID {id}, Packet Data: {data}.");
+                        Logger.Log(LogType.Error, $"P3D Reading Error: Packets Length {P3DPacketResponses.Packets.Length} > Packet ID {id}, Packet Data: {data}.");
                 }
                 else
-                    Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet TryParseID error. Packet Data: {data}.");
+                    Logger.Log(LogType.Error, $"P3D Reading Error: Packet TryParseID error. Packet Data: {data}.");
             }
             else
-                Logger.Log(LogType.GlobalError, $"P3D Reading Error: Packet Data is null or empty.");
+                Logger.Log(LogType.Error, $"P3D Reading Error: Packet Data is null or empty.");
         }
         private void HandlePacket(P3DPacket packet)
         {

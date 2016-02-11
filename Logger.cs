@@ -15,29 +15,14 @@ namespace PokeD.Server
         Info,
 
         /// <summary>
-        /// Error Log Type.
-        /// </summary>
-        Warning,
-
-        /// <summary>
-        /// Debug Log Type.
-        /// </summary>
-        Debug,
-
-        /// <summary>
         /// Chat Log Type.
         /// </summary>
         Chat,
 
         /// <summary>
-        /// PM Log Type.
-        /// </summary>
-        PM,
-
-        /// <summary>
         /// Server Chat Log Type.
         /// </summary>
-        Server,
+        Event,
 
         /// <summary>
         /// Trade Log Type.
@@ -57,7 +42,16 @@ namespace PokeD.Server
         /// <summary>
         /// Should be reported.
         /// </summary>
-        GlobalError
+        Error,
+        /// <summary>
+        /// Error Log Type.
+        /// </summary>
+        Warning,
+
+        /// <summary>
+        /// Debug Log Type.
+        /// </summary>
+        Debug,
     }
 
     public static class Logger
