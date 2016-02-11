@@ -203,7 +203,7 @@ namespace PokeD.Server.Clients.P3D
                 else
                 { 
                     SendPacket(new ChatMessageGlobalPacket { Message = $"Can not start trade with {destClient.Name}! Online-Offline trade disabled." }, -1);
-                    SendPacket(new TradeQuitPacket(), packet.DestinationPlayerID);
+                    Module.SendTradeCancel(this, destClient);
                 }
             }
             else
@@ -219,10 +219,15 @@ namespace PokeD.Server.Clients.P3D
         }
         private void HandleTradeOffer(TradeOfferPacket packet)
         {
+            var destClient = Module.Server.GetClient(packet.DestinationPlayerID);
+
             if (PokemonValid(packet.TradeData))
-                Module.SendTradeRequest(this, packet.DataItems.ToMonster(), Module.Server.GetClient(packet.DestinationPlayerID));
+                Module.SendTradeRequest(this, packet.DataItems.ToMonster(), destClient);
             else
-                Module.SendTradeCancel(this, Module.Server.GetClient(packet.DestinationPlayerID));
+            {
+                SendPacket(new ChatMessageGlobalPacket { Message = $"Your Pokemon is not valid!" }, -1);
+                Module.SendTradeCancel(this, destClient);
+            }
         }
         private void HandleTradeStart(TradeStartPacket packet)
         {
@@ -245,9 +250,12 @@ namespace PokeD.Server.Clients.P3D
         private void HandleBattleOffer(BattleOfferPacket packet)
         {
             if (PokemonsValid(packet.BattleData))
-                Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleOfferPacket {DataItems = new DataItems(packet.BattleData)}, packet.Origin);
+                Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleOfferPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
             else
+            {
+                SendPacket(new ChatMessageGlobalPacket { Message = $"One of your Pokemon is not valid!" }, -1);
                 SendPacket(new BattleQuitPacket(), packet.DestinationPlayerID);
+            }
         }
         private void HandleBattlePokemonData(BattlePokemonDataPacket packet)
         {

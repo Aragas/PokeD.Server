@@ -251,7 +251,6 @@ namespace PokeD.Server
 
                 if (playerToAdd.ID != 0)
                 {
-                    Logger.Log(LogType.Server, $"The player {playerToAdd.Name} joined the game from IP {playerToAdd.IP}.");
                     PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() { Message = $"Player {playerToAdd.Name} joined the game!" });
 
                     Server.ClientConnected(this, playerToAdd);
@@ -299,7 +298,6 @@ namespace PokeD.Server
 
                 if (playerToRemove.ID != 0)
                 {
-                    Logger.Log(LogType.Server, $"The player {playerToRemove.Name} disconnected, playtime was {DateTime.Now - playerToRemove.ConnectionTime:hh\\:mm\\:ss}.");
                     PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket { Message = $"Player {playerToRemove.Name} disconnected!" });
                     
                     Server.ClientDisconnected(this, playerToRemove);

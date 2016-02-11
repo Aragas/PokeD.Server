@@ -50,6 +50,7 @@
     <Compile Include="Clients\Protobuf\ProtobufPlayer.Settings.cs" />
     <Compile Include="Clients\Protobuf\ProtobufPlayer.Packets.cs" />
     <Compile Include="Clients\Protobuf\ProtobufPlayer.cs" />
+    <Compile Include="Clients\ServerClient.cs" />
     <Compile Include="Data\BattleDataTable.cs" />
     <Compile Include="Clients\NPC\NPCLoader.cs" />
     <Compile Include="Data\Prefix.cs" />
@@ -135,7 +136,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-
   </ItemGroup>
   <Choose>
     <When Condition="Exists('..\Aragas.Core')">

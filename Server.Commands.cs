@@ -1,37 +1,37 @@
 ﻿using System;
 
-using Aragas.Core.Wrappers;
-
 using PokeD.Server.Data;
 
 namespace PokeD.Server
 {
     public partial class Server
     {
-        public void ExecuteCommand(string message)
+        public bool ExecuteCommand(string message)
         {
             var command = message.ToLower();
 
             if (message.StartsWith("say "))
-                ;//SendGlobalChatMessageToAllClients(message.Remove(0, 4));
+                ClientServerMessage(null, ServerClient, message.Remove(0, 4));
 
             else if (message.StartsWith("message "))
-                ;//SendServerMessageToAllClients(message.Remove(0, 8));
+                ClientServerMessage(null, ServerClient, message.Remove(0, 8));
 
             else if (command.StartsWith("help server"))    // help from program
-                ExecuteHelpCommand(message.Remove(0, 11));
+                return ExecuteHelpCommand(message.Remove(0, 11));
 
             else if (command.StartsWith("help"))           // internal help from remote
-                ExecuteHelpCommand(message.Remove(0, 4));
+                return ExecuteHelpCommand(message.Remove(0, 4));
 
             else if (command.StartsWith("world "))
-                ExecuteWorldCommand(command.Remove(0, 6));
+                return ExecuteWorldCommand(command.Remove(0, 6));
 
             else
-                InputWrapper.ConsoleWrite("Invalid command!");
+                return false;
+
+            return true;
         }
 
-        private void ExecuteWorldCommand(string command)
+        private bool ExecuteWorldCommand(string command)
         {
             if (command.StartsWith("set "))
             {
@@ -46,10 +46,10 @@ namespace PokeD.Server
                     if (Enum.TryParse(command, true, out weather))
                     {
                         World.Weather = weather;
-                        InputWrapper.ConsoleWrite($"Set Weather to {weather}!");
+                        Logger.Log(LogType.Command, $"Set Weather to {weather}!");
                     }
                     else
-                        InputWrapper.ConsoleWrite("Weather not found!");
+                        Logger.Log(LogType.Command, "Weather not found!");
                 }
                 #endregion Weather
 
@@ -62,10 +62,10 @@ namespace PokeD.Server
                     if (Enum.TryParse(command, true, out season))
                     {
                         World.Season = season;
-                        InputWrapper.ConsoleWrite($"Set Season to {season}!");
+                        Logger.Log(LogType.Command, $"Set Season to {season}!");
                     }
                     else
-                        InputWrapper.ConsoleWrite("Season not found!");
+                        Logger.Log(LogType.Command, "Season not found!");
                 }
                 #endregion Season
 
@@ -79,11 +79,11 @@ namespace PokeD.Server
                     {
                         World.CurrentTime = time;
                         World.UseRealTime = false;
-                        InputWrapper.ConsoleWrite($"Set time to {time}!");
-                        InputWrapper.ConsoleWrite("Disabled Real Time!");
+                        Logger.Log(LogType.Command, $"Set time to {time}!");
+                        Logger.Log(LogType.Command, "Disabled Real Time!");
                     }
                     else
-                        InputWrapper.ConsoleWrite("Invalid time!");
+                        Logger.Log(LogType.Command, "Invalid time!");
                 }
                 #endregion Time
 
@@ -93,7 +93,7 @@ namespace PokeD.Server
                     command = command.Remove(0, 9);
 
                     World.DoDayCycle = command.StartsWith("true");
-                    InputWrapper.ConsoleWrite($"Set Day Cycle to {World.DoDayCycle}!");
+                    Logger.Log(LogType.Command, $"Set Day Cycle to {World.DoDayCycle}!");
                 }
                 #endregion DayCycle
 
@@ -104,8 +104,8 @@ namespace PokeD.Server
 
                     World.UseRealTime = command.StartsWith("true");
                     World.DoDayCycle = true;
-                    InputWrapper.ConsoleWrite($"Set Real Time to {World.UseRealTime}!");
-                    InputWrapper.ConsoleWrite("Enabled Day Cycle!");
+                    Logger.Log(LogType.Command, $"Set Real Time to {World.UseRealTime}!");
+                    Logger.Log(LogType.Command, "Enabled Day Cycle!");
                 }
                 #endregion Realtime
 
@@ -116,19 +116,21 @@ namespace PokeD.Server
 
                     World.Location = command;
                     World.UseLocation = true;
-                    InputWrapper.ConsoleWrite($"Set Location to {World.Location}!");
-                    InputWrapper.ConsoleWrite("Enabled Location!");
+                    Logger.Log(LogType.Command, $"Set Location to {World.Location}!");
+                    Logger.Log(LogType.Command, "Enabled Location!");
                 }
-                #endregion Location
+                    #endregion Location
 
                 else
-                    InputWrapper.ConsoleWrite("Invalid command!");
+                    return false;
             }
 
             else
-                InputWrapper.ConsoleWrite("Invalid command!");
+                return false;
+
+            return true;
         }
 
-        private static void ExecuteHelpCommand(string command) { }
+        private static bool ExecuteHelpCommand(string command) { return false; }
     }
 }
