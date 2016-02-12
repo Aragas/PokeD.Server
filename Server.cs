@@ -34,6 +34,9 @@ namespace PokeD.Server
         [JsonProperty("PokeApiUrl", NullValueHandling = NullValueHandling.Ignore)]
         public string PokeApiUrl { get; set; } = "http://pokeapi.co/";
 
+        [JsonProperty("AutomaticErrorReporting")]
+        public bool AutomaticErrorReporting { get; private set; } = true;
+
         [JsonProperty("World")]
         public World World { get; set; } = new World();
 
