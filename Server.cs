@@ -42,7 +42,8 @@ namespace PokeD.Server
 
         #endregion Settings
 
-        List<IServerModule> Modules { get; } = new List<IServerModule>();
+        [JsonIgnore]
+        public List<IServerModule> Modules { get; } = new List<IServerModule>();
         
         IThread ListenToConnectionsThread { get; set; }
 

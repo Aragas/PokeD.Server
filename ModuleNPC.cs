@@ -18,6 +18,9 @@ namespace PokeD.Server
         [JsonProperty("Enabled")]
         public bool Enabled { get; private set; } = false;
 
+        [JsonIgnore]
+        public ushort Port => 0;
+
         #endregion Settings
 
         [JsonIgnore]

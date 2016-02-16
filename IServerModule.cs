@@ -11,6 +11,8 @@ namespace PokeD.Server
     public interface IServerModule : IUpdatable, IDisposable
     {
         Server Server { get; }
+        bool Enabled { get; }
+        ushort Port { get; }
         ClientList Clients { get; }
         bool ClientsVisible { get; } 
 
