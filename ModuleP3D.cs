@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
 using Aragas.Core.Wrappers;
-
-using Newtonsoft.Json;
 
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Data.PokeD.Monster;
@@ -31,37 +28,29 @@ namespace PokeD.Server
 
     public class ModuleP3D : IServerModule
     {
-        const string FileName = "ModuleP3D.json";
+        const string FileName = "ModuleP3D";
 
         #region Settings
 
-        [JsonProperty("Enabled")]
         public bool Enabled { get; private set; } = false;
 
-        [JsonProperty("Port")]
         public ushort Port { get; private set; } = 15124;
 
-        [JsonProperty("ServerName", NullValueHandling = NullValueHandling.Ignore)]
         public string ServerName { get; private set; } = "Put name here";
 
-        [JsonProperty("ServerMessage", NullValueHandling = NullValueHandling.Ignore)]
         public string ServerMessage { get; private set; } = "Put description here";
         
-        [JsonProperty("MaxPlayers")]
         public int MaxPlayers { get; private set; } = 1000;
 
-        [JsonProperty("EncryptionEnabled")]
         public bool EncryptionEnabled { get; private set; } = true;
 
-        [JsonProperty("MoveCorrectionEnabled")]
         public bool MoveCorrectionEnabled { get; private set; } = true;
 
-        [JsonProperty("MutedPlayers")]
-        public Dictionary<int, List<int>> MutedPlayers { get; } = new Dictionary<int, List<int>>();
+        public Dictionary<int, List<int>> MutedPlayers { get; private set; } = new Dictionary<int, List<int>>();
 
         #endregion Settings
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public Server Server { get; }
         bool IsDisposing { get; set; }
 
@@ -71,9 +60,9 @@ namespace PokeD.Server
         IThread PlayerCorrectionThread { get; set; }
 
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public ClientList Clients { get; } = new ClientList();
-        [JsonIgnore]
+        [ConfigIgnore]
         public bool ClientsVisible { get; } = true;
 
         List<IClient> PlayersJoining { get; } = new List<IClient>();
@@ -85,7 +74,6 @@ namespace PokeD.Server
         ConcurrentQueue<PacketP3DOrigin> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<PacketP3DOrigin>();
 
         ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; } = new ConcurrentDictionary<string, P3DPlayer[]>();
-
 
         public ModuleP3D(Server server) { Server = server; }
 
@@ -139,6 +127,7 @@ namespace PokeD.Server
         }
 
 
+        [ConfigIgnore]
         public static long PlayerWatcherThreadTime { get; private set; }
         private void PlayerWatcherCycle()
         {
@@ -176,6 +165,7 @@ namespace PokeD.Server
             }
         }
 
+        [ConfigIgnore]
         public static long PlayerCorrectionThreadTime { get; private set; }
         private void PlayerCorrectionCycle()
         {

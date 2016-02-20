@@ -29,27 +29,24 @@ namespace PokeD.Server
         }
 
 
-        const string FileName = "ModuleNancy.json";
+        const string FileName = "ModuleNancy";
 
         #region Settings
 
-        [JsonProperty("Enabled")]
         public bool Enabled { get; private set; } = false;
 
-        [JsonProperty("Host", NullValueHandling = NullValueHandling.Ignore)]
         public string Host { get; private set; } = "localhost";
 
-        [JsonProperty("Port")]
         public ushort Port { get; private set; } = 8765;
         
         #endregion Settings
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public Server Server { get; }
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public ClientList Clients { get; } = new ClientList();
-        [JsonIgnore]
+        [ConfigIgnore]
         public bool ClientsVisible { get; } = false;
 
 

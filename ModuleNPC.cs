@@ -1,7 +1,5 @@
 ﻿using Aragas.Core.Wrappers;
 
-using Newtonsoft.Json;
-
 using PokeD.Core.Data.PokeD.Monster;
 
 using PokeD.Server.Clients;
@@ -11,24 +9,23 @@ namespace PokeD.Server
 {
     public class ModuleNPC : IServerModule
     {
-        const string FileName = "ModuleNPC.json";
+        const string FileName = "ModuleNPC";
 
         #region Settings
 
-        [JsonProperty("Enabled")]
         public bool Enabled { get; private set; } = false;
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public ushort Port => 0;
 
         #endregion Settings
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public Server Server { get; }
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public ClientList Clients { get; } = new ClientList();
-        [JsonIgnore]
+        [ConfigIgnore]
         public bool ClientsVisible { get; } = true;
 
 

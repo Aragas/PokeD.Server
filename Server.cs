@@ -6,8 +6,6 @@ using System.Linq;
 using Aragas.Core.Interfaces;
 using Aragas.Core.Wrappers;
 
-using Newtonsoft.Json;
-
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Generators;
@@ -19,39 +17,34 @@ using PokeD.Core.Data.PokeApi;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
 
-
 namespace PokeD.Server
 {
     public partial class Server : IUpdatable, IDisposable
     {
-        const string FileName = "Server.json";
+        const string FileName = "Server";
 
         #region Settings
 
-        [JsonProperty("PlayerDatabaseName", NullValueHandling = NullValueHandling.Ignore)]
         public string PlayerDatabaseName { get; set; } = "Players";
 
-        [JsonProperty("PokeApiUrl", NullValueHandling = NullValueHandling.Ignore)]
         public string PokeApiUrl { get; set; } = "http://pokeapi.co/";
 
-        [JsonProperty("AutomaticErrorReporting")]
         public bool AutomaticErrorReporting { get; private set; } = true;
 
-        [JsonProperty("World")]
         public World World { get; set; } = new World();
 
         #endregion Settings
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public List<IServerModule> Modules { get; } = new List<IServerModule>();
         
         IThread ListenToConnectionsThread { get; set; }
 
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public bool IsDisposing { get; private set; }
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public AsymmetricCipherKeyPair RSAKeyPair { get; private set; }
         const int RsaKeySize = 1024;
 
@@ -137,7 +130,8 @@ namespace PokeD.Server
             return status;
         }
 
-        
+
+        [ConfigIgnore]
         public static long ClientConnectionsThreadTime { get; private set; }
         private void ListenToConnectionsCycle()
         {

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -8,8 +7,6 @@ using System.Text;
 
 using Aragas.Core.Extensions;
 using Aragas.Core.Wrappers;
-
-using Newtonsoft.Json;
 
 using PCLStorage;
 
@@ -119,35 +116,31 @@ namespace PokeD.Server
 
     public class ModulePokeD : IServerModule
     {
-        const string FileName = "ModulePokeD.json";
+        const string FileName = "ModulePokeD";
 
         static IFolder Maps => FileSystemWrapper.ContentFolder.CreateFolderAsync("Maps", CreationCollisionOption.OpenIfExists).Result;
         static IFolder TileSets => Maps.CreateFolderAsync("TileSets", CreationCollisionOption.OpenIfExists).Result;
 
         #region Settings
 
-        [JsonProperty("Enabled")]
         public bool Enabled { get; private set; } = false;
 
-        [JsonProperty("Port")]
         public ushort Port { get; private set; } = 15130;
 
-        [JsonProperty("EncryptionEnabled")]
         public bool EncryptionEnabled { get; private set; } = true;
-
-
+        
         #endregion Settings
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public Server Server { get; }
         bool IsDisposing { get; set; }
 
         ITCPListener Listener { get; set; }
 
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public ClientList Clients { get; } = new ClientList();
-        [JsonIgnore]
+        [ConfigIgnore]
         public bool ClientsVisible { get; } = true;
         List<IClient> PlayersJoining { get; } = new List<IClient>();
         List<IClient> PlayersToAdd { get; } = new List<IClient>();

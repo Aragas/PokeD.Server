@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using Aragas.Core.Data;
 using Aragas.Core.Wrappers;
 
-using Newtonsoft.Json;
-
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.SCON.Authorization;
@@ -18,33 +16,29 @@ namespace PokeD.Server
 {
     public class ModuleSCON : IServerModule
     {
-        const string FileName = "ModuleSCON.json";
+        const string FileName = "ModuleSCON";
 
         #region Settings
 
-        [JsonProperty("Enabled")]
         public bool Enabled { get; private set; } = false;
 
-        [JsonProperty("Port")]
         public ushort Port { get; private set; } = 15126;
 
-        [JsonProperty("SCON_Password"), JsonConverter(typeof(PasswordHandler))]
         public PasswordStorage SCON_Password { get; private set; } = new PasswordStorage();
 
-        [JsonProperty("EncryptionEnabled")]
         public bool EncryptionEnabled { get; private set; } = true;
         
         #endregion Settings
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public Server Server { get; }
         bool IsDisposing { get; set; }
 
         ITCPListener Listener { get; set; }
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public ClientList Clients { get; } = new ClientList();
-        [JsonIgnore]
+        [ConfigIgnore]
         public bool ClientsVisible { get; } = false;
         List<IClient> PlayersJoining { get; } = new List<IClient>();
         List<IClient> PlayersToAdd { get; } = new List<IClient>();

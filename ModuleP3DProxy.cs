@@ -3,8 +3,6 @@
 using Aragas.Core.Data;
 using Aragas.Core.Wrappers;
 
-using Newtonsoft.Json;
-
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Shared;
@@ -17,34 +15,30 @@ namespace PokeD.Server
 {
     public class ModuleP3DProxy : IServerModule
     {
-        const string FileName = "ModuleP3DProxy.json";
+        const string FileName = "ModuleP3DProxy";
 
         #region Settings
 
-        [JsonProperty("Enabled")]
         public bool Enabled { get; private set; } = false;
 
-        [JsonProperty("Host", NullValueHandling = NullValueHandling.Ignore)]
         public string Host { get; private set; } = "karp.pokemon3d.net";
 
-        [JsonProperty("Port")]
         public ushort Port { get; private set; } = 15124;
 
-        [JsonProperty("PlayerName", NullValueHandling = NullValueHandling.Ignore)]
         public string PlayerName { get; private set; } = "PokeDProxy";
 
         #endregion Settings
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public Server Server { get; }
         bool IsDisposing { get; set; }
-        
-        [JsonIgnore]
+
+        [ConfigIgnore]
         public IClient Proxy { get; set; }
 
-        [JsonIgnore]
+        [ConfigIgnore]
         public ClientList Clients { get; } = new ClientList();
-        [JsonIgnore]
+        [ConfigIgnore]
         public bool ClientsVisible { get; } = true;
 
 
