@@ -56,6 +56,7 @@ namespace PokeD.Server.Clients.P3DProxy
         public string IP { get; set; }
 
         public DateTime ConnectionTime { get; } = DateTime.Now;
+        public CultureInfo Language { get; }
 
         bool IsInitialized { get; set; }
 

@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
-
+using System.Linq;
 using Aragas.Core.Data;
 using Aragas.Core.Packets;
 using Aragas.Core.Wrappers;
@@ -19,6 +20,8 @@ using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.NPC
 {
+
+    // Call Lua funcs, but put default variables first. So lua can override
     public partial class NPCPlayer : INPC, IClient
     {
         CultureInfo CultureInfo => CultureInfo.InvariantCulture;
@@ -28,12 +31,14 @@ namespace PokeD.Server.Clients.NPC
         public int ID { get; set; }
 
         private char DecimalSeparator { get; set; } = '.';
-        public string Name { get; set; } = string.Empty;
+        public string PureName { get; set; } = string.Empty;
+        public string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {PureName}" : PureName; } private set { PureName = value; } }
         public Prefix Prefix { get; set; } = Prefix.NPC;
         public string PasswordHash { get; set; } = string.Empty;
 
         public string LevelFile { get; set; } = string.Empty;
-        public Vector3 Position { get; set; }
+        public Vector3 Position { get { return _position; } set { _position = value; Module.SendPosition(this); } }
+        private Vector3 _position;
         public int Facing { get; set; }
         public bool Moving { get; set; }
         public string Skin { get; set; } = string.Empty;
@@ -50,49 +55,55 @@ namespace PokeD.Server.Clients.NPC
         public string IP => "NPC";
 
         public DateTime ConnectionTime { get; } = DateTime.MinValue;
-        
+        public CultureInfo Language => new CultureInfo("ru-RU");
+
         #endregion Other Values
 
 
-        ILua Lua { get; }
         IServerModule Module { get; }
 
+        LuaScript Lua { get; }
+        LuaTable Hook => LuaWrapper.ToLuaTable(Lua["hook"]);
 
+        
 #if DEBUG
         List<P3DPacket> Received { get; } =  new List<P3DPacket>();
 #endif
 
 
-        public NPCPlayer(string name, ILua lua, IServerModule module)
+        public NPCPlayer(string name, LuaScript luaScript, IServerModule module)
         {
-            Name = name;
-            Lua = lua;
-            Lua["Vector3"] = new Vector3();
-            Lua["NPC"] = this;
-            Lua.ReloadFile();
-
             Module = module;
+
+            Name = name;
+            Lua = luaScript;
+
+
+            Lua["NPC"] = this; // Sandbox it, a lot of vars opened
+            Lua.ReloadFile();
         }
 
-        public Vector3 Vector3(double x, double y, double z) => new Vector3(x, y, z);
-
+        Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
         public void Update()
         {
-            Lua.CallFunction("OnUpdate");
+            Hook.CallFunction("Call", "Update");
+
+            // Stuff that is done every 1 second
+            if (UpdateWatch.ElapsedMilliseconds < 1000)
+                return;
+
+            Hook.CallFunction("Call", "Update2");
+
+            UpdateWatch.Reset();
+            UpdateWatch.Start();
         }
         //public void BattleUpdate(BattleDataTable battleData)
         //{
-        //    Lua.CallFunction("OnBattleUpdate", battleData);
+        //    Hook.CallFunction("Call", "BattleUpdate", battleData);
         //}
-        public void GotMessage(int playerID, string message)
-        {
-            Lua.CallFunction("OnPrivateMessage", playerID, message);
-        }
 
-        public int GetLocalPlayers()
-        {
-            return 0;
-        }
+        public IClient[] GetLocalPlayers() => Module.Server.AllClients().Where(client => client != this && client.LevelFile == LevelFile).ToArray();
+        //public IClient[] GetLocalPlayers() => Module.Server.AllClients().Where(client => client.LevelFile == LevelFile).ToArray();
 
 
         public void SendPacket(ProtobufPacket packet, int originID)
@@ -196,7 +207,7 @@ namespace PokeD.Server.Clients.NPC
                 "1",    // IsGameJolt
                 "0",    // GameJolt ID
                 DecimalSeparator.ToString(),
-                $"[{Prefix}] {Name}",
+                Name,
                 LevelFile,
                 Position.ToPokeString(DecimalSeparator, CultureInfo),
                 Facing.ToString(CultureInfo),
@@ -221,13 +232,8 @@ namespace PokeD.Server.Clients.NPC
 
         }
 
-        public void SayPlayerPM(int playerID, string message)
-        {
-            //_server.SendPrivateChatMessageToClient(playerID, message, ID);
-        }
-        public void SayGlobal(string message)
-        {
-            //_server.SendGlobalChatMessageToAllClients(message);
-        }
+        public void SayPlayerPM(IClient client, string message) { Module.SendPrivateMessage(this, client, message); }
+        public void SayGlobal(string message) { Module.SendGlobalMessage(this, message); }
+        public void SayGlobal(object message) {  }
     }
 }

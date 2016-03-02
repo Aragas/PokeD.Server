@@ -131,7 +131,6 @@ namespace PokeD.Server
         }
 
 
-        [ConfigIgnore]
         public static long ClientConnectionsThreadTime { get; private set; }
         private void ListenToConnectionsCycle()
         {

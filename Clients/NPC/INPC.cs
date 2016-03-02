@@ -19,7 +19,7 @@ namespace PokeD.Server.Clients.NPC
 
         void Move(int x, int y, int z);
 
-        void SayPlayerPM(int playerID, string message);
+        void SayPlayerPM(IClient client, string message);
         void SayGlobal(string message);
     }
 }

@@ -167,8 +167,8 @@ namespace PokeD.Server.Clients.P3D
             var destClient = Module.Server.GetClient(packet.DestinationPlayerName);
             if (destClient != null)
             {
-                Module.SendPrivateMessage(this, destClient, packet.Message);
                 Module.P3DPlayerSendToClient(this, new ChatMessagePrivatePacket { DataItems = packet.DataItems }, packet.Origin);
+                Module.SendPrivateMessage(this, destClient, packet.Message);
             }
             else
                 SendPacket(new ChatMessageGlobalPacket { Message = $"The player with the name \"{packet.DestinationPlayerName}\" doesn't exist." }, -1);

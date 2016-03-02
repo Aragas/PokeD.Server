@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Globalization;
 using Aragas.Core.Data;
 using Aragas.Core.IO;
 using Aragas.Core.Packets;
@@ -59,6 +59,7 @@ namespace PokeD.Server.Clients.PokeD
         public string IP => "";
 
         public DateTime ConnectionTime { get; } = DateTime.Now;
+        public CultureInfo Language { get; }
 
         public DateTime LastMessage { get; private set; }
 

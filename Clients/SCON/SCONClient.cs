@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using System.Globalization;
 using Aragas.Core.Data;
 using Aragas.Core.IO;
 using Aragas.Core.Packets;
@@ -42,6 +42,7 @@ namespace PokeD.Server.Clients.SCON
         public string IP => Stream.Host;
 
         public DateTime ConnectionTime { get; } = DateTime.Now;
+        public CultureInfo Language { get; }
 
         bool EncryptionEnabled => Module.EncryptionEnabled;
 

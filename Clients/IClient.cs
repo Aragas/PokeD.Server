@@ -1,5 +1,5 @@
 ﻿using System;
-
+using System.Globalization;
 using Aragas.Core.Data;
 using Aragas.Core.Interfaces;
 using Aragas.Core.Packets;
@@ -23,6 +23,7 @@ namespace PokeD.Server.Clients
 
         string IP { get; }
         DateTime ConnectionTime { get; }
+        CultureInfo Language { get; }
 
 
         GameDataPacket GetDataPacket();

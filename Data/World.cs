@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 using Aragas.Core.Interfaces;
 
@@ -12,7 +13,7 @@ namespace PokeD.Server.Data
         bool LocationChanged { get; set; }
 
         public string Location { get { return _location; } set { LocationChanged = _location != value; _location = value; } }
-        string _location;
+        string _location = string.Empty;
 
         public bool UseRealTime { get; set; } = true;
 
@@ -33,11 +34,14 @@ namespace PokeD.Server.Data
         int TimeOffset { get; set; }
 
 
-        /// <summary>
-        /// Call it one per second.
-        /// </summary>
+        Stopwatch Watch = Stopwatch.StartNew();
         public void Update()
         {
+            if (Watch.ElapsedMilliseconds < 1000) { return; }
+
+            Watch.Reset();
+            Watch.Start();
+
             TimeOffset++;
         }
 

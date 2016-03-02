@@ -1,5 +1,5 @@
 ﻿using System;
-
+using System.Globalization;
 using Aragas.Core.Data;
 using Aragas.Core.Packets;
 
@@ -20,6 +20,7 @@ namespace PokeD.Server.Clients
         public string LevelFile { get { throw new NotSupportedException(); } }
         public string IP { get { throw new NotSupportedException(); } }
         public DateTime ConnectionTime { get { throw new NotSupportedException(); } }
+        public CultureInfo Language { get; }
         public GameDataPacket GetDataPacket() { throw new NotSupportedException(); }
 
         public void SendPacket(ProtobufPacket packet, int originID = 0) { throw new NotSupportedException(); }

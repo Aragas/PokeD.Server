@@ -127,7 +127,6 @@ namespace PokeD.Server
         }
 
 
-        [ConfigIgnore]
         public static long PlayerWatcherThreadTime { get; private set; }
         private void PlayerWatcherCycle()
         {
@@ -165,7 +164,6 @@ namespace PokeD.Server
             }
         }
 
-        [ConfigIgnore]
         public static long PlayerCorrectionThreadTime { get; private set; }
         private void PlayerCorrectionCycle()
         {

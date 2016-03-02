@@ -18,12 +18,12 @@ namespace PokeD.Server.Clients.NPC
         }
         private void HandlePrivateMessage(ChatMessagePrivatePacket packet)
         {
-            var destinationPlayerID = Module.Server.GetClientID(packet.DestinationPlayerName);
-            if (destinationPlayerID != -1)
-            {
-            }
+            var destClient = Module.Server.GetClient(packet.DestinationPlayerName);
+            if (destClient != null)
+                Hook.CallFunction("Call", "PrivateMessage", destClient, packet.Message);
             else
             {
+
             }
         }
 

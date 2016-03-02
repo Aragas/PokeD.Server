@@ -1,7 +1,6 @@
 ﻿using Aragas.Core.Wrappers;
-
 using PokeD.Core.Data.PokeD.Monster;
-
+using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.NPC;
 
@@ -116,14 +115,30 @@ namespace PokeD.Server
         public void OtherDisconnected(IClient client) { }
 
         public void SendServerMessage(IClient sender, string message) { }
-        public void SendPrivateMessage(IClient sender, IClient destClient, string message) { }
+        public void SendPrivateMessage(IClient sender, IClient destClient, string message)
+        {
+            if (destClient is NPCPlayer)
+                destClient.SendPacket(new ChatMessagePrivatePacket() { DestinationPlayerName = sender.Name, Message = message});
+                //PokeDPlayerSendToClient(destClient, new ChatPrivateMessagePacket() { Message = message });
+            else
+                Server.ClientPrivateMessage(this, sender, destClient, message);
+        }
         public void SendGlobalMessage(IClient sender, string message) { }
 
         public void SendTradeRequest(IClient sender, Monster monster, IClient destClient) { }
         public void SendTradeConfirm(IClient sender, IClient destClient) { }
         public void SendTradeCancel(IClient sender, IClient destClient) { }
 
-        public void SendPosition(IClient sender) { }
+        public void SendPosition(IClient sender)
+        {
+            if (sender is NPCPlayer)
+            {
+                Server.ClientPosition(this, sender);
+                //P3DPlayerSendToAllClients(sender.GetDataPacket(), sender.ID);
+            }
+            else
+                ;//P3DPlayerSendToAllClients(sender.GetDataPacket(), sender.ID);
+        }
         
         public void ExecuteCommand(string command) { }
 

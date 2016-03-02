@@ -62,6 +62,7 @@ namespace PokeD.Server.Clients.P3D
         public string IP => Stream.Host;
 
         public DateTime ConnectionTime { get; } = DateTime.Now;
+        public CultureInfo Language => new CultureInfo("en");
 
         bool IsInitialized { get; set; }
 
