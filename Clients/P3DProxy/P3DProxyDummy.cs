@@ -13,13 +13,13 @@ using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.P3DProxy
 {
-    public class P3DProxyDummy : IClient
+    public class P3DProxyDummy : Client
     {
         CultureInfo CultureInfo => CultureInfo.InvariantCulture;
 
         #region P3D Values
 
-        public int ID { get; set; }
+        public override int ID { get; set; }
 
         public string GameMode { get; private set; }
         public bool IsGameJoltPlayer { get; private set; }
@@ -28,11 +28,11 @@ namespace PokeD.Server.Clients.P3DProxy
 
 
         private string _name;
-        public string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {_name}" : _name; } private set { _name = value; } }
+        public override string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {_name}" : _name; } protected set { _name = value; } }
 
 
-        public string LevelFile { get; private set; }
-        public Vector3 Position { get; private set; }
+        public override string LevelFile { get; protected set; }
+        public override Vector3 Position { get; protected set; }
         public int Facing { get; private set; }
         public bool Moving { get; private set; }
 
@@ -50,13 +50,13 @@ namespace PokeD.Server.Clients.P3DProxy
 
         public VarInt SID { get; private set; }
 
-        public Prefix Prefix { get; private set; }
-        public string PasswordHash { get; set; }
+        public override Prefix Prefix { get; protected set; }
+        public override string PasswordHash { get; set; }
 
-        public string IP { get; set; }
+        public override string IP { get; }
 
-        public DateTime ConnectionTime { get; } = DateTime.Now;
-        public CultureInfo Language { get; }
+        public override DateTime ConnectionTime { get; } = DateTime.Now;
+        public override CultureInfo Language { get; }
 
         bool IsInitialized { get; set; }
 
@@ -174,13 +174,13 @@ namespace PokeD.Server.Clients.P3DProxy
                 PokemonSkin,
                 PokemonFacing.ToString(CultureInfo));
         }
-        public GameDataPacket GetDataPacket() => new GameDataPacket { DataItems = GenerateDataItems() };
+        public override GameDataPacket GetDataPacket() => new GameDataPacket { DataItems = GenerateDataItems() };
 
-        public void SendPacket(ProtobufPacket packet, int originID = 0) { }
+        public override void SendPacket<TIDType, TPacketType>(Packet<TIDType, TPacketType> packet, int originID = 0) { }
 
-        public void LoadFromDB(Player data) { }
+        public override void LoadFromDB(Player data) { }
 
-        public void Update() { }
-        public void Dispose() { }
+        public override void Update() { }
+        public override void Dispose() { }
     }
 }

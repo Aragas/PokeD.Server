@@ -28,14 +28,14 @@ namespace PokeD.Server
     /*
     public class BattleTrainer
     {
-        public IClient Client { get; }
+        public Client Client { get; }
         public bool HasAccepted { get; set; }
 
         public PokeDPacket LastCommand { get; set; }
 
 
 
-        public BattleTrainer(IClient client) { Client = client; }
+        public BattleTrainer(Client client) { Client = client; }
     }
     public class BattleInstance : IUpdatable, IDisposable
     {
@@ -47,7 +47,7 @@ namespace PokeD.Server
 
         private string Message { get; }
 
-        public BattleInstance(IEnumerable<IClient> players, string message)
+        public BattleInstance(IEnumerable<Client> players, string message)
         {
             Trainers = new List<BattleTrainer>(players.Select(client => new BattleTrainer(client)));
             Message = message;
@@ -84,18 +84,18 @@ namespace PokeD.Server
                 trainer.LastCommand = null;
         }
 
-        public void AcceptBattle(IClient player)
+        public void AcceptBattle(Client player)
         {
             foreach (var trainer in Trainers.Where(trainer => trainer.Client.ID == player.ID))
                 trainer.HasAccepted = true;
         }
-        public void CancelBattle(IClient player)
+        public void CancelBattle(Client player)
         {
             foreach (var trainer in Trainers)
                 trainer.Client.SendPacket(new BattleCancelledPacket { Reason = $"Player {player.Name} has denied the battle request!" }, 0);
         }
 
-        public void HandlePacket(IClient player, PokeDPacket packet)
+        public void HandlePacket(Client player, PokeDPacket packet)
         {
             foreach (var trainer in Trainers.Where(trainer => trainer.Client.ID == player.ID))
             {
@@ -142,9 +142,9 @@ namespace PokeD.Server
         public ClientList Clients { get; } = new ClientList();
         [ConfigIgnore]
         public bool ClientsVisible { get; } = true;
-        List<IClient> PlayersJoining { get; } = new List<IClient>();
-        List<IClient> PlayersToAdd { get; } = new List<IClient>();
-        List<IClient> PlayersToRemove { get; } = new List<IClient>();
+        List<Client> PlayersJoining { get; } = new List<Client>();
+        List<Client> PlayersToAdd { get; } = new List<Client>();
+        List<Client> PlayersToRemove { get; } = new List<Client>();
 
         ConcurrentQueue<PlayerPacketPokeD> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerPacketPokeD>();
         ConcurrentQueue<PokeDPacket> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<PokeDPacket>();
@@ -187,7 +187,7 @@ namespace PokeD.Server
 
         public void StartListen()
         {
-            Listener = TCPListenerWrapper.CreateTCPListener(Port);
+            Listener = TCPListenerWrapper.Create(Port);
             Listener.Start();
         }
         public void CheckListener()
@@ -198,12 +198,12 @@ namespace PokeD.Server
         }
 
 
-        public void PreAdd(IClient client)
+        public void PreAdd(Client client)
         {
             if (Server.PeekDBID(client) != -1)
                 PokeDPlayerSendToClient(client, new AuthorizationCompletePacket { PlayerID = client.ID });
         }
-        public void AddClient(IClient client)
+        public void AddClient(Client client)
         {
             if (!Server.LoadDBPlayer(client))
             {
@@ -214,7 +214,7 @@ namespace PokeD.Server
             PlayersToAdd.Add(client);
             PlayersJoining.Remove(client);
         }
-        public void RemoveClient(IClient client, string reason = "")
+        public void RemoveClient(Client client, string reason = "")
         {
             if (!string.IsNullOrEmpty(reason))
                 client.SendPacket(new DisconnectPacket { Reason = reason });
@@ -341,19 +341,19 @@ namespace PokeD.Server
         }
 
 
-        public void OtherConnected(IClient client)
+        public void OtherConnected(Client client)
         {
             //PokeDPlayerSendToAllClients(new CreatePlayerPacket { PlayerID = client.ID }, -1);
             //PokeDPlayerSendToAllClients(client.GetDataPacket(), client.ID);
             PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() { Message = $"Player {client.Name} joined the game!" });
         }
-        public void OtherDisconnected(IClient client)
+        public void OtherDisconnected(Client client)
         {
             //PokeDPlayerSendToAllClients(new DestroyPlayerPacket { PlayerID = client.ID });
             PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() { Message = $"Player {client.Name} disconnected!" });
         }
 
-        public void SendServerMessage(IClient sender, string message)
+        public void SendServerMessage(Client sender, string message)
         {
             if (sender is PokeDPlayer)
             {
@@ -363,14 +363,14 @@ namespace PokeD.Server
             else
                 PokeDPlayerSendToAllClients(new ChatServerMessagePacket() { Message = message });
         }
-        public void SendPrivateMessage(IClient sender, IClient destClient, string message)
+        public void SendPrivateMessage(Client sender, Client destClient, string message)
         {
             if (destClient is PokeDPlayer)
                 PokeDPlayerSendToClient(destClient, new ChatPrivateMessagePacket() { Message = message });
             else
                 Server.ClientPrivateMessage(this, sender, destClient, message);
         }
-        public void SendGlobalMessage(IClient sender, string message)
+        public void SendGlobalMessage(Client sender, string message)
         {
             if (sender is PokeDPlayer)
             {
@@ -382,14 +382,14 @@ namespace PokeD.Server
                 PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() { Message = message });
         }
 
-        public void SendTradeRequest(IClient sender, Monster monster, IClient destClient)
+        public void SendTradeRequest(Client sender, Monster monster, Client destClient)
         {
             if (destClient is PokeDPlayer)
                 PokeDPlayerSendToClient(destClient, new TradeOfferPacket() { DestinationID = -1, MonsterData = monster.InstanceData });
             else
                 Server.ClientTradeOffer(this, sender, monster, destClient);
         }
-        public void SendTradeConfirm(IClient sender, IClient destClient)
+        public void SendTradeConfirm(Client sender, Client destClient)
         {
             if (destClient is PokeDPlayer)
             {
@@ -402,7 +402,7 @@ namespace PokeD.Server
             else
                 Server.ClientTradeConfirm(this, sender, destClient);
         }
-        public void SendTradeCancel(IClient sender, IClient destClient)
+        public void SendTradeCancel(Client sender, Client destClient)
         {
             if (destClient is PokeDPlayer)
                 PokeDPlayerSendToClient(destClient, new TradeRefusePacket() { DestinationID = -1 });
@@ -410,7 +410,7 @@ namespace PokeD.Server
                 Server.ClientTradeCancel(this, sender, destClient);
         }
 
-        public void SendPosition(IClient sender)
+        public void SendPosition(Client sender)
         {
             if (sender is PokeDPlayer)
                 Server.ClientPosition(this, sender);
@@ -428,7 +428,7 @@ namespace PokeD.Server
             if (player != null)
                 PokeDPlayerSendToClient(player, packet);
         }
-        public void PokeDPlayerSendToClient(IClient player, PokeDPacket packet)
+        public void PokeDPlayerSendToClient(Client player, PokeDPacket packet)
         {
             PacketsToPlayer.Enqueue(new PlayerPacketPokeD(player, ref packet));
         }
@@ -436,7 +436,7 @@ namespace PokeD.Server
         {
             PacketsToAllPlayers.Enqueue(packet);
         }
-        public void PokeDTileSetRequest(IClient player, IEnumerable<string> tileSetNames)
+        public void PokeDTileSetRequest(Client player, IEnumerable<string> tileSetNames)
         {
             var tileSets = new List<TileSetResponse>();
             var images = new List<ImageResponse>();
@@ -509,15 +509,15 @@ namespace PokeD.Server
 
         private class PlayerPacketPokeD
         {
-            public readonly IClient Player;
+            public readonly Client Player;
             public readonly PokeDPacket Packet;
 
-            public PlayerPacketPokeD(IClient player, ref PokeDPacket packet)
+            public PlayerPacketPokeD(Client player, ref PokeDPacket packet)
             {
                 Player = player;
                 Packet = packet;
             }
-            public PlayerPacketPokeD(IClient player, PokeDPacket packet)
+            public PlayerPacketPokeD(Client player, PokeDPacket packet)
             {
                 Player = player;
                 Packet = packet;

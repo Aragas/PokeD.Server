@@ -48,7 +48,7 @@ namespace PokeD.Server
         public AsymmetricCipherKeyPair RSAKeyPair { get; private set; }
         const int RsaKeySize = 1024;
 
-        IDatabase Database { get; set; }
+        Aragas.Core.Wrappers.Database Database { get; set; }
 
 
         public Server()
@@ -99,7 +99,7 @@ namespace PokeD.Server
             foreach (var module in toRemove)
                 Modules.Remove(module);
 
-            ListenToConnectionsThread = ThreadWrapper.CreateThread(ListenToConnectionsCycle);
+            ListenToConnectionsThread = ThreadWrapper.Create(ListenToConnectionsCycle);
             ListenToConnectionsThread.Name = "ListenToConnectionsThread";
             ListenToConnectionsThread.IsBackground = true;
             ListenToConnectionsThread.Start();

@@ -29,7 +29,7 @@ using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.Protobuf
 {
-    public partial class ProtobufPlayer : IClient
+    public partial class ProtobufPlayer : Client
     {
 
         #region Game Values
@@ -132,7 +132,7 @@ namespace PokeD.Server.Clients.Protobuf
                     if (dataLength == 0)
                     {
                         Logger.Log(LogType.GlobalError,
-                            $"Protobuf Reading Error: Packet Length size is 0. Disconnecting IClient {Name}.");
+                            $"Protobuf Reading Error: Packet Length size is 0. Disconnecting Client {Name}.");
                         //_server.RemovePlayer(this, "Packet Length size is 0!");
                         return;
                     }
@@ -188,13 +188,13 @@ namespace PokeD.Server.Clients.Protobuf
                         }
                         else
                         {
-                            Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: GamePacketResponses.Packets[{id}] is null. Disconnecting IClient {Name}.");
+                            Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: GamePacketResponses.Packets[{id}] is null. Disconnecting Client {Name}.");
                             //_server.RemovePlayer(this, $"Packet ID {id} is not correct!");
                         }
                     }
                     else
                     {
-                        Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
+                        Logger.Log(LogType.GlobalError, $"Protobuf Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting Client {Name}.");
                         //_server.RemovePlayer(this, $"Packet ID {id} is not correct!");
                     }
                 }

@@ -22,21 +22,21 @@ namespace PokeD.Server
         void StartListen();
         void CheckListener();
 
-        //void AddClient(IClient client);
-        //void RemoveClient(IClient client, string reason = "");
+        //void AddClient(Client client);
+        //void RemoveClient(Client client, string reason = "");
 
-        void OtherConnected(IClient client);
-        void OtherDisconnected(IClient client);
+        void OtherConnected(Client client);
+        void OtherDisconnected(Client client);
 
-        void SendPrivateMessage(IClient sender, IClient destClient, string message);
-        void SendGlobalMessage(IClient sender, string message);
-        void SendServerMessage(IClient sender, string message);
+        void SendPrivateMessage(Client sender, Client destClient, string message);
+        void SendGlobalMessage(Client sender, string message);
+        void SendServerMessage(Client sender, string message);
 
         //void BattleRequest();
-        void SendTradeRequest(IClient sender, Monster monster, IClient destClient);
-        void SendTradeConfirm(IClient sender, IClient destClient);
-        void SendTradeCancel(IClient sender, IClient destClient);
+        void SendTradeRequest(Client sender, Monster monster, Client destClient);
+        void SendTradeConfirm(Client sender, Client destClient);
+        void SendTradeCancel(Client sender, Client destClient);
 
-        void SendPosition(IClient sender);
+        void SendPosition(Client sender);
     }
 }

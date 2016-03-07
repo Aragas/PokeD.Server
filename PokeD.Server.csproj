@@ -38,7 +38,7 @@
     <Compile Include="Clients\NPC\INPC.cs" />
     <Compile Include="Clients\NPC\NPCPlayer.cs" />
     <Compile Include="Clients\NPC\NPCPlayer.Packets.cs" />
-    <Compile Include="Clients\IClient.cs" />
+    <Compile Include="Clients\Client.cs" />
     <Compile Include="Clients\P3DProxy\P3DProxyDummy.cs" />
     <Compile Include="Clients\P3DProxy\P3DProxyPlayer.cs" />
     <Compile Include="Clients\P3DProxy\P3DProxyPlayer.Packets.cs" />

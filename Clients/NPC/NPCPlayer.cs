@@ -22,22 +22,22 @@ namespace PokeD.Server.Clients.NPC
 {
 
     // Call Lua funcs, but put default variables first. So lua can override
-    public partial class NPCPlayer : INPC, IClient
+    public partial class NPCPlayer : Client, INPC
     {
         CultureInfo CultureInfo => CultureInfo.InvariantCulture;
 
         #region Game Values
 
-        public int ID { get; set; }
+        public override int ID { get; set; }
 
         private char DecimalSeparator { get; set; } = '.';
         public string PureName { get; set; } = string.Empty;
-        public string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {PureName}" : PureName; } private set { PureName = value; } }
-        public Prefix Prefix { get; set; } = Prefix.NPC;
-        public string PasswordHash { get; set; } = string.Empty;
+        public override string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {PureName}" : PureName; } protected set { PureName = value; } }
+        public override Prefix Prefix { get; protected set; } = Prefix.NPC;
+        public override string PasswordHash { get; set; } = string.Empty;
 
-        public string LevelFile { get; set; } = string.Empty;
-        public Vector3 Position { get { return _position; } set { _position = value; Module.SendPosition(this); } }
+        public override string LevelFile { get; protected set; } = string.Empty;
+        public override Vector3 Position { get { return _position; } protected set { _position = value; Module.SendPosition(this); } }
         private Vector3 _position;
         public int Facing { get; set; }
         public bool Moving { get; set; }
@@ -52,10 +52,10 @@ namespace PokeD.Server.Clients.NPC
 
         #region Other Values
 
-        public string IP => "NPC";
+        public override string IP => "NPC";
 
-        public DateTime ConnectionTime { get; } = DateTime.MinValue;
-        public CultureInfo Language => new CultureInfo("ru-RU");
+        public override DateTime ConnectionTime { get; } = DateTime.MinValue;
+        public override CultureInfo Language => new CultureInfo("ru-RU");
 
         #endregion Other Values
 
@@ -84,7 +84,7 @@ namespace PokeD.Server.Clients.NPC
         }
 
         Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
-        public void Update()
+        public override void Update()
         {
             Hook.CallFunction("Call", "Update");
 
@@ -102,11 +102,11 @@ namespace PokeD.Server.Clients.NPC
         //    Hook.CallFunction("Call", "BattleUpdate", battleData);
         //}
 
-        public IClient[] GetLocalPlayers() => Module.Server.AllClients().Where(client => client != this && client.LevelFile == LevelFile).ToArray();
-        //public IClient[] GetLocalPlayers() => Module.Server.AllClients().Where(client => client.LevelFile == LevelFile).ToArray();
+        public Client[] GetLocalPlayers() => Module.Server.AllClients().Where(client => client != this && client.LevelFile == LevelFile).ToArray();
+        //public Client[] GetLocalPlayers() => Module.Server.AllClients().Where(client => client.LevelFile == LevelFile).ToArray();
 
 
-        public void SendPacket(ProtobufPacket packet, int originID)
+        public override void SendPacket<TIDType, TPacketType>(Packet<TIDType, TPacketType> packet, int originID)
         {
             var protoOrigin = packet as P3DPacket;
             if (protoOrigin == null)
@@ -192,7 +192,7 @@ namespace PokeD.Server.Clients.NPC
             }
         }
 
-        public void LoadFromDB(Player data)
+        public override void LoadFromDB(Player data)
         {
             if (ID == 0)
                 ID = data.Id;
@@ -219,9 +219,9 @@ namespace PokeD.Server.Clients.NPC
                 PokemonSkin,
                 PokemonFacing.ToString(CultureInfo));
         }
-        public GameDataPacket GetDataPacket() { return new GameDataPacket { DataItems = GenerateDataItems() }; }
+        public override GameDataPacket GetDataPacket() { return new GameDataPacket { DataItems = GenerateDataItems() }; }
         
-        public void Dispose()
+        public override void Dispose()
         {
 
         }
@@ -232,7 +232,7 @@ namespace PokeD.Server.Clients.NPC
 
         }
 
-        public void SayPlayerPM(IClient client, string message) { Module.SendPrivateMessage(this, client, message); }
+        public void SayPlayerPM(Client client, string message) { Module.SendPrivateMessage(this, client, message); }
         public void SayGlobal(string message) { Module.SendGlobalMessage(this, message); }
         public void SayGlobal(object message) {  }
     }

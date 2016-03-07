@@ -65,9 +65,9 @@ namespace PokeD.Server
         [ConfigIgnore]
         public bool ClientsVisible { get; } = true;
 
-        List<IClient> PlayersJoining { get; } = new List<IClient>();
-        List<IClient> PlayersToAdd { get; } = new List<IClient>();
-        List<IClient> PlayersToRemove { get; } = new List<IClient>();
+        List<Client> PlayersJoining { get; } = new List<Client>();
+        List<Client> PlayersToAdd { get; } = new List<Client>();
+        List<Client> PlayersToRemove { get; } = new List<Client>();
 
 
         ConcurrentQueue<PlayerPacketP3DOrigin> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerPacketP3DOrigin>();
@@ -94,12 +94,12 @@ namespace PokeD.Server
             
             if (MoveCorrectionEnabled)
             {
-                PlayerWatcherThread = ThreadWrapper.CreateThread(PlayerWatcherCycle);
+                PlayerWatcherThread = ThreadWrapper.Create(PlayerWatcherCycle);
                 PlayerWatcherThread.Name = "PlayerWatcherThread";
                 PlayerWatcherThread.IsBackground = true;
                 PlayerWatcherThread.Start();
 
-                PlayerCorrectionThread = ThreadWrapper.CreateThread(PlayerCorrectionCycle);
+                PlayerCorrectionThread = ThreadWrapper.Create(PlayerCorrectionCycle);
                 PlayerCorrectionThread.Name = "PlayerCorrectionThread";
                 PlayerCorrectionThread.IsBackground = true;
                 PlayerCorrectionThread.Start();
@@ -134,7 +134,7 @@ namespace PokeD.Server
             while (!IsDisposing)
             {
                 var players = new List<P3DPlayer>(Clients.GetTypeEnumerator<P3DPlayer>());
-                //var players = new List<IClient>(Clients.GetConcreteTypeEnumerator<P3DPlayer, ProtobufPlayer>());
+                //var players = new List<Client>(Clients.GetConcreteTypeEnumerator<P3DPlayer, ProtobufPlayer>());
 
                 foreach (var player in players.Where(player => player.LevelFile != null && !NearPlayers.ContainsKey(player.LevelFile)))
                     NearPlayers.TryAdd(player.LevelFile, null);
@@ -212,7 +212,7 @@ namespace PokeD.Server
 
         public void StartListen()
         {
-            Listener = TCPListenerWrapper.CreateTCPListener(Port);
+            Listener = TCPListenerWrapper.Create(Port);
             Listener.Start();
         }
         public void CheckListener()
@@ -223,7 +223,7 @@ namespace PokeD.Server
         }
 
 
-        public void PreAdd(IClient client)
+        public void PreAdd(Client client)
         {
             if (Server.PeekDBID(client) != -1)
             {
@@ -231,7 +231,7 @@ namespace PokeD.Server
                 P3DPlayerSendToClient(client, new WorldDataPacket { DataItems = Server.World.GenerateDataItems() }, -1);
             }
         }
-        public void AddClient(IClient client)
+        public void AddClient(Client client)
         {
             if (IsGameJoltIDUsed(client as P3DPlayer))
             {
@@ -264,7 +264,7 @@ namespace PokeD.Server
             PlayersToAdd.Add(client);
             PlayersJoining.Remove(client);
         }
-        public void RemoveClient(IClient client, string reason = "")
+        public void RemoveClient(Client client, string reason = "")
         {
             if (!string.IsNullOrEmpty(reason))
                 client.SendPacket(new KickedPacket { Reason = reason }, -1);
@@ -360,20 +360,20 @@ namespace PokeD.Server
         }
 
 
-        public void OtherConnected(IClient client)
+        public void OtherConnected(Client client)
         {
             P3DPlayerSendToAllClients(new CreatePlayerPacket { PlayerID = client.ID }, -1);
             P3DPlayerSendToAllClients(client.GetDataPacket(), client.ID);
             P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = $"Player {client.Name} joined the game!" });
         }
-        public void OtherDisconnected(IClient client)
+        public void OtherDisconnected(Client client)
         {
             P3DPlayerSendToAllClients(new DestroyPlayerPacket { PlayerID = client.ID });
             P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = $"Player {client.Name} disconnected!" });
         }
 
 
-        public void SendServerMessage(IClient sender, string message)
+        public void SendServerMessage(Client sender, string message)
         {
             if (sender is P3DPlayer)
             {
@@ -383,14 +383,14 @@ namespace PokeD.Server
             else
                 P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, -1);
         }
-        public void SendPrivateMessage(IClient sender, IClient destClient, string message)
+        public void SendPrivateMessage(Client sender, Client destClient, string message)
         {
             if (destClient is P3DPlayer)
                 P3DPlayerSendToClient(destClient, new ChatMessagePrivatePacket { DataItems = new DataItems(message) }, sender.ID);
             else
                 Server.ClientPrivateMessage(this, sender, destClient, message);
         }
-        public void SendGlobalMessage(IClient sender, string message)
+        public void SendGlobalMessage(Client sender, string message)
         {
             if (sender is P3DPlayer)
             {
@@ -401,7 +401,7 @@ namespace PokeD.Server
                 P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
         }
 
-        public void SendTradeRequest(IClient sender, Monster monster, IClient destClient)
+        public void SendTradeRequest(Client sender, Monster monster, Client destClient)
         {
             if (destClient is P3DPlayer)
             {
@@ -411,14 +411,14 @@ namespace PokeD.Server
             else
                 Server.ClientTradeOffer(this, sender, monster, destClient);
         }
-        public void SendTradeConfirm(IClient sender, IClient destClient)
+        public void SendTradeConfirm(Client sender, Client destClient)
         {
             if (destClient is P3DPlayer)
                 P3DPlayerSendToClient(destClient, new TradeStartPacket(), sender.ID);
             else
                 Server.ClientTradeConfirm(this, destClient, sender);
         }
-        public void SendTradeCancel(IClient sender, IClient destClient)
+        public void SendTradeCancel(Client sender, Client destClient)
         {
             if (destClient is P3DPlayer)
                 P3DPlayerSendToClient(destClient, new TradeQuitPacket(), sender.ID);
@@ -426,7 +426,7 @@ namespace PokeD.Server
                 Server.ClientTradeCancel(this, sender, destClient);
         }
 
-        public void SendPosition(IClient sender)
+        public void SendPosition(Client sender)
         {
             if (sender is P3DPlayer)
             {
@@ -444,7 +444,7 @@ namespace PokeD.Server
             if (player != null)
                 P3DPlayerSendToClient(player, packet, originID);
         }
-        public void P3DPlayerSendToClient(IClient player, P3DPacket packet, int originID)
+        public void P3DPlayerSendToClient(Client player, P3DPacket packet, int originID)
         {
             if (packet is TradeRequestPacket)
             {
@@ -526,7 +526,7 @@ namespace PokeD.Server
             return MuteStatus.PlayerNotFound;
         }
 
-        public void P3DPlayerChangePassword(IClient client, string oldPassword, string newPassword)
+        public void P3DPlayerChangePassword(Client client, string oldPassword, string newPassword)
         {
             if (client.PasswordHash == oldPassword)
                 client.PasswordHash = newPassword;
@@ -578,17 +578,17 @@ namespace PokeD.Server
 
         private class PlayerPacketP3DOrigin
         {
-            public readonly IClient Player;
+            public readonly Client Player;
             public readonly P3DPacket Packet;
             public readonly int OriginID;
 
-            public PlayerPacketP3DOrigin(IClient player, ref P3DPacket packet, int originID = -1)
+            public PlayerPacketP3DOrigin(Client player, ref P3DPacket packet, int originID = -1)
             {
                 Player = player;
                 Packet = packet;
                 OriginID = originID;
             }
-            public PlayerPacketP3DOrigin(IClient player, P3DPacket packet, int originID = -1)
+            public PlayerPacketP3DOrigin(Client player, P3DPacket packet, int originID = -1)
             {
                 Player = player;
                 Packet = packet;

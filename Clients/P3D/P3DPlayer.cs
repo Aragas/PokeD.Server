@@ -21,13 +21,13 @@ using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.P3D
 {
-    public partial class P3DPlayer : IClient
+    public partial class P3DPlayer : Client
     {
         CultureInfo CultureInfo => CultureInfo.InvariantCulture;
 
         #region P3D Values
 
-        public int ID { get; set; }
+        public override int ID { get; set; }
 
         public string GameMode { get; private set; }
         public bool IsGameJoltPlayer { get; private set; }
@@ -36,11 +36,11 @@ namespace PokeD.Server.Clients.P3D
 
 
         private string _name;
-        public string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {_name}" : _name; } private set { _name = value; } }
+        public override string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {_name}" : _name; } protected set { _name = value; } }
 
 
-        public string LevelFile { get; private set; }
-        public Vector3 Position { get; private set; }
+        public override string LevelFile { get; protected set; }
+        public override Vector3 Position { get; protected set; }
         public int Facing { get; private set; }
         public bool Moving { get; private set; }
 
@@ -56,13 +56,13 @@ namespace PokeD.Server.Clients.P3D
 
         #region Values
 
-        public Prefix Prefix { get; private set; }
-        public string PasswordHash { get; set; }
+        public override Prefix Prefix { get; protected set; }
+        public override string PasswordHash { get; set; }
 
-        public string IP => Stream.Host;
+        public override string IP => Stream.Host;
 
-        public DateTime ConnectionTime { get; } = DateTime.Now;
-        public CultureInfo Language => new CultureInfo("en");
+        public override DateTime ConnectionTime { get; } = DateTime.Now;
+        public override CultureInfo Language => new CultureInfo("en");
 
         bool IsInitialized { get; set; }
 
@@ -88,7 +88,7 @@ namespace PokeD.Server.Clients.P3D
         }
 
 
-        public void Update()
+        public override void Update()
         {
             if (Stream.Connected)
             {
@@ -140,7 +140,7 @@ namespace PokeD.Server.Clients.P3D
         }
         private void HandlePacket(P3DPacket packet)
         {
-            switch ((P3DPacketTypes) (int) packet.ID)
+            switch ((P3DPacketTypes) packet.ID)
             {
                 case P3DPacketTypes.GameData:
                     HandleGameData((GameDataPacket) packet);
@@ -224,7 +224,7 @@ namespace PokeD.Server.Clients.P3D
         }
 
 
-        public void SendPacket(ProtobufPacket packet, int originID)
+        public override void SendPacket<TIDType, TPacketType>(Packet<TIDType, TPacketType> packet, int originID)
         {
             var p3dPacket = packet as P3DPacket;
             if(p3dPacket == null)
@@ -239,7 +239,7 @@ namespace PokeD.Server.Clients.P3D
 #endif
         }
 
-        public void LoadFromDB(Player data)
+        public override void LoadFromDB(Player data)
         {
             if (ID == 0)
                 ID = data.Id;
@@ -276,10 +276,10 @@ namespace PokeD.Server.Clients.P3D
                 PokemonSkin,
                 PokemonFacing.ToString(CultureInfo));
         }
-        public GameDataPacket GetDataPacket() => new GameDataPacket { DataItems = GenerateDataItems() };
+        public override GameDataPacket GetDataPacket() => new GameDataPacket { DataItems = GenerateDataItems() };
 
 
-        public void Dispose()
+        public override void Dispose()
         {
             Stream.Disconnect();
             Stream.Dispose();

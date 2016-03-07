@@ -10,44 +10,44 @@ namespace PokeD.Server
     public partial class Server
     {
         /// <summary>
-        /// Get all connected IClient.
+        /// Get all connected Client.
         /// </summary>
-        /// <returns>Returns null if there are no IClient connected.</returns>
-        public IEnumerable<IClient> AllClients() => Modules.Where(module => module.ClientsVisible).SelectMany(module => module.Clients);
+        /// <returns>Returns null if there are no Client connected.</returns>
+        public IEnumerable<Client> AllClients() => Modules.Where(module => module.ClientsVisible).SelectMany(module => module.Clients);
 
         /// <summary>
-        /// Get all connected IClient Names.
+        /// Get all connected Client Names.
         /// </summary>
-        /// <returns>Returns null if there are no IClient connected.</returns>
+        /// <returns>Returns null if there are no Client connected.</returns>
         public IEnumerable<PlayerInfo> GetAllClientsInfo() => Modules.Where(module => module.ClientsVisible).SelectMany(module => module.Clients.GetAllClientsInfo());
 
 
         /// <summary>
-        /// Get IClient by ID.
+        /// Get Client by ID.
         /// </summary>
-        /// <param name="id">IClient ID.</param>
-        /// <returns>Returns null if IClient is not found.</returns>
-        public IClient GetClient(int id) => AllClients().FirstOrDefault(client => client.ID == id);
+        /// <param name="id">Client ID.</param>
+        /// <returns>Returns null if Client is not found.</returns>
+        public Client GetClient(int id) => AllClients().FirstOrDefault(client => client.ID == id);
 
         /// <summary>
-        /// Get IClient by name.
+        /// Get Client by name.
         /// </summary>
-        /// <param name="name">IClient Name.</param>
-        /// <returns>Returns null if IClient is not found.</returns>
-        public IClient GetClient(string name) => AllClients().FirstOrDefault(client => client.Name == name);
+        /// <param name="name">Client Name.</param>
+        /// <returns>Returns null if Client is not found.</returns>
+        public Client GetClient(string name) => AllClients().FirstOrDefault(client => client.Name == name);
 
         /// <summary>
-        /// Get IClient Name by ID.
+        /// Get Client Name by ID.
         /// </summary>
-        /// <param name="name">IClient Name.</param>
-        /// <returns>Returns -1 if IClient is not found.</returns>
+        /// <param name="name">Client Name.</param>
+        /// <returns>Returns -1 if Client is not found.</returns>
         public int GetClientID(string name) => GetClient(name)?.ID ?? -1;
 
         /// <summary>
-        /// Get IClient ID by Name.
+        /// Get Client ID by Name.
         /// </summary>
-        /// <param name="id">IClient ID.</param>
-        /// <returns>Returns <see cref="string.Empty"/> if IClient is not found.</returns>
+        /// <param name="id">Client ID.</param>
+        /// <returns>Returns <see cref="string.Empty"/> if Client is not found.</returns>
         public string GetClientName(int id) => GetClient(id)?.Name ?? string.Empty;
     }
 }

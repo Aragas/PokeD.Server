@@ -8,7 +8,7 @@ namespace PokeD.Server
 {
     public partial class Server
     {
-        public int PeekDBID(IClient player)
+        public int PeekDBID(Client player)
         {
             if (AllClients().Any(p => p.Name == player.Name))
                 return -1;
@@ -26,7 +26,7 @@ namespace PokeD.Server
             }
         }
 
-        public bool LoadDBPlayer(IClient player)
+        public bool LoadDBPlayer(Client player)
         {
             if (AllClients().Any(p => p.Name == player.Name))
                 return false;
@@ -59,7 +59,7 @@ namespace PokeD.Server
         }
 
         Stopwatch UpdateDBPlayerWatch { get; } = Stopwatch.StartNew();
-        public void UpdateDBPlayer(IClient player, bool forceUpdate = false)
+        public void UpdateDBPlayer(Client player, bool forceUpdate = false)
         {
             if (player.ID == 0)
                 return;

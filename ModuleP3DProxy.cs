@@ -34,7 +34,7 @@ namespace PokeD.Server
         bool IsDisposing { get; set; }
 
         [ConfigIgnore]
-        public IClient Proxy { get; set; }
+        public Client Proxy { get; set; }
 
         [ConfigIgnore]
         public ClientList Clients { get; } = new ClientList();
@@ -78,7 +78,7 @@ namespace PokeD.Server
 
         public void StartListen()
         {
-            var client = TCPClientWrapper.CreateTCPClient();
+            var client = TCPClientWrapper.Create();
             client.Connect(Host, Port);
 
             Proxy = new P3DProxyPlayer(client, this, PlayerName);
@@ -118,11 +118,11 @@ namespace PokeD.Server
         public void Update() { Proxy?.Update(); }
 
 
-        public void OtherConnected(IClient client) { }
-        public void OtherDisconnected(IClient client) { }
+        public void OtherConnected(Client client) { }
+        public void OtherDisconnected(Client client) { }
 
 
-        public void SendServerMessage(IClient sender, string message)
+        public void SendServerMessage(Client sender, string message)
         {
             if (sender is P3DProxyDummy)
                 Server.ClientServerMessage(this, sender, message);
@@ -130,8 +130,8 @@ namespace PokeD.Server
                 Proxy.SendPacket(new ChatServerMessagePacket() { Message = message });
         }
 
-        public void SendPrivateMessage(IClient sender, IClient destClient, string message) { }
-        public void SendGlobalMessage(IClient sender, string message)
+        public void SendPrivateMessage(Client sender, Client destClient, string message) { }
+        public void SendGlobalMessage(Client sender, string message)
         {
             if (sender is P3DProxyDummy)
                 Server.ClientGlobalMessage(this, sender, message);
@@ -139,11 +139,11 @@ namespace PokeD.Server
                 Proxy.SendPacket(new ChatMessageGlobalPacket {Message = $"<{sender.Name}>: {message}"});
         }
 
-        public void SendTradeRequest(IClient sender, Monster monster, IClient destClient) { }
-        public void SendTradeConfirm(IClient sender, IClient destClient) { }
-        public void SendTradeCancel(IClient sender, IClient destClient) { }
+        public void SendTradeRequest(Client sender, Monster monster, Client destClient) { }
+        public void SendTradeConfirm(Client sender, Client destClient) { }
+        public void SendTradeCancel(Client sender, Client destClient) { }
 
-        public void SendPosition(IClient sender) { }
+        public void SendPosition(Client sender) { }
 
 
 

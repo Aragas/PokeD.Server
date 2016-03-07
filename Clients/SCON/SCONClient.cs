@@ -20,29 +20,28 @@ using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.SCON
 {
-    public partial class SCONClient : IClient
+    public partial class SCONClient : Client
     {
         #region P3D Values
 
-        public int ID { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
-
-        public string Name { get { throw new NotImplementedException(); } }
-
-
-        public string LevelFile { get { throw new NotImplementedException(); } }
-        public Vector3 Position { get { throw new NotImplementedException(); } }
+        public override int ID { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
+        public override string Name { get { throw new NotImplementedException(); } protected set { throw new NotImplementedException(); } }
+        
+        public override string LevelFile { get { throw new NotImplementedException(); } protected set { throw new NotImplementedException(); } }
+        public override Vector3 Position { get { throw new NotImplementedException(); } protected set { throw new NotImplementedException(); } }
 
         #endregion P3D Values
 
         #region Values
 
-        public Prefix Prefix { get { throw new NotImplementedException(); } }
-        public string PasswordHash { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
+        public override Prefix Prefix { get { throw new NotImplementedException(); } protected set { throw new NotImplementedException(); } }
 
-        public string IP => Stream.Host;
+        public override string PasswordHash { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
 
-        public DateTime ConnectionTime { get; } = DateTime.Now;
-        public CultureInfo Language { get; }
+        public override string IP => Stream.Host;
+
+        public override DateTime ConnectionTime { get; } = DateTime.Now;
+        public override CultureInfo Language { get; }
 
         bool EncryptionEnabled => Module.EncryptionEnabled;
 
@@ -71,7 +70,7 @@ namespace PokeD.Server.Clients.SCON
             AuthorizationStatus = (EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0);
         }
 
-        public void Update()
+        public override void Update()
         {
             if (Stream.Connected)
             {
@@ -80,7 +79,7 @@ namespace PokeD.Server.Clients.SCON
                     var dataLength = Stream.ReadVarInt();
                     if (dataLength != 0)
                     {
-                        var data = Stream.ReadByteArray(dataLength);
+                        var data = Stream.Receive(dataLength);
 
                         HandleData(data);
                     }
@@ -209,9 +208,9 @@ namespace PokeD.Server.Clients.SCON
         }
 
 
-        public GameDataPacket GetDataPacket() { throw new NotImplementedException(); }
+        public override GameDataPacket GetDataPacket() { throw new NotImplementedException(); }
 
-        public void SendPacket(ProtobufPacket packet, int originID = 0)
+        public override void SendPacket<TIDType, TPacketType>(Packet<TIDType, TPacketType> packet, int originID = 0)
         {
             var sconPacket = packet as SCONPacket;
             if (sconPacket == null)
@@ -228,10 +227,10 @@ namespace PokeD.Server.Clients.SCON
 #endif
         }
 
-        public void LoadFromDB(Player data) { }
+        public override void LoadFromDB(Player data) { }
 
 
-        public void Dispose()
+        public override void Dispose()
         {
             Stream.Disconnect();
             Stream.Dispose();

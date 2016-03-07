@@ -40,9 +40,9 @@ namespace PokeD.Server
         public ClientList Clients { get; } = new ClientList();
         [ConfigIgnore]
         public bool ClientsVisible { get; } = false;
-        List<IClient> PlayersJoining { get; } = new List<IClient>();
-        List<IClient> PlayersToAdd { get; } = new List<IClient>();
-        List<IClient> PlayersToRemove { get; } = new List<IClient>();
+        List<Client> PlayersJoining { get; } = new List<Client>();
+        List<Client> PlayersToAdd { get; } = new List<Client>();
+        List<Client> PlayersToRemove { get; } = new List<Client>();
 
         ConcurrentQueue<PlayerPacketSCON> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerPacketSCON>();
         ConcurrentQueue<SCONPacket> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<SCONPacket>();
@@ -83,7 +83,7 @@ namespace PokeD.Server
         
         public void StartListen()
         {
-            Listener = TCPListenerWrapper.CreateTCPListener(Port);
+            Listener = TCPListenerWrapper.Create(Port);
             Listener.Start();
         }
         public void CheckListener()
@@ -94,12 +94,12 @@ namespace PokeD.Server
         }
 
 
-        public void AddClient(IClient client)
+        public void AddClient(Client client)
         {
             PlayersToAdd.Add(client);
             PlayersJoining.Remove(client);
         }
-        public void RemoveClient(IClient client, string reason = "")
+        public void RemoveClient(Client client, string reason = "")
         {
             if (!string.IsNullOrEmpty(reason))
                 client.SendPacket(new AuthorizationDisconnectPacket { Reason = reason });
@@ -160,18 +160,18 @@ namespace PokeD.Server
         }
 
 
-        public void OtherConnected(IClient client) { }
-        public void OtherDisconnected(IClient client) { }
+        public void OtherConnected(Client client) { }
+        public void OtherDisconnected(Client client) { }
 
-        public void SendServerMessage(IClient sender, string message)
+        public void SendServerMessage(Client sender, string message)
         {
             if (sender is SCONClient)
                 return;
             else
                 SCONClientSendToAllClients(new ChatMessagePacket { Player = sender.Name, Message = message });
         }
-        public void SendPrivateMessage(IClient sender, IClient destClient, string message) { }
-        public void SendGlobalMessage(IClient sender, string message)
+        public void SendPrivateMessage(Client sender, Client destClient, string message) { }
+        public void SendGlobalMessage(Client sender, string message)
         {
             if (sender is SCONClient)
                 return;
@@ -179,11 +179,11 @@ namespace PokeD.Server
                 SCONClientSendToAllClients(new ChatMessagePacket { Player = sender.Name, Message = message });
         }
 
-        public void SendTradeRequest(IClient sender, Monster monster, IClient destClient) { }
-        public void SendTradeConfirm(IClient sender, IClient destClient) { }
-        public void SendTradeCancel(IClient sender, IClient destClient) { }
+        public void SendTradeRequest(Client sender, Monster monster, Client destClient) { }
+        public void SendTradeConfirm(Client sender, Client destClient) { }
+        public void SendTradeCancel(Client sender, Client destClient) { }
 
-        public void SendPosition(IClient sender) { }
+        public void SendPosition(Client sender) { }
 
         public void ExecuteCommand(string command) { }
 
@@ -231,15 +231,15 @@ namespace PokeD.Server
 
         private class PlayerPacketSCON
         {
-            public readonly IClient Player;
+            public readonly Client Player;
             public readonly SCONPacket Packet;
 
-            public PlayerPacketSCON(IClient player, ref SCONPacket packet)
+            public PlayerPacketSCON(Client player, ref SCONPacket packet)
             {
                 Player = player;
                 Packet = packet;
             }
-            public PlayerPacketSCON(IClient player, SCONPacket packet)
+            public PlayerPacketSCON(Client player, SCONPacket packet)
             {
                 Player = player;
                 Packet = packet;

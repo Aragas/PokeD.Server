@@ -25,7 +25,7 @@ namespace PokeD.Server.Database
 
         public Player() { }
 
-        public Player(IClient client)
+        public Player(Client client)
         {
             if (client.ID >= 0)
                 Id = client.ID;

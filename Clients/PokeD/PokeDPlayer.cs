@@ -21,13 +21,13 @@ using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.PokeD
 {
-    public partial class PokeDPlayer : IClient
+    public partial class PokeDPlayer : Client
     {
         Trainer PlayerRef { get; set; } = new Trainer("1112");
 
         #region Game Values
 
-        public int ID { get { return PlayerRef.EntityID; } set { PlayerRef.EntityID = value; } }
+        public override int ID { get { return PlayerRef.EntityID; } set { PlayerRef.EntityID = value; } }
 
         public string GameMode => "PokeD Game";
         public bool IsGameJoltPlayer => true;
@@ -35,10 +35,11 @@ namespace PokeD.Server.Clients.PokeD
 
         private char DecimalSeparator => '.';
 
-        public string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {PlayerRef.Name}" : PlayerRef.Name; } private set { PlayerRef.Name = value; } }
+        public override string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {PlayerRef.Name}" : PlayerRef.Name; } protected set { PlayerRef.Name = value; } }
 
-        public string LevelFile { get; set; }
-        public Vector3 Position => PlayerRef.Position;
+        public override string LevelFile { get; protected set; }
+        public override Vector3 Position { get { return PlayerRef.Position; } protected set { throw  new NotSupportedException(); } }
+
         public int Facing => PlayerRef.Facing;
         public bool Moving => true;
         public string Skin => PlayerRef.TrainerSprite.ToString();
@@ -52,14 +53,14 @@ namespace PokeD.Server.Clients.PokeD
 
         #region Other Values
 
-        public Prefix Prefix { get; private set; }
-        public string PasswordHash { get; set; }
+        public override Prefix Prefix { get; protected set; }
+        public override string PasswordHash { get; set; }
 
         //public string IP => Stream.Host; // TODO
-        public string IP => "";
+        public override string IP => "";
 
-        public DateTime ConnectionTime { get; } = DateTime.Now;
-        public CultureInfo Language { get; }
+        public override DateTime ConnectionTime { get; } = DateTime.Now;
+        public override CultureInfo Language { get; }
 
         public DateTime LastMessage { get; private set; }
 
@@ -87,7 +88,7 @@ namespace PokeD.Server.Clients.PokeD
         }
 
 
-        public void Update()
+        public override void Update()
         {
             if (Stream.Connected)
             {
@@ -101,7 +102,7 @@ namespace PokeD.Server.Clients.PokeD
                         return;
                     }
 
-                    var data = Stream.ReadByteArray(dataLength);
+                    var data = Stream.Receive(dataLength);
 
                     LastMessage = DateTime.UtcNow;
                     HandleData(data);
@@ -215,7 +216,7 @@ namespace PokeD.Server.Clients.PokeD
             }
         }
 
-        public void SendPacket(ProtobufPacket packet, int originID = 0)
+        public override void SendPacket<TIDType, TPacketType>(Packet<TIDType, TPacketType> packet, int originID = 0)
         {
             var pokeDPacket = packet as PokeDPacket;
             if (pokeDPacket == null)
@@ -228,7 +229,7 @@ namespace PokeD.Server.Clients.PokeD
 #endif
         }
 
-        public void LoadFromDB(Player data)
+        public override void LoadFromDB(Player data)
         {
             if (ID == 0)
                 ID = data.Id;
@@ -237,7 +238,7 @@ namespace PokeD.Server.Clients.PokeD
             Prefix = data.Prefix;
         }
 
-        public GameDataPacket GetDataPacket()
+        public override GameDataPacket GetDataPacket()
         {
             var packet = new GameDataPacket
             {
@@ -272,7 +273,7 @@ namespace PokeD.Server.Clients.PokeD
             return packet;
         }
         
-        public void Dispose()
+        public override void Dispose()
         {
             Stream.Disconnect();
             Stream.Dispose();

@@ -10,25 +10,31 @@ using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients
 {
-    public class ServerClient : IClient
+    public class ServerClient : Client
     {
-        public int ID { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
-        public string Name => "SERVER";
-        public Prefix Prefix { get { throw new NotSupportedException(); } }
-        public string PasswordHash { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
-        public Vector3 Position { get { throw new NotSupportedException(); } }
-        public string LevelFile { get { throw new NotSupportedException(); } }
-        public string IP { get { throw new NotSupportedException(); } }
-        public DateTime ConnectionTime { get { throw new NotSupportedException(); } }
-        public CultureInfo Language { get; }
-        public GameDataPacket GetDataPacket() { throw new NotSupportedException(); }
+        public override int ID { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
+        public override string Name { get { return "SERVER"; } protected set { throw new NotImplementedException(); } }
 
-        public void SendPacket(ProtobufPacket packet, int originID = 0) { throw new NotSupportedException(); }
+        public override Prefix Prefix
+        {
+            get { throw new NotSupportedException(); }
+            protected set { throw new NotSupportedException(); }
+        }
 
-        public void LoadFromDB(Player data) { throw new NotSupportedException(); }
+        public override string PasswordHash { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
+        public override Vector3 Position { get { throw new NotSupportedException(); } protected set { throw new NotSupportedException(); } }
+        public override string LevelFile { get { throw new NotSupportedException(); } protected set { throw new NotSupportedException(); } }
+        public override string IP { get { throw new NotSupportedException(); } }
+        public override DateTime ConnectionTime { get { throw new NotSupportedException(); } }
+        public override CultureInfo Language { get; }
+        public override GameDataPacket GetDataPacket() { throw new NotSupportedException(); }
 
-        public void Update() { throw new NotSupportedException(); }
+        public override void SendPacket<TIDType, TPacketType>(Packet<TIDType, TPacketType> packet, int originID = 0) { throw new NotSupportedException(); }
 
-        public void Dispose() { throw new NotSupportedException(); }
+        public override void LoadFromDB(Player data) { throw new NotSupportedException(); }
+
+        public override void Update() { throw new NotSupportedException(); }
+
+        public override void Dispose() { throw new NotSupportedException(); }
     }
 }

@@ -102,25 +102,25 @@ namespace PokeD.Server
         public void CheckListener() { }
 
 
-        public void AddClient(IClient client) { }
-        public void RemoveClient(IClient client, string reason = "") { }
+        public void AddClient(Client client) { }
+        public void RemoveClient(Client client, string reason = "") { }
 
 
         public void Update() { }
 
 
-        public void OtherConnected(IClient client) { }
-        public void OtherDisconnected(IClient client) { }
+        public void OtherConnected(Client client) { }
+        public void OtherDisconnected(Client client) { }
 
-        public void SendServerMessage(IClient sender, string message) { }
-        public void SendPrivateMessage(IClient sender, IClient destClient, string message) { }
-        public void SendGlobalMessage(IClient sender, string message) { }
+        public void SendServerMessage(Client sender, string message) { }
+        public void SendPrivateMessage(Client sender, Client destClient, string message) { }
+        public void SendGlobalMessage(Client sender, string message) { }
 
-        public void SendTradeRequest(IClient sender, Monster monster, IClient destClient) { }
-        public void SendTradeConfirm(IClient sender, IClient destClient) { }
-        public void SendTradeCancel(IClient sender, IClient destClient) { }
+        public void SendTradeRequest(Client sender, Monster monster, Client destClient) { }
+        public void SendTradeConfirm(Client sender, Client destClient) { }
+        public void SendTradeCancel(Client sender, Client destClient) { }
 
-        public void SendPosition(IClient sender) { }
+        public void SendPosition(Client sender) { }
 
         public void ExecuteCommand(string command) { }
 

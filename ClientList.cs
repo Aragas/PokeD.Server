@@ -9,22 +9,22 @@ using PokeD.Server.Clients;
 
 namespace PokeD.Server
 {
-    public class ClientList : IEnumerable<IClient>
+    public class ClientList : IEnumerable<Client>
     {
         public int Count => ClientsList.Count;
-        private List<IClient> ClientsList { get; } 
+        private List<Client> ClientsList { get; } 
 
 
-        public ClientList() { ClientsList = new List<IClient>(); }
+        public ClientList() { ClientsList = new List<Client>(); }
         
-        public IEnumerator<IClient> GetEnumerator() { return ClientsList.GetEnumerator(); }
+        public IEnumerator<Client> GetEnumerator() { return ClientsList.GetEnumerator(); }
         IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
 
-        public IEnumerable<T> GetTypeEnumerator<T>() where T : IClient
+        public IEnumerable<T> GetTypeEnumerator<T>() where T : Client
         {
             return ClientsList.Where(client => client.GetType() == typeof (T)).Select(client => (T) client);
         }
-        public IEnumerable<IClient> GetTypeEnumerator<T1, T2>() where T1 : IClient where T2 : IClient
+        public IEnumerable<Client> GetTypeEnumerator<T1, T2>() where T1 : Client where T2 : Client
         {
             return ClientsList.Select(client => new {client, type = client.GetType()})
                 .Where(t =>
@@ -32,7 +32,7 @@ namespace PokeD.Server
                     t.type == typeof (T2))
                 .Select(t => t.client);
         }
-        public IEnumerable<IClient> GetTypeEnumerator<T1, T2, T3>() where T1 : IClient where T2 : IClient where T3 : IClient
+        public IEnumerable<Client> GetTypeEnumerator<T1, T2, T3>() where T1 : Client where T2 : Client where T3 : Client
         {
             return ClientsList.Select(client => new {client, type = client.GetType()})
                 .Where(t =>
@@ -41,7 +41,7 @@ namespace PokeD.Server
                     t.type == typeof (T3))
                 .Select(t => t.client);
         }
-        public IEnumerable<IClient> GetTypeEnumerator<T1, T2, T3, T4>() where T1 : IClient where T2 : IClient where T3 : IClient where T4 : IClient
+        public IEnumerable<Client> GetTypeEnumerator<T1, T2, T3, T4>() where T1 : Client where T2 : Client where T3 : Client where T4 : Client
         {
             return ClientsList.Select(client => new {client, type = client.GetType()})
                 .Where(t =>
@@ -65,10 +65,10 @@ namespace PokeD.Server
             });
         }
 
-        public IClient this[int index] => ClientsList[index];
+        public Client this[int index] => ClientsList[index];
 
-        public void Add(IClient client) { ClientsList.Add(client); }
-        public void Remove(IClient client) { ClientsList.Remove(client); }
+        public void Add(Client client) { ClientsList.Add(client); }
+        public void Remove(Client client) { ClientsList.Remove(client); }
 
         public void Clear() { ClientsList.Clear(); }
     }
