@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+
 using Aragas.Core.Data;
 using Aragas.Core.IO;
 using Aragas.Core.Packets;
@@ -27,7 +28,7 @@ namespace PokeD.Server.Clients.PokeD
 
         #region Game Values
 
-        public override int ID { get { return PlayerRef.EntityID; } set { PlayerRef.EntityID = value; } }
+        public override int ID { get { return PlayerRef.EntityID; } set { PlayerRef.EntityID = new VarInt(value); } }
 
         public string GameMode => "PokeD Game";
         public bool IsGameJoltPlayer => true;
@@ -116,7 +117,7 @@ namespace PokeD.Server.Clients.PokeD
         {
             if (data != null)
             {
-                using (PacketDataReader reader = new ProtobufDataReader(data))
+                using (var reader = new ProtobufDataReader(data))
                 {
                     var id = reader.Read<VarInt>();
 
@@ -216,13 +217,13 @@ namespace PokeD.Server.Clients.PokeD
             }
         }
 
-        public override void SendPacket<TIDType, TPacketType>(Packet<TIDType, TPacketType> packet, int originID = 0)
+        public override void SendPacket(Packet packet)
         {
             var pokeDPacket = packet as PokeDPacket;
             if (pokeDPacket == null)
                 throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
 
-            Stream.SendPacket(ref packet);
+            Stream.SendPacket(packet);
 
 #if DEBUG
             Sended.Add(pokeDPacket);

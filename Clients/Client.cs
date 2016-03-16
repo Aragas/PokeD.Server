@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+
 using Aragas.Core.Data;
 using Aragas.Core.Interfaces;
 using Aragas.Core.Packets;
@@ -28,7 +29,7 @@ namespace PokeD.Server.Clients
 
         public abstract GameDataPacket GetDataPacket();
 
-        public abstract void SendPacket<TIDType, TPacketType>(Packet<TIDType, TPacketType> packet, int originID = 0) where TPacketType : Packet;
+        public abstract void SendPacket(Packet packet);
 
         public abstract void LoadFromDB(Player data);
 

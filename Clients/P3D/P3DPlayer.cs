@@ -224,20 +224,19 @@ namespace PokeD.Server.Clients.P3D
         }
 
 
-        public override void SendPacket<TIDType, TPacketType>(Packet<TIDType, TPacketType> packet, int originID)
+        public override void SendPacket(Packet packet)
         {
             var p3dPacket = packet as P3DPacket;
             if(p3dPacket == null)
                 throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
 
-            p3dPacket.Origin = originID;
-
-            Stream.SendPacket(ref p3dPacket);
+            Stream.SendPacket(packet);
 
 #if DEBUG
             Sended.Add(p3dPacket);
 #endif
         }
+
 
         public override void LoadFromDB(Player data)
         {

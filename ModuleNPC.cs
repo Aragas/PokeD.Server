@@ -1,6 +1,8 @@
 ﻿using Aragas.Core.Wrappers;
+
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Packets.P3D.Chat;
+
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.NPC;
 

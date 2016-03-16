@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+
 using Aragas.Core.Data;
 using Aragas.Core.Packets;
 using Aragas.Core.Wrappers;
@@ -106,7 +107,7 @@ namespace PokeD.Server.Clients.NPC
         //public Client[] GetLocalPlayers() => Module.Server.AllClients().Where(client => client.LevelFile == LevelFile).ToArray();
 
 
-        public override void SendPacket<TIDType, TPacketType>(Packet<TIDType, TPacketType> packet, int originID)
+        public override void SendPacket(Packet packet)
         {
             var protoOrigin = packet as P3DPacket;
             if (protoOrigin == null)

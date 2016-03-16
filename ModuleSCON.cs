@@ -208,14 +208,14 @@ namespace PokeD.Server
 
             for (var i = 0; i < Clients.Count; i++)
             {
-                Clients[i].SendPacket(new AuthorizationDisconnectPacket() { Reason = "Closing server!" }, -1);
+                Clients[i].SendPacket(new AuthorizationDisconnectPacket() { Reason = "Closing server!" });
                 Clients[i].Dispose();
             }
             Clients.Clear();
 
             for (var i = 0; i < PlayersToAdd.Count; i++)
             {
-                PlayersToAdd[i].SendPacket(new AuthorizationDisconnectPacket() { Reason = "Closing server!" }, -1);
+                PlayersToAdd[i].SendPacket(new AuthorizationDisconnectPacket() { Reason = "Closing server!" });
                 PlayersToAdd[i].Dispose();
             }
             PlayersToAdd.Clear();

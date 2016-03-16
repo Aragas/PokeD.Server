@@ -89,7 +89,7 @@ namespace PokeD.Server.Clients.PokeD
             if (packet.Message.StartsWith("/"))
             {
                 if (!packet.Message.ToLower().StartsWith("/login"))
-                    SendPacket(new ChatGlobalMessagePacket { Message = packet.Message }, ID);
+                    SendPacket(new ChatGlobalMessagePacket { Message = packet.Message });
 
                 ExecuteCommand(packet.Message);
             }
@@ -108,7 +108,7 @@ namespace PokeD.Server.Clients.PokeD
                 Module.PokeDPlayerSendToClient(this, new ChatPrivateMessagePacket { Message = packet.Message });
             }
             else
-                SendPacket(new ChatGlobalMessagePacket { Message = $"The player with the name \"{destClient.Name}\" doesn't exist." }, -1);
+                SendPacket(new ChatGlobalMessagePacket { Message = $"The player with the name \"{destClient.Name}\" doesn't exist." });
         }
 
 

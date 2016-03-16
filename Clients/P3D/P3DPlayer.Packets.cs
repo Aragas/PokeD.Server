@@ -125,7 +125,9 @@ namespace PokeD.Server.Clients.P3D
             if(!Moving)
                 Module.P3DPlayerSendToAllClients(packet, packet.Origin);
 
-            SendPacket(GetDataPacket(), ID);
+            var dataPacket = GetDataPacket();
+            dataPacket.Origin = ID;
+            SendPacket(dataPacket);
 
             // We assume that if we get a GameData, it's a client that wanna play
             if (FirstGameData)
@@ -136,11 +138,11 @@ namespace PokeD.Server.Clients.P3D
             {
                 Module.PreAdd(this);
 
-                SendPacket(new ChatMessageGlobalPacket { Message = "Please use /login %PASSWORD% for logging in or registering" }, -1);
-                SendPacket(new ChatMessageGlobalPacket { Message = "Please note that chat data  isn't sended secure to server" }, -1);
-                SendPacket(new ChatMessageGlobalPacket { Message = "So it can be seen via traffic sniffing" }, -1);
-                SendPacket(new ChatMessageGlobalPacket { Message = "Don't use your regular passwords" }, -1);
-                SendPacket(new ChatMessageGlobalPacket { Message = "On server it's stored fully secure via SHA-512" }, -1);
+                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = "Please use /login %PASSWORD% for logging in or registering" });
+                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = "Please note that chat data  isn't sended secure to server" });
+                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = "So it can be seen via traffic sniffing" });
+                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = "Don't use your regular passwords" });
+                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = "On server it's stored fully secure via SHA-512" });
             }
             else
             {
@@ -155,7 +157,7 @@ namespace PokeD.Server.Clients.P3D
             if (packet.Message.StartsWith("/"))
             {
                 if(!packet.Message.ToLower().StartsWith("/login"))
-                    SendPacket(new ChatMessageGlobalPacket { Message = packet.Message }, ID);
+                    SendPacket(new ChatMessageGlobalPacket { Origin = ID, Message = packet.Message });
 
                 ExecuteCommand(packet.Message);
             }
@@ -171,7 +173,7 @@ namespace PokeD.Server.Clients.P3D
                 Module.SendPrivateMessage(this, destClient, packet.Message);
             }
             else
-                SendPacket(new ChatMessageGlobalPacket { Message = $"The player with the name \"{packet.DestinationPlayerName}\" doesn't exist." }, -1);
+                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = $"The player with the name \"{packet.DestinationPlayerName}\" doesn't exist." });
         }
 
 
@@ -198,7 +200,7 @@ namespace PokeD.Server.Clients.P3D
                     Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeRequestPacket(), packet.Origin);
                 else
                 { 
-                    SendPacket(new ChatMessageGlobalPacket { Message = $"Can not start trade with {destClient.Name}! Online-Offline trade disabled." }, -1);
+                    SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = $"Can not start trade with {destClient.Name}! Online-Offline trade disabled." });
                     Module.SendTradeCancel(this, destClient);
                 }
             }
@@ -221,7 +223,7 @@ namespace PokeD.Server.Clients.P3D
                 Module.SendTradeRequest(this, packet.DataItems.ToMonster(), destClient);
             else
             {
-                SendPacket(new ChatMessageGlobalPacket { Message = $"Your Pokemon is not valid!" }, -1);
+                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = $"Your Pokemon is not valid!" });
                 Module.SendTradeCancel(this, destClient);
             }
         }
@@ -249,8 +251,8 @@ namespace PokeD.Server.Clients.P3D
                 Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleOfferPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
             else
             {
-                SendPacket(new ChatMessageGlobalPacket { Message = $"One of your Pokemon is not valid!" }, -1);
-                SendPacket(new BattleQuitPacket(), packet.DestinationPlayerID);
+                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = $"One of your Pokemon is not valid!" });
+                SendPacket(new BattleQuitPacket { Origin = packet.DestinationPlayerID });
             }
         }
         private void HandleBattlePokemonData(BattlePokemonDataPacket packet)
@@ -281,7 +283,8 @@ namespace PokeD.Server.Clients.P3D
             if (Module.Server.AllClients().Any())
                 spacket.PlayerNames = Module.Server.GetAllClientsInfo().Select(client => client.Name).ToArray();
 
-            SendPacket(spacket, ID);
+            spacket.Origin = ID;
+            SendPacket(spacket);
 
             Module.RemoveClient(this);
         }

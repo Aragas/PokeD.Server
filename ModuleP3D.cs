@@ -173,7 +173,11 @@ namespace PokeD.Server
                 foreach (var nearPlayers in NearPlayers.Where(nearPlayers => nearPlayers.Value != null))
                     foreach (var player in nearPlayers.Value.Where(player => player.Moving))
                         foreach (var playerToSend in nearPlayers.Value.Where(playerToSend => player != playerToSend))
-                            playerToSend.SendPacket(player.GetDataPacket(), player.ID);
+                        {
+                            var packet = player.GetDataPacket();
+                            packet.Origin = player.ID;
+                            playerToSend.SendPacket(packet);
+                        }
 
                 /*
                 for (int i = 0; i < Players.Count; i++)
@@ -267,7 +271,7 @@ namespace PokeD.Server
         public void RemoveClient(Client client, string reason = "")
         {
             if (!string.IsNullOrEmpty(reason))
-                client.SendPacket(new KickedPacket { Reason = reason }, -1);
+                client.SendPacket(new KickedPacket { Origin = -1, Reason = reason });
 
             PlayersToRemove.Add(client);
         }
@@ -333,12 +337,18 @@ namespace PokeD.Server
 
             PlayerPacketP3DOrigin packetToPlayer;
             while (!IsDisposing && PacketsToPlayer.TryDequeue(out packetToPlayer))
-                packetToPlayer.Player.SendPacket(packetToPlayer.Packet, packetToPlayer.OriginID);
+            {
+                packetToPlayer.Packet.Origin = packetToPlayer.OriginID;
+                packetToPlayer.Player.SendPacket(packetToPlayer.Packet);
+            }
 
             PacketP3DOrigin packetToAllPlayers;
             while (!IsDisposing && PacketsToAllPlayers.TryDequeue(out packetToAllPlayers))
                 for (var i = 0; i < Clients.Count; i++)
-                    Clients[i].SendPacket(packetToAllPlayers.Packet, packetToAllPlayers.OriginID);
+                {
+                    packetToAllPlayers.Packet.Origin = packetToAllPlayers.OriginID;
+                    Clients[i].SendPacket(packetToAllPlayers.Packet);
+                }
 
             #endregion Packet Sending
 
@@ -549,12 +559,12 @@ namespace PokeD.Server
 
             for (var i = 0; i < Clients.Count; i++)
             {
-                Clients[i].SendPacket(new ServerClosePacket { Reason = "Closing server!" }, -1);
+                Clients[i].SendPacket(new ServerClosePacket { Origin = -1, Reason = "Closing server!" });
                 Clients[i].Dispose();
             }
             for (var i = 0; i < PlayersToAdd.Count; i++)
             {
-                PlayersToAdd[i].SendPacket(new ServerClosePacket { Reason = "Closing server!" }, -1);
+                PlayersToAdd[i].SendPacket(new ServerClosePacket { Origin = -1, Reason = "Closing server!" });
                 PlayersToAdd[i].Dispose();
             }
 

@@ -130,7 +130,7 @@ namespace PokeD.Server.Clients.P3D
 
         private void SendCommandResponse(string message)
         {
-            SendPacket(new ChatMessageGlobalPacket { Message = message }, -1);
+            SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = message });
         }
     }
 }

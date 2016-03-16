@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+
 using Aragas.Core.Data;
 using Aragas.Core.Packets;
 
@@ -29,7 +30,7 @@ namespace PokeD.Server.Clients
         public override CultureInfo Language { get; }
         public override GameDataPacket GetDataPacket() { throw new NotSupportedException(); }
 
-        public override void SendPacket<TIDType, TPacketType>(Packet<TIDType, TPacketType> packet, int originID = 0) { throw new NotSupportedException(); }
+        public override void SendPacket(Packet packet) { throw new NotSupportedException(); }
 
         public override void LoadFromDB(Player data) { throw new NotSupportedException(); }
 

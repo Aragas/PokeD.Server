@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+
 using Aragas.Core.Data;
 using Aragas.Core.IO;
 using Aragas.Core.Packets;
@@ -98,7 +99,7 @@ namespace PokeD.Server.Clients.SCON
         {
             if (data != null)
             {
-                using (PacketDataReader reader = new ProtobufDataReader(data))
+                using (var reader = new ProtobufDataReader(data))
                 {
                     var id = reader.Read<VarInt>();
 
@@ -210,7 +211,7 @@ namespace PokeD.Server.Clients.SCON
 
         public override GameDataPacket GetDataPacket() { throw new NotImplementedException(); }
 
-        public override void SendPacket<TIDType, TPacketType>(Packet<TIDType, TPacketType> packet, int originID = 0)
+        public override void SendPacket(Packet packet)
         {
             var sconPacket = packet as SCONPacket;
             if (sconPacket == null)
@@ -220,7 +221,7 @@ namespace PokeD.Server.Clients.SCON
                 if(!ChatEnabled)
                     return;
             
-            Stream.SendPacket(ref packet);
+            Stream.SendPacket(packet);
      
 #if DEBUG
             Sended.Add(sconPacket);

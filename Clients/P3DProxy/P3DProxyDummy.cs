@@ -48,7 +48,7 @@ namespace PokeD.Server.Clients.P3DProxy
 
         #region Values
 
-        public VarInt SID { get; private set; }
+        public int SID { get; private set; }
 
         public override Prefix Prefix { get; protected set; }
         public override string PasswordHash { get; set; }
@@ -63,7 +63,7 @@ namespace PokeD.Server.Clients.P3DProxy
         #endregion Values
 
 
-        public P3DProxyDummy(VarInt id, GameDataPacket packet)
+        public P3DProxyDummy(int id, GameDataPacket packet)
         {
             SID = id;
             ParseGameData(packet);
@@ -176,7 +176,7 @@ namespace PokeD.Server.Clients.P3DProxy
         }
         public override GameDataPacket GetDataPacket() => new GameDataPacket { DataItems = GenerateDataItems() };
 
-        public override void SendPacket<TIDType, TPacketType>(Packet<TIDType, TPacketType> packet, int originID = 0) { }
+        public override void SendPacket(Packet packet) { }
 
         public override void LoadFromDB(Player data) { }
 

@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 
-using Aragas.Core.Data;
 using Aragas.Core.Wrappers;
 
 using PokeD.Core.Data.PokeD.Monster;
@@ -82,14 +81,17 @@ namespace PokeD.Server
             client.Connect(Host, Port);
 
             Proxy = new P3DProxyPlayer(client, this, PlayerName);
-            Proxy.SendPacket(Proxy.GetDataPacket(), 0);
+
+            var packet = Proxy.GetDataPacket();
+            packet.Origin = 0;
+            Proxy.SendPacket(packet);
         }
         public void CheckListener() { }
 
 
-        public P3DProxyDummy GetDummy(VarInt id) => Clients.FirstOrDefault(c => (c as P3DProxyDummy).SID == id) as P3DProxyDummy;
+        public P3DProxyDummy GetDummy(int id) => Clients.FirstOrDefault(c => (c as P3DProxyDummy).SID == id) as P3DProxyDummy;
 
-        public void AddOrUpdateClient(VarInt sid, GameDataPacket packet)
+        public void AddOrUpdateClient(int sid, GameDataPacket packet)
         {
             var client = GetDummy(sid);
             if(client != null)
@@ -103,7 +105,7 @@ namespace PokeD.Server
                 Server.ClientConnected(this, client);
             }
         }
-        public void RemoveClient(VarInt sid)
+        public void RemoveClient(int sid)
         {
             var client = GetDummy(sid);
             if (client != null)

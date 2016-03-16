@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
+using Aragas.Core.Data;
 using Aragas.Core.Extensions;
 using Aragas.Core.Wrappers;
 
@@ -201,7 +202,7 @@ namespace PokeD.Server
         public void PreAdd(Client client)
         {
             if (Server.PeekDBID(client) != -1)
-                PokeDPlayerSendToClient(client, new AuthorizationCompletePacket { PlayerID = client.ID });
+                PokeDPlayerSendToClient(client, new AuthorizationCompletePacket { PlayerID = new VarInt(client.ID) });
         }
         public void AddClient(Client client)
         {
@@ -385,7 +386,7 @@ namespace PokeD.Server
         public void SendTradeRequest(Client sender, Monster monster, Client destClient)
         {
             if (destClient is PokeDPlayer)
-                PokeDPlayerSendToClient(destClient, new TradeOfferPacket() { DestinationID = -1, MonsterData = monster.InstanceData });
+                PokeDPlayerSendToClient(destClient, new TradeOfferPacket() { DestinationID = new VarInt(-1), MonsterData = monster.InstanceData });
             else
                 Server.ClientTradeOffer(this, sender, monster, destClient);
         }
@@ -393,7 +394,7 @@ namespace PokeD.Server
         {
             if (destClient is PokeDPlayer)
             {
-                PokeDPlayerSendToClient(destClient, new TradeAcceptPacket() { DestinationID = -1 });
+                PokeDPlayerSendToClient(destClient, new TradeAcceptPacket() { DestinationID = new VarInt(-1) });
 
                 Server.ClientTradeConfirm(this, sender, destClient);
 
@@ -405,7 +406,7 @@ namespace PokeD.Server
         public void SendTradeCancel(Client sender, Client destClient)
         {
             if (destClient is PokeDPlayer)
-                PokeDPlayerSendToClient(destClient, new TradeRefusePacket() { DestinationID = -1 });
+                PokeDPlayerSendToClient(destClient, new TradeRefusePacket() { DestinationID = new VarInt(-1) });
             else
                 Server.ClientTradeCancel(this, sender, destClient);
         }
@@ -483,14 +484,14 @@ namespace PokeD.Server
 
             for (var i = 0; i < Clients.Count; i++)
             {
-                Clients[i].SendPacket(new DisconnectPacket() { Reason = "Closing server!" }, -1);
+                Clients[i].SendPacket(new DisconnectPacket() { Reason = "Closing server!" });
                 Clients[i].Dispose();
             }
             Clients.Clear();
 
             for (var i = 0; i < PlayersToAdd.Count; i++)
             {
-                PlayersToAdd[i].SendPacket(new DisconnectPacket() { Reason = "Closing server!" }, -1);
+                PlayersToAdd[i].SendPacket(new DisconnectPacket() { Reason = "Closing server!" });
                 PlayersToAdd[i].Dispose();
             }
             PlayersToAdd.Clear();
