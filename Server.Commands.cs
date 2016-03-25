@@ -1,11 +1,33 @@
 ﻿using System;
+using System.Linq;
 
+using PokeD.Server.Clients;
+using PokeD.Server.Commands;
 using PokeD.Server.Data;
 
 namespace PokeD.Server
 {
     public partial class Server
     {
+        CommandManager CommandManager { get; }
+
+        public bool ProcessCommand(Client client, string message)
+        {
+            var commandWithoutSlash = message.TrimStart('/');
+            var messageArray = commandWithoutSlash
+                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (messageArray.Length <= 0) return false; // command not found
+
+            var alias = messageArray[0];
+            var trimmedMessageArray = messageArray.Skip(1).ToArray();
+
+            CommandManager.HandleCommand(client, alias, trimmedMessageArray);
+            
+            return true;
+        }
+
+
         public bool ExecuteCommand(string message)
         {
             var command = message.ToLower();
@@ -30,7 +52,6 @@ namespace PokeD.Server
 
             return true;
         }
-
         private bool ExecuteWorldCommand(string command)
         {
             if (command.StartsWith("set "))
@@ -130,7 +151,6 @@ namespace PokeD.Server
 
             return true;
         }
-
         private static bool ExecuteHelpCommand(string command) { return false; }
     }
 }

@@ -114,31 +114,22 @@ namespace PokeD.Server.Clients.PokeD
 
         private void HandleBattleRequest(BattleRequestPacket packet)
         {
-            //if(Battle == null)
-            //    Battle = Module.CreateBattle(packet.PlayerIDs, packet.Message);
-            //else
-            //    SendPacket(new BattleCancelledPacket {Reason = "You are already in battle!"});
+            if(CurrentBattle == null)
+                CurrentBattle = Module.CreateBattle(packet.Battle, packet.Message);
+            else
+                SendPacket(new BattleCancelledPacket { Reason = "You are already in battle!" });
         }
         private void HandleBattleAccept(BattleAcceptPacket packet)
         {
-            //if(packet.IsAccepted) Battle.AcceptBattle(this); else Battle.CancelBattle(this);
+            if(packet.IsAccepted)
+                CurrentBattle.AcceptBattle(this);
+            else
+                CurrentBattle.CancelBattle(this);
         }
-        private void HandleBattleAttack(BattleAttackPacket packet)
-        {
-            //Battle.HandlePacket(this, packet);
-        }
-        private void HandleBattleItem(BattleItemPacket packet)
-        {
-            //Battle.HandlePacket(this, packet);
-        }
-        private void HandleBattleSwitch(BattleSwitchPacket packet)
-        {
-            //Battle.HandlePacket(this, packet);
-        }
-        private void HandleBattleFlee(BattleFleePacket packet)
-        {
-            //Battle.HandlePacket(this, packet);
-        }
+        private void HandleBattleAttack(BattleAttackPacket packet) { CurrentBattle.HandleAttack(this, packet.CurrentMonster, packet.TargetMonster, packet.Move); }
+        private void HandleBattleItem(BattleItemPacket packet) { CurrentBattle.HandleBattleItem(this, packet.Monster, packet.Item); }
+        private void HandleBattleSwitch(BattleSwitchPacket packet) { CurrentBattle.HandleBattleSwitch(this, packet.CurrentMonster, packet.SwitchMonster); }
+        private void HandleBattleFlee(BattleFleePacket packet) { CurrentBattle.HandleBattleFlee(this); }
 
 
         private void HandleTradeOffer(TradeOfferPacket packet)

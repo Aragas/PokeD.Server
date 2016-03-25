@@ -42,6 +42,7 @@
     <Compile Include="Clients\P3DProxy\P3DProxyDummy.cs" />
     <Compile Include="Clients\P3DProxy\P3DProxyPlayer.cs" />
     <Compile Include="Clients\P3DProxy\P3DProxyPlayer.Packets.cs" />
+    <Compile Include="Clients\PokeD\BattleInstance.cs" />
     <Compile Include="Clients\PokeD\PokeDPlayer.Settings.cs" />
     <Compile Include="Clients\PokeD\PokeDPlayer.Battle.cs" />
     <Compile Include="Clients\PokeD\PokeDPlayer.cs" />
@@ -51,6 +52,11 @@
     <Compile Include="Clients\Protobuf\ProtobufPlayer.Packets.cs" />
     <Compile Include="Clients\Protobuf\ProtobufPlayer.cs" />
     <Compile Include="Clients\ServerClient.cs" />
+    <Compile Include="Commands\CommandManager.cs" />
+    <Compile Include="Commands\HelpCommand.cs" />
+    <Compile Include="Commands\TimeCommand.cs" />
+    <Compile Include="Commands\PingCommand.cs" />
+    <Compile Include="Commands\Command.cs" />
     <Compile Include="Data\BattleDataTable.cs" />
     <Compile Include="Clients\NPC\NPCLoader.cs" />
     <Compile Include="Data\Prefix.cs" />

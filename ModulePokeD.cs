@@ -10,7 +10,7 @@ using Aragas.Core.Extensions;
 using Aragas.Core.Wrappers;
 
 using PCLStorage;
-
+using PokeD.Core.Data.PokeD.Battle;
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.PokeD.Authorization;
@@ -26,95 +26,6 @@ using TMXParserPCL;
 
 namespace PokeD.Server
 {
-    /*
-    public class BattleTrainer
-    {
-        public Client Client { get; }
-        public bool HasAccepted { get; set; }
-
-        public PokeDPacket LastCommand { get; set; }
-
-
-
-        public BattleTrainer(Client client) { Client = client; }
-    }
-    public class BattleInstance : IUpdatable, IDisposable
-    {
-        //public int BattleID { get; set; }
-
-        private List<BattleTrainer> Trainers { get; }
-        private BattleTrainer HostTrainer => Trainers.ElementAt(0);
-        private List<BattleTrainer> OtherTrainers => Trainers.Skip(1).ToList();
-
-        private string Message { get; }
-
-        public BattleInstance(IEnumerable<Client> players, string message)
-        {
-            Trainers = new List<BattleTrainer>(players.Select(client => new BattleTrainer(client)));
-            Message = message;
-
-            SendOffers();
-        }
-        private void SendOffers()
-        {
-            var playerIDs = Trainers.Select(c => (VarInt) c.Client.ID).ToArray();
-
-            foreach (var client in Trainers)
-                client.Client.SendPacket(new BattleOfferPacket { PlayerIDs = playerIDs, Message = Message }, 0);
-        }
-
-        Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
-        public void Update()
-        {
-            // Stuff that is done every 0.5 second
-            if (UpdateWatch.ElapsedMilliseconds < 500)
-                return;
-
-            UpdateWatch.Reset();
-            UpdateWatch.Start();
-
-            if (Trainers.All(trainer => trainer.LastCommand != null))
-                DoRound();
-        }
-        private void DoRound()
-        {
-
-
-
-            foreach (var trainer in Trainers)
-                trainer.LastCommand = null;
-        }
-
-        public void AcceptBattle(Client player)
-        {
-            foreach (var trainer in Trainers.Where(trainer => trainer.Client.ID == player.ID))
-                trainer.HasAccepted = true;
-        }
-        public void CancelBattle(Client player)
-        {
-            foreach (var trainer in Trainers)
-                trainer.Client.SendPacket(new BattleCancelledPacket { Reason = $"Player {player.Name} has denied the battle request!" }, 0);
-        }
-
-        public void HandlePacket(Client player, PokeDPacket packet)
-        {
-            foreach (var trainer in Trainers.Where(trainer => trainer.Client.ID == player.ID))
-            {
-                if (!trainer.HasAccepted)
-                    CancelBattle(player);
-
-                trainer.LastCommand = packet;
-                //trainer.DoneTurn = true;
-            }
-        }
-
-        public void Dispose()
-        {
-            
-        }
-    }
-    */
-
     public class ModulePokeD : IServerModule
     {
         const string FileName = "ModulePokeD";
@@ -150,7 +61,7 @@ namespace PokeD.Server
         ConcurrentQueue<PlayerPacketPokeD> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerPacketPokeD>();
         ConcurrentQueue<PokeDPacket> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<PokeDPacket>();
 
-        //List<BattleInstance> Battles { get; } = new List<BattleInstance>();
+        List<BattleInstance> Battles { get; } = new List<BattleInstance>();
 
 
         public ModulePokeD(Server server) { Server = server; }
@@ -227,9 +138,9 @@ namespace PokeD.Server
         Stopwatch UpdateWatch = Stopwatch.StartNew();
         public void Update()
         {
-            //for (var i = 0; i < Battles.Count; i++)
-            //    Battles[i]?.Update();
-            //
+            for (var i = 0; i < Battles.Count; i++)
+                Battles[i]?.Update();
+            
             //for (var i = 0; i < Clients.Count; i++)
             //    Clients[i]?.Update();
             //*/
@@ -250,7 +161,8 @@ namespace PokeD.Server
                     Server.ClientConnected(this, playerToAdd);
 
 
-                    var mapData = Maps.GetFileAsync(playerToAdd.LevelFile).Result.ReadAllTextAsync().Result;
+                    var mapData = Maps.GetFileAsync("0.0.tmx").Result.ReadAllTextAsync().Result;
+                    //var mapData = Maps.GetFileAsync(playerToAdd.LevelFile).Result.ReadAllTextAsync().Result;
 
                     #region Hash
 
@@ -462,12 +374,12 @@ namespace PokeD.Server
         }
 
 
-        //public BattleInstance CreateBattle(VarInt[] playerIDs, string message)
-        //{
-        //    var battle = new BattleInstance(playerIDs.Select(playerID => Server.GetClient(playerID)), message);
-        //    Battles.Add(battle);
-        //    return battle;
-        //}
+        public BattleInstance CreateBattle(IBattleInfo info, string message)
+        {
+            var battle = new BattleInstance(info, message);
+            Battles.Add(battle);
+            return battle;
+        }
 
 
         public void Dispose()

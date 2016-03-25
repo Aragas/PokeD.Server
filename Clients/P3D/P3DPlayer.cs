@@ -13,6 +13,7 @@ using PokeD.Core.Packets;
 using PokeD.Core.Packets.P3D.Battle;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Client;
+using PokeD.Core.Packets.P3D.Server;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
 
@@ -81,10 +82,10 @@ namespace PokeD.Server.Clients.P3D
 #endif
 
 
-        public P3DPlayer(ITCPClient clientWrapper, IServerModule server)
+        public P3DPlayer(ITCPClient clientWrapper, ModuleP3D module)
         {
             Stream = new P3DStream(clientWrapper);
-            Module = (ModuleP3D) server;
+            Module = module;
         }
 
 
@@ -95,7 +96,6 @@ namespace PokeD.Server.Clients.P3D
                 if (Stream.DataAvailable > 0)
                 {
                     var data = Stream.ReadLine();
-                    //LastMessage = DateTime.UtcNow;
 
                     HandleData(data);
                 }
@@ -119,6 +119,7 @@ namespace PokeD.Server.Clients.P3D
                             if (packet.TryParseData(data))
                             {
                                 HandlePacket(packet);
+
 #if DEBUG
                                 Received.Add(packet);
 #endif
@@ -155,7 +156,6 @@ namespace PokeD.Server.Clients.P3D
                     break;
 
                 case P3DPacketTypes.Ping:
-                    //LastPing = DateTime.UtcNow;
                     break;
 
                 case P3DPacketTypes.GameStateMessage:
@@ -236,6 +236,7 @@ namespace PokeD.Server.Clients.P3D
             Sended.Add(p3dPacket);
 #endif
         }
+        public override void SendMessage(string text) { SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = text }); }
 
 
         public override void LoadFromDB(Player data)

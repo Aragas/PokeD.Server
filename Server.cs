@@ -13,7 +13,7 @@ using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
 
 using PokeD.Core.Data.PokeApi;
-
+using PokeD.Server.Commands;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
 
@@ -32,6 +32,10 @@ namespace PokeD.Server
         public bool AutomaticErrorReporting { get; private set; } = true;
 
         public World World { get; set; } = new World();
+
+        public List<string> Blacklist { get; private set; }
+        public List<string> Whitelist { get; private set; }
+        public List<string> Oplist { get; private set; }
 
         #endregion Settings
 
@@ -59,6 +63,8 @@ namespace PokeD.Server
             Modules.Add(new ModuleNPC(this));
             Modules.Add(new ModuleNancy(this));
             Modules.Add(new ModuleP3DProxy(this));
+
+            CommandManager =     new CommandManager(this);
         }
 
         private static AsymmetricCipherKeyPair GenerateKeyPair()

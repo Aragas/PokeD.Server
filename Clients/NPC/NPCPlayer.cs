@@ -119,6 +119,7 @@ namespace PokeD.Server.Clients.NPC
 
             HandlePacket(protoOrigin);
         }
+        public override void SendMessage(string text) { }
 
         private void HandlePacket(P3DPacket packet)
         {

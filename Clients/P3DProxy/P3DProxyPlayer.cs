@@ -23,7 +23,7 @@ using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.P3DProxy
 {
-    public partial class P3DProxyPlayer : Client
+    public sealed partial class P3DProxyPlayer : Client
     {
         CultureInfo CultureInfo => CultureInfo.InvariantCulture;
 
@@ -84,10 +84,10 @@ namespace PokeD.Server.Clients.P3DProxy
 #endif
 
 
-        public P3DProxyPlayer(ITCPClient clientWrapper, IServerModule server, string name)
+        public P3DProxyPlayer(ITCPClient clientWrapper, ModuleP3DProxy module, string name)
         {
             Stream = new P3DStream(clientWrapper);
-            Module = (ModuleP3DProxy) server;
+            Module = module;
 
             Name = name;
         }
@@ -101,7 +101,6 @@ namespace PokeD.Server.Clients.P3DProxy
                 if (Stream.DataAvailable > 0)
                 {
                     var data = Stream.ReadLine();
-                    //LastMessage = DateTime.UtcNow;
 
                     HandleData(data);
                 }
@@ -133,6 +132,7 @@ namespace PokeD.Server.Clients.P3DProxy
                             if (packet.TryParseData(data))
                             {
                                 HandlePacket(packet);
+
 #if DEBUG
                                 Received.Add(packet);
 #endif
@@ -154,7 +154,7 @@ namespace PokeD.Server.Clients.P3DProxy
         }
         private void HandlePacket(P3DPacket packet)
         {
-            switch ((P3DPacketTypes) (int) packet.ID)
+            switch ((P3DPacketTypes) packet.ID)
             {
                 case P3DPacketTypes.ID:
                     HandleID((IDPacket) packet);
@@ -252,6 +252,7 @@ namespace PokeD.Server.Clients.P3DProxy
             Sended.Add(p3dPacket);
 #endif
         }
+        public override void SendMessage(string text) { }
 
         public override void LoadFromDB(Player data)
         {

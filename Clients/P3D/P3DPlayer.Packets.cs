@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 using Aragas.Core.Data;
 
@@ -9,7 +10,7 @@ using PokeD.Core.Packets.P3D.Client;
 using PokeD.Core.Packets.P3D.Server;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
-
+using PokeD.Server.Commands;
 using PokeD.Server.Extensions;
 
 namespace PokeD.Server.Clients.P3D
@@ -152,14 +153,18 @@ namespace PokeD.Server.Clients.P3D
             }
         }
 
+
         private void HandleChatMessage(ChatMessageGlobalPacket packet)
         {
             if (packet.Message.StartsWith("/"))
             {
+                // Do not show login command
                 if(!packet.Message.ToLower().StartsWith("/login"))
                     SendPacket(new ChatMessageGlobalPacket { Origin = ID, Message = packet.Message });
 
-                ExecuteCommand(packet.Message);
+                if (Module.Server.ProcessCommand(this, packet.Message)) return;
+                if (ExecuteCommand(packet.Message)) return;
+                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = "Invalid command!" });
             }
             else if(IsInitialized)
                 Module.SendGlobalMessage(this, packet.Message);

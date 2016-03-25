@@ -58,15 +58,15 @@ namespace PokeD.Server.Clients.SCON
 
 #if DEBUG
         // -- Debug -- //
-        List<SCONPacket> Received { get; } = new List<SCONPacket>();
-        List<SCONPacket> Sended { get; } = new List<SCONPacket>();
+        List<ProtobufPacket> Received { get; } = new List<ProtobufPacket>();
+        List<ProtobufPacket> Sended { get; } = new List<ProtobufPacket>();
         // -- Debug -- //
 #endif
 
-        public SCONClient(ITCPClient clientWrapper, IServerModule server)
+        public SCONClient(ITCPClient clientWrapper, ModuleSCON module)
         {
             Stream = new ProtobufStream(clientWrapper);
-            Module = (ModuleSCON) server;
+            Module = module;
 
             AuthorizationStatus = (EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0);
         }
@@ -107,7 +107,7 @@ namespace PokeD.Server.Clients.SCON
                     {
                         if (SCONPacketResponses.Packets[id] != null)
                         {
-                            var packet = SCONPacketResponses.Packets[id]().ReadPacket(reader) as SCONPacket;
+                            var packet = SCONPacketResponses.Packets[id]().ReadPacket(reader);
                             if (packet != null)
                             {
                                 HandlePacket(packet);
@@ -134,7 +134,7 @@ namespace PokeD.Server.Clients.SCON
         }
         private void HandlePacket(ProtobufPacket packet)
         {
-            switch ((SCONPacketTypes)(int) packet.ID)
+            switch ((SCONPacketTypes) (int) packet.ID)
             {
                 case SCONPacketTypes.AuthorizationRequest:
                     HandleAuthorizationRequest((AuthorizationRequestPacket) packet);
@@ -209,7 +209,7 @@ namespace PokeD.Server.Clients.SCON
         }
 
 
-        public override GameDataPacket GetDataPacket() { throw new NotImplementedException(); }
+        public override GameDataPacket GetDataPacket() { throw new NotSupportedException(); }
 
         public override void SendPacket(Packet packet)
         {
@@ -227,6 +227,7 @@ namespace PokeD.Server.Clients.SCON
             Sended.Add(sconPacket);
 #endif
         }
+        public override void SendMessage(string text) { }
 
         public override void LoadFromDB(Player data) { }
 

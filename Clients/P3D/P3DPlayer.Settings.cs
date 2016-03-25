@@ -6,7 +6,7 @@ namespace PokeD.Server.Clients.P3D
 {
     public partial class P3DPlayer
     {
-        private void ExecuteCommand(string message)
+        private bool ExecuteCommand(string message)
         {
             var command = message.Remove(0, 1).ToLower();
             message = message.Remove(0, 1);
@@ -30,7 +30,11 @@ namespace PokeD.Server.Clients.P3D
                 ExecuteMoveCommand(message.Remove(0, 5));
 
             else
-                SendCommandResponse("Invalid command!");
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private void ExecuteLoginCommand(string password)
@@ -71,7 +75,6 @@ namespace PokeD.Server.Clients.P3D
                     break;
             }
         }
-
         private void ExecuteUnmuteCommand(string name)
         {
             switch (Module.UnMutePlayer(ID, name))

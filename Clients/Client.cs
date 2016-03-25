@@ -30,6 +30,7 @@ namespace PokeD.Server.Clients
         public abstract GameDataPacket GetDataPacket();
 
         public abstract void SendPacket(Packet packet);
+        public abstract void SendMessage(string text);
 
         public abstract void LoadFromDB(Player data);
 

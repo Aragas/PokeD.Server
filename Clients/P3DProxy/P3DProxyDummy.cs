@@ -177,6 +177,10 @@ namespace PokeD.Server.Clients.P3DProxy
         public override GameDataPacket GetDataPacket() => new GameDataPacket { DataItems = GenerateDataItems() };
 
         public override void SendPacket(Packet packet) { }
+        public override void SendMessage(string text)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void LoadFromDB(Player data) { }
 

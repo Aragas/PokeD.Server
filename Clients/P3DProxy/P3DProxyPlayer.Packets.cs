@@ -6,7 +6,7 @@ using PokeD.Core.Packets.P3D.Trade;
 
 namespace PokeD.Server.Clients.P3DProxy
 {
-    public partial class P3DProxyPlayer
+    public sealed partial class P3DProxyPlayer
     {
         private void HandleID(IDPacket packet)
         {

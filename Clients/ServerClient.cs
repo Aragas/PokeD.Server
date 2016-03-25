@@ -31,6 +31,10 @@ namespace PokeD.Server.Clients
         public override GameDataPacket GetDataPacket() { throw new NotSupportedException(); }
 
         public override void SendPacket(Packet packet) { throw new NotSupportedException(); }
+        public override void SendMessage(string text)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void LoadFromDB(Player data) { throw new NotSupportedException(); }
 

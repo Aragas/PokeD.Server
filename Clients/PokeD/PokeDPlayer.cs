@@ -57,15 +57,10 @@ namespace PokeD.Server.Clients.PokeD
         public override Prefix Prefix { get; protected set; }
         public override string PasswordHash { get; set; }
 
-        //public string IP => Stream.Host; // TODO
-        public override string IP => "";
+        public override string IP => Stream.Host;
 
         public override DateTime ConnectionTime { get; } = DateTime.Now;
         public override CultureInfo Language { get; }
-
-        public DateTime LastMessage { get; private set; }
-
-        bool EncryptionEnabled => Module.EncryptionEnabled;
 
         bool IsInitialized { get; set; }
         
@@ -77,15 +72,15 @@ namespace PokeD.Server.Clients.PokeD
 
 #if DEBUG
         // -- Debug -- //
-        List<PokeDPacket> Received { get; } = new List<PokeDPacket>();
-        List<PokeDPacket> Sended { get; } = new List<PokeDPacket>();
+        List<ProtobufPacket> Received { get; } = new List<ProtobufPacket>();
+        List<ProtobufPacket> Sended { get; } = new List<ProtobufPacket>();
         // -- Debug -- //
 #endif
 
-        public PokeDPlayer(ITCPClient clientWrapper, IServerModule modulo)
+        public PokeDPlayer(ITCPClient clientWrapper, ModulePokeD module)
         {
             Stream = new ProtobufStream(clientWrapper);
-            Module = (ModulePokeD) modulo;
+            Module = module;
         }
 
 
@@ -105,7 +100,6 @@ namespace PokeD.Server.Clients.PokeD
 
                     var data = Stream.Receive(dataLength);
 
-                    LastMessage = DateTime.UtcNow;
                     HandleData(data);
                 }
             }
@@ -125,7 +119,7 @@ namespace PokeD.Server.Clients.PokeD
                     {
                         if (PokeDPacketResponses.Packets[id] != null)
                         {
-                            var packet = PokeDPacketResponses.Packets[id]().ReadPacket(reader) as PokeDPacket;
+                            var packet = PokeDPacketResponses.Packets[id]().ReadPacket(reader);
 
                             HandlePacket(packet);
 
@@ -149,7 +143,7 @@ namespace PokeD.Server.Clients.PokeD
             else
                 Logger.Log(LogType.Error, $"PokeD Reading Error: Packet Data is null.");
         }
-        private void HandlePacket(PokeDPacket packet)
+        private void HandlePacket(ProtobufPacket packet)
         {
             switch ((PokeDPacketTypes) (int) packet.ID)
             {
@@ -229,6 +223,7 @@ namespace PokeD.Server.Clients.PokeD
             Sended.Add(pokeDPacket);
 #endif
         }
+        public override void SendMessage(string text) { SendPacket(new ChatServerMessagePacket { Message = text }); }
 
         public override void LoadFromDB(Player data)
         {

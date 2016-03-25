@@ -10,7 +10,7 @@ namespace PokeD.Server
 {
     public partial class Server
     {
-        private static Client ServerClient = new ServerClient();
+        private static Client ServerClient { get; } = new ServerClient();
 
         public void ClientConnected(IServerModule caller, Client client)
         {
