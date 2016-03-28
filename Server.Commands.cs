@@ -17,10 +17,14 @@ namespace PokeD.Server
             var messageArray = commandWithoutSlash
                 .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-            if (messageArray.Length <= 0) return false; // command not found
+            if (messageArray.Length <= 0)
+                return false; // command not found
 
             var alias = messageArray[0];
             var trimmedMessageArray = messageArray.Skip(1).ToArray();
+
+            if(!CommandManager.Commands.Any(c => c.Name == alias || c.Aliases.Any(a => a == alias)))
+                return false; // command not found
 
             CommandManager.HandleCommand(client, alias, trimmedMessageArray);
             

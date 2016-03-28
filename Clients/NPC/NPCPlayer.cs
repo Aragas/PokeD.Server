@@ -17,7 +17,7 @@ using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
 
 using PokeD.Server.Data;
-using PokeD.Server.Database;
+using PokeD.Server.DatabaseData;
 
 namespace PokeD.Server.Clients.NPC
 {

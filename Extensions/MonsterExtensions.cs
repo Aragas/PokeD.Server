@@ -21,7 +21,7 @@ namespace PokeD.Server.Extensions
             dict.Add("NickName", $"[{monster.DisplayName}]");
             dict.Add("Level", $"[{(monster.Level > 0 ? monster.Level - 1 : monster.Level)}]");
             dict.Add("OT", $"[{(monster.CatchInfo.TrainerID < 0 ? (ushort) -monster.CatchInfo.TrainerID : monster.CatchInfo.TrainerID)}]");
-            dict.Add("Ability", $"[{string.Join(",", monster.Ability)}]");
+            dict.Add("Ability", $"[{string.Join(",", monster.Ability.ID)}]");
             dict.Add("Status", $"[]"); // TODO
             dict.Add("Nature", $"[{monster.Nature}]");
             dict.Add("CatchLocation", $"[{monster.CatchInfo.Location}]");
@@ -31,14 +31,14 @@ namespace PokeD.Server.Extensions
             dict.Add("Friendship", $"[{monster.Friendship}]");
             dict.Add("isShiny", $"[{(monster.IsShiny ? 1 : 0)}]");
 
-            var pp0 = PokeApiV2.GetMoves(new ResourceUri($"api/v2/move/{monster.Moves.Move_0.ID}/"))[0].pp;
-            var pp1 = PokeApiV2.GetMoves(new ResourceUri($"api/v2/move/{monster.Moves.Move_1.ID}/"))[0].pp;
-            var pp2 = PokeApiV2.GetMoves(new ResourceUri($"api/v2/move/{monster.Moves.Move_2.ID}/"))[0].pp;
-            var pp3 = PokeApiV2.GetMoves(new ResourceUri($"api/v2/move/{monster.Moves.Move_3.ID}/"))[0].pp;
-            dict.Add("Attack1", monster.Moves.Move_0.ID == 0 ? $"[]" : $"[{monster.Moves.Move_0.ID}, {pp0}, {pp0}]");
-            dict.Add("Attack2", monster.Moves.Move_1.ID == 0 ? $"[]" : $"[{monster.Moves.Move_1.ID}, {pp1}, {pp1}]");
-            dict.Add("Attack3", monster.Moves.Move_2.ID == 0 ? $"[]" : $"[{monster.Moves.Move_2.ID}, {pp2}, {pp2}]");
-            dict.Add("Attack4", monster.Moves.Move_3.ID == 0 ? $"[]" : $"[{monster.Moves.Move_3.ID}, {pp3}, {pp3}]");
+            var pp0 = monster.Moves.Move_0.ID == 0 ? 0 : PokeApiV2.GetMoves(new ResourceUri($"api/v2/move/{monster.Moves.Move_0.ID}/", true)).Result[0].pp;
+            var pp1 = monster.Moves.Move_1.ID == 0 ? 0 : PokeApiV2.GetMoves(new ResourceUri($"api/v2/move/{monster.Moves.Move_1.ID}/", true)).Result[0].pp;
+            var pp2 = monster.Moves.Move_2.ID == 0 ? 0 : PokeApiV2.GetMoves(new ResourceUri($"api/v2/move/{monster.Moves.Move_2.ID}/", true)).Result[0].pp;
+            var pp3 = monster.Moves.Move_3.ID == 0 ? 0 : PokeApiV2.GetMoves(new ResourceUri($"api/v2/move/{monster.Moves.Move_3.ID}/", true)).Result[0].pp;
+            dict.Add("Attack1", monster.Moves.Move_0.ID == 0 ? $"[]" : $"[{monster.Moves.Move_0.ID},{pp0},{pp0}]");
+            dict.Add("Attack2", monster.Moves.Move_1.ID == 0 ? $"[]" : $"[{monster.Moves.Move_1.ID},{pp1},{pp1}]");
+            dict.Add("Attack3", monster.Moves.Move_2.ID == 0 ? $"[]" : $"[{monster.Moves.Move_2.ID},{pp2},{pp2}]");
+            dict.Add("Attack4", monster.Moves.Move_3.ID == 0 ? $"[]" : $"[{monster.Moves.Move_3.ID},{pp3},{pp3}]");
 
             dict.Add("HP", $"[{monster.CurrentHP}]");
             dict.Add("EVs", $"[{monster.InstanceData.EV.HP},{monster.InstanceData.EV.Attack},{monster.InstanceData.EV.Defense},{monster.InstanceData.EV.SpecialAttack},{monster.InstanceData.EV.SpecialDefense},{monster.InstanceData.EV.Speed}]");

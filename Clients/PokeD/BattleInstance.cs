@@ -1,25 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-using Aragas.Core.Data;
 using Aragas.Core.Interfaces;
+
 using PokeD.Core.Data.PokeD.Battle;
-using PokeD.Core.Packets;
+using PokeD.Core.Packets.PokeD.Battle;
+using PokeD.Server.DatabaseData;
 
 namespace PokeD.Server.Clients.PokeD
 {
     public class BattleInstance : IUpdatable, IDisposable
     {
-        public int BattleID { get; set; }
+        private Server Server { get; }
 
-        private IBattleInfo Trainers { get; }
+        public Guid BattleID { get; set; } = Guid.NewGuid();
 
-        private string Message { get; }
+        public IBattleInfo Trainers { get; }
 
-        public BattleInstance(IBattleInfo players, string message)
+        public string Message { get; }
+
+        public BattleInstance(Server server, IBattleInfo players, string message)
         {
+            Server = server;
+
             Trainers = players;
             Message = message;
 
@@ -27,10 +31,10 @@ namespace PokeD.Server.Clients.PokeD
         }
         private void SendOffers()
         {
-            //var playerIDs = Trainers.Select(c => (VarInt)c.Client.ID).ToArray();
-            //
-            //foreach (var client in Trainers)
-            //    client.Client.SendPacket(new BattleOfferPacket { PlayerIDs = playerIDs, Message = Message });
+            var playerIDs = Trainers.IDs;
+
+            foreach (var client in Trainers.IDs.Select(clientID => Server.GetClient(clientID)))
+                client.SendPacket(new BattleOfferPacket { PlayerIDs = playerIDs.ToArray(), Message = Message});
         }
 
         Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
@@ -42,18 +46,22 @@ namespace PokeD.Server.Clients.PokeD
 
             UpdateWatch.Reset();
             UpdateWatch.Start();
-
-            //if (Trainers.All(trainer => trainer.LastCommand != null))
-            //    DoRound();
         }
-        private void DoRound()
+
+        public void LoadFromDB(Battle data) { }
+
+        public void EndBattle()
         {
 
 
-
-            //foreach (var trainer in Trainers)
-            //    trainer.LastCommand = null;
+            Server.DatabaseBatteSave(this);
         }
+
+        public void Dispose()
+        {
+
+        }
+
 
         public void AcceptBattle(Client player)
         {
@@ -66,10 +74,6 @@ namespace PokeD.Server.Clients.PokeD
             //    trainer.Client.SendPacket(new BattleCancelledPacket { Reason = $"Player {player.Name} has denied the battle request!" });
         }
 
-        public void Dispose()
-        {
-
-        }
 
         public void HandleAttack(Client client, int currentMonster, int targetMonster, int move)
         {

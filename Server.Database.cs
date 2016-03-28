@@ -2,13 +2,15 @@
 using System.Linq;
 
 using PokeD.Server.Clients;
-using PokeD.Server.Database;
+using PokeD.Server.Clients.PokeD;
+using PokeD.Server.Data;
+using PokeD.Server.DatabaseData;
 
 namespace PokeD.Server
 {
     public partial class Server
     {
-        public int PeekDBID(Client player)
+        public int DatabasePlayerGetID(Client player)
         {
             if (AllClients().Any(p => p.Name == player.Name))
                 return -1;
@@ -22,11 +24,26 @@ namespace PokeD.Server
             else
             {
                 Database.Insert(new Player(player));
-                return PeekDBID(player);
+                return DatabasePlayerGetID(player);
             }
         }
 
-        public bool LoadDBPlayer(Client player)
+        Stopwatch DatabasePlayerWatch { get; } = Stopwatch.StartNew();
+        public void DatabasePlayerSave(Client player, bool forceUpdate = false)
+        {
+            if (player.ID == 0)
+                return;
+
+            if (DatabasePlayerWatch.ElapsedMilliseconds < 2000 && !forceUpdate)
+                return;
+
+            Database.Update(new Player(player));
+
+            DatabasePlayerWatch.Reset();
+            DatabasePlayerWatch.Start();
+        }
+
+        public bool DatabasePlayerLoad(Client player)
         {
             if (AllClients().Any(p => p.Name == player.Name))
                 return false;
@@ -58,19 +75,18 @@ namespace PokeD.Server
             }
         }
 
-        Stopwatch UpdateDBPlayerWatch { get; } = Stopwatch.StartNew();
-        public void UpdateDBPlayer(Client player, bool forceUpdate = false)
+
+        public bool DatabaseBatteSave(BattleInstance battleInstance)
         {
-            if (player.ID == 0)
-                return;
+            Database.Insert(new Battle(battleInstance));
+            return true;
+        }
 
-            if (UpdateDBPlayerWatch.ElapsedMilliseconds < 2000 && !forceUpdate)
-                return;
 
-            Database.Update(new Player(player));
-
-            UpdateDBPlayerWatch.Reset();
-            UpdateDBPlayerWatch.Start();
+        public bool DatabaseTradeSave(TradeInstance tradeInstance)
+        {
+            Database.Insert(new Trade(Database, tradeInstance));
+            return true;
         }
     }
 }

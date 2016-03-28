@@ -99,7 +99,7 @@ namespace PokeD.Server
             else
             {
                 client = new P3DProxyDummy(sid, packet);
-                Server.PeekDBID(client);
+                Server.DatabasePlayerGetID(client);
                 Clients.Add(client);
 
                 Server.ClientConnected(this, client);

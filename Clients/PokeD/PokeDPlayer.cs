@@ -18,7 +18,7 @@ using PokeD.Core.Packets.PokeD.Overworld;
 using PokeD.Core.Packets.PokeD.Trade;
 
 using PokeD.Server.Data;
-using PokeD.Server.Database;
+using PokeD.Server.DatabaseData;
 
 namespace PokeD.Server.Clients.PokeD
 {

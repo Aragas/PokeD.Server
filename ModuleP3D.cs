@@ -229,7 +229,7 @@ namespace PokeD.Server
 
         public void PreAdd(Client client)
         {
-            if (Server.PeekDBID(client) != -1)
+            if (Server.DatabasePlayerGetID(client) != -1)
             {
                 P3DPlayerSendToClient(client, new IDPacket { PlayerID = client.ID }, -1);
                 P3DPlayerSendToClient(client, new WorldDataPacket { DataItems = Server.World.GenerateDataItems() }, -1);
@@ -243,7 +243,7 @@ namespace PokeD.Server
                 return;
             }
 
-            if (!Server.LoadDBPlayer(client))
+            if (!Server.DatabasePlayerLoad(client))
             {
                 RemoveClient(client, "Wrong password or you are already on server!");
                 return;
@@ -411,18 +411,21 @@ namespace PokeD.Server
                 P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
         }
 
+
         public void SendTradeRequest(Client sender, Monster monster, Client destClient)
         {
+            Server.OnClientTradeOffer(sender, monster, destClient);
+
             if (destClient is P3DPlayer)
-            {
-                P3DPlayerSendToClient(destClient, new TradeRequestPacket(), sender.ID);
-                P3DPlayerSendToClient(destClient, new TradeOfferPacket() { DataItems = monster.ToDataItems() }, sender.ID);
-            }
+                P3DPlayerSendToClient(destClient, new TradeOfferPacket {DataItems = monster.ToDataItems()}, sender.ID);
             else
                 Server.ClientTradeOffer(this, sender, monster, destClient);
         }
+
         public void SendTradeConfirm(Client sender, Client destClient)
         {
+            Server.OnClientTradeConfirm(destClient, sender);
+
             if (destClient is P3DPlayer)
                 P3DPlayerSendToClient(destClient, new TradeStartPacket(), sender.ID);
             else
@@ -430,6 +433,8 @@ namespace PokeD.Server
         }
         public void SendTradeCancel(Client sender, Client destClient)
         {
+            Server.OnClientTradeCancel(sender, destClient);
+
             if (destClient is P3DPlayer)
                 P3DPlayerSendToClient(destClient, new TradeQuitPacket(), sender.ID);
             else
@@ -541,7 +546,7 @@ namespace PokeD.Server
             if (client.PasswordHash == oldPassword)
                 client.PasswordHash = newPassword;
 
-            Server.UpdateDBPlayer(client, true);
+            Server.DatabasePlayerSave(client, true);
         }
 
 

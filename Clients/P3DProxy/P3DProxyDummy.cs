@@ -9,7 +9,7 @@ using PokeD.Core.Extensions;
 using PokeD.Core.Packets.P3D.Shared;
 
 using PokeD.Server.Data;
-using PokeD.Server.Database;
+using PokeD.Server.DatabaseData;
 
 namespace PokeD.Server.Clients.P3DProxy
 {

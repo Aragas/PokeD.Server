@@ -17,7 +17,7 @@ using PokeD.Core.Packets.SCON.Lua;
 using PokeD.Core.Packets.SCON.Status;
 
 using PokeD.Server.Data;
-using PokeD.Server.Database;
+using PokeD.Server.DatabaseData;
 
 namespace PokeD.Server.Clients.SCON
 {

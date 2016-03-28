@@ -13,12 +13,11 @@ using PokeD.Core.Packets;
 using PokeD.Core.Packets.P3D.Battle;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Client;
-using PokeD.Core.Packets.P3D.Server;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
 
 using PokeD.Server.Data;
-using PokeD.Server.Database;
+using PokeD.Server.DatabaseData;
 
 namespace PokeD.Server.Clients.P3D
 {

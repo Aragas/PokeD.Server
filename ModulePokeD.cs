@@ -112,12 +112,12 @@ namespace PokeD.Server
 
         public void PreAdd(Client client)
         {
-            if (Server.PeekDBID(client) != -1)
+            if (Server.DatabasePlayerGetID(client) != -1)
                 PokeDPlayerSendToClient(client, new AuthorizationCompletePacket { PlayerID = new VarInt(client.ID) });
         }
         public void AddClient(Client client)
         {
-            if (!Server.LoadDBPlayer(client))
+            if (!Server.DatabasePlayerLoad(client))
             {
                 RemoveClient(client, "Wrong password!");
                 return;
@@ -376,7 +376,7 @@ namespace PokeD.Server
 
         public BattleInstance CreateBattle(IBattleInfo info, string message)
         {
-            var battle = new BattleInstance(info, message);
+            var battle = new BattleInstance(Server, info, message);
             Battles.Add(battle);
             return battle;
         }

@@ -8,23 +8,26 @@ using PokeD.Server.Clients;
 using PokeD.Server.Data;
 using PokeD.Server.Extensions;
 
-namespace PokeD.Server.Database
+namespace PokeD.Server.DatabaseData
 {
-    public class Player : DatabaseTable
+    public sealed class Player : DatabaseTable<int>
     {
-		public Prefix Prefix{ get; set; }
-		public string Name{ get; set; }
-        public string PasswordHash { get; set; }
+        [AutoIncrement]
+        public override int Id { get; protected set; }
 
-        public string Position{ get; set; }
-		public string LevelFile{ get; set; }
 
-		public string LastIP{ get; set; }
-		public int LastConnectionTime{ get; set; }
+        public Prefix Prefix{ get; private set; }
+		public string Name{ get; private set; }
+        public string PasswordHash { get; private set; }
+
+        public string Position{ get; private set; }
+		public string LevelFile{ get; private set; }
+
+		public string LastIP{ get; private set; }
+		public int LastConnectionTime{ get; private set; }
 
 
         public Player() { }
-
         public Player(Client client)
         {
             if (client.ID >= 0)

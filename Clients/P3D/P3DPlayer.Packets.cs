@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 
 using Aragas.Core.Data;
 
@@ -10,7 +9,7 @@ using PokeD.Core.Packets.P3D.Client;
 using PokeD.Core.Packets.P3D.Server;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
-using PokeD.Server.Commands;
+
 using PokeD.Server.Extensions;
 
 namespace PokeD.Server.Clients.P3D
@@ -121,7 +120,7 @@ namespace PokeD.Server.Clients.P3D
             Module.SendPosition(this);
 
             if(IsInitialized)
-                Module.Server.UpdateDBPlayer(this);
+                Module.Server.DatabasePlayerSave(this);
 
             if(!Moving)
                 Module.P3DPlayerSendToAllClients(packet, packet.Origin);
@@ -212,14 +211,8 @@ namespace PokeD.Server.Clients.P3D
             else
                 Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeRequestPacket(), packet.Origin);
         }
-        private void HandleTradeJoin(TradeJoinPacket packet)
-        {
-            Module.P3DPlayerSendToClient(packet.Origin, new TradeJoinPacket(), packet.DestinationPlayerID);
-        }
-        private void HandleTradeQuit(TradeQuitPacket packet)
-        {
-            Module.SendTradeCancel(this, Module.Server.GetClient(packet.DestinationPlayerID));
-        }
+        private void HandleTradeJoin(TradeJoinPacket packet) { Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeJoinPacket(), packet.Origin); }
+        private void HandleTradeQuit(TradeQuitPacket packet) { Module.SendTradeCancel(this, Module.Server.GetClient(packet.DestinationPlayerID)); }
         private void HandleTradeOffer(TradeOfferPacket packet)
         {
             var destClient = Module.Server.GetClient(packet.DestinationPlayerID);
@@ -232,10 +225,7 @@ namespace PokeD.Server.Clients.P3D
                 Module.SendTradeCancel(this, destClient);
             }
         }
-        private void HandleTradeStart(TradeStartPacket packet)
-        {
-            Module.SendTradeConfirm(this, Module.Server.GetClient(packet.DestinationPlayerID));
-        }
+        private void HandleTradeStart(TradeStartPacket packet) { Module.SendTradeConfirm(this, Module.Server.GetClient(packet.DestinationPlayerID)); }
 
 
         private void HandleBattleClientData(BattleClientDataPacket packet)

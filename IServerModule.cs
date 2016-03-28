@@ -32,10 +32,16 @@ namespace PokeD.Server
         void SendGlobalMessage(Client sender, string message);
         void SendServerMessage(Client sender, string message);
 
-        //void BattleRequest();
         void SendTradeRequest(Client sender, Monster monster, Client destClient);
         void SendTradeConfirm(Client sender, Client destClient);
         void SendTradeCancel(Client sender, Client destClient);
+
+        //void SendBattleRequest(Client sender, Client destClient);
+        //void SendBattleAccept(Client sender);
+        //void SendBattleAttack(Client sender);
+        //void SendBattleItem(Client sender);
+        //void SendBattleSwitch(Client sender);
+        //void SendBattleFlee(Client sender);
 
         void SendPosition(Client sender);
     }

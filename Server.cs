@@ -13,9 +13,10 @@ using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
 
 using PokeD.Core.Data.PokeApi;
+
 using PokeD.Server.Commands;
 using PokeD.Server.Data;
-using PokeD.Server.Database;
+using PokeD.Server.DatabaseData;
 
 namespace PokeD.Server
 {
@@ -25,9 +26,21 @@ namespace PokeD.Server
 
         #region Settings
 
-        public string PlayerDatabaseName { get; set; } = "Players";
+        public string DatabaseName { get; set; } = "Database";
 
-        public string PokeApiUrl { get; set; } = "http://pokeapi.co/";
+        public string PokeApiUrl
+        {
+            get { return ResourceUri.URL; }
+            set
+            {
+                if (!value.EndsWith("/"))
+                    value = value + "/";
+                ResourceUri.URL = value;
+            }
+        }
+
+        public bool CacheData { get { return PokeApiV2.CacheData; } set { PokeApiV2.CacheData = value; } }
+        public bool PreCacheData { get; private set; } = false;
 
         public bool AutomaticErrorReporting { get; private set; } = true;
 
@@ -39,8 +52,7 @@ namespace PokeD.Server
 
         #endregion Settings
 
-        [ConfigIgnore]
-        public List<IServerModule> Modules { get; } = new List<IServerModule>();
+        List<IServerModule> Modules { get; } = new List<IServerModule>();
         
         IThread ListenToConnectionsThread { get; set; }
 
@@ -52,7 +64,7 @@ namespace PokeD.Server
         public AsymmetricCipherKeyPair RSAKeyPair { get; private set; }
         const int RsaKeySize = 1024;
 
-        Aragas.Core.Wrappers.Database Database { get; set; }
+        Database Database { get; set; }
 
 
         public Server()
@@ -64,7 +76,7 @@ namespace PokeD.Server
             Modules.Add(new ModuleNancy(this));
             Modules.Add(new ModuleP3DProxy(this));
 
-            CommandManager =     new CommandManager(this);
+            CommandManager = new CommandManager(this);
         }
 
         private static AsymmetricCipherKeyPair GenerateKeyPair()
@@ -84,19 +96,21 @@ namespace PokeD.Server
             if(!status)
                 Logger.Log(LogType.Warning, "Failed to load Server settings!");
 
-
-            if (!PokeApiUrl.EndsWith("/"))
-                PokeApiUrl = PokeApiUrl + "/";
-            ResourceUri.URL = PokeApiUrl;
-
+            
+            if(PreCacheData)
+                PreCache();
 
             Logger.Log(LogType.Info, "Generating RSA key pair.");
             RSAKeyPair = GenerateKeyPair();
 
 
-            Logger.Log(LogType.Info, $"Loading {PlayerDatabaseName}.");
-            Database = DatabaseWrapper.Create(PlayerDatabaseName);
+            Logger.Log(LogType.Info, $"Loading {DatabaseName}.");
+            Database = DatabaseWrapper.Create(DatabaseName);
             Database.CreateTable<Player>();
+            Database.CreateTable<Battle>();
+            Database.CreateTable<MonsterDB>();
+            Database.CreateTable<Trade>();
+            Database.CreateTable<TradePlayer>();
 
 
             Logger.Log(LogType.Info, $"Starting Server.");
@@ -109,7 +123,7 @@ namespace PokeD.Server
             ListenToConnectionsThread.Name = "ListenToConnectionsThread";
             ListenToConnectionsThread.IsBackground = true;
             ListenToConnectionsThread.Start();
-          
+            
 
             return status;
         }

@@ -1,4 +1,5 @@
-﻿using Aragas.Core.Wrappers;
+﻿using System.Collections.Generic;
+using Aragas.Core.Wrappers;
 
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Packets.P3D.Chat;
@@ -89,8 +90,8 @@ namespace PokeD.Server
 
         public void AddClient(Client client)
         {
-            Server.PeekDBID(client);
-            Server.LoadDBPlayer(client);
+            Server.DatabasePlayerGetID(client);
+            Server.DatabasePlayerLoad(client);
 
             Clients.Add(client);
 
@@ -98,7 +99,7 @@ namespace PokeD.Server
         }
         public void RemoveClient(Client client, string reason = "")
         {
-            Server.UpdateDBPlayer(client, true);
+            Server.DatabasePlayerSave(client, true);
 
             Clients.Remove(client);
 
