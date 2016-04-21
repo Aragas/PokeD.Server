@@ -65,9 +65,7 @@
     <Compile Include="Clients\NPC\NPCLoader.cs" />
     <Compile Include="Data\Prefix.cs" />
     <Compile Include="Data\TradeInstance.cs" />
-    <Compile Include="Extensions\DataItemsExtensions.cs" />
     <Compile Include="Extensions\DateTimeExtensions.cs" />
-    <Compile Include="Extensions\MonsterExtensions.cs" />
     <Compile Include="IServerModule.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Clients\P3D\P3DPlayer.Settings.cs" />

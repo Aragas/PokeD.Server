@@ -1,9 +1,10 @@
 ﻿using System;
 
+using Aragas.Core;
+
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Prng;
 
-using PokeD.Core;
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Data.PokeD.Trainer;
 using PokeD.Core.Extensions;

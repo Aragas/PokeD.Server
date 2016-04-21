@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using Aragas.Core;
 using Aragas.Core.Wrappers;
 
 using Org.BouncyCastle.Crypto.Digests;
@@ -10,7 +11,6 @@ using Org.BouncyCastle.Crypto.Prng;
 
 using PCLStorage;
 
-using PokeD.Core;
 using PokeD.Core.Data.SCON;
 using PokeD.Core.Extensions;
 using PokeD.Core.Packets.SCON;

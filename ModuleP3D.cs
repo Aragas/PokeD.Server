@@ -7,6 +7,7 @@ using Aragas.Core.Wrappers;
 
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Data.PokeD.Monster;
+using PokeD.Core.Extensions;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Server;
@@ -14,7 +15,6 @@ using PokeD.Core.Packets.P3D.Trade;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.P3D;
-using PokeD.Server.Extensions;
 
 namespace PokeD.Server
 {

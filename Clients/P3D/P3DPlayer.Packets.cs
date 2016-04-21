@@ -3,14 +3,13 @@
 using Aragas.Core.Data;
 
 using PokeD.Core.Data.P3D;
+using PokeD.Core.Extensions;
 using PokeD.Core.Packets.P3D.Battle;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Client;
 using PokeD.Core.Packets.P3D.Server;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
-
-using PokeD.Server.Extensions;
 
 namespace PokeD.Server.Clients.P3D
 {
