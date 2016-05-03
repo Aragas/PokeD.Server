@@ -4,9 +4,10 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 
-using Aragas.Core.Data;
-using Aragas.Core.Packets;
-using Aragas.Core.Wrappers;
+using Aragas.Network.Data;
+using Aragas.Network.Packets;
+
+using PCLExt.Lua;
 
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Extensions;
@@ -64,7 +65,7 @@ namespace PokeD.Server.Clients.NPC
         IServerModule Module { get; }
 
         LuaScript Lua { get; }
-        LuaTable Hook => LuaWrapper.ToLuaTable(Lua["hook"]);
+        LuaTable Hook => PCLExt.Lua.Lua.ToLuaTable(Lua["hook"]);
 
         
 #if DEBUG

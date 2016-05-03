@@ -5,13 +5,17 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-using Aragas.Core.Data;
-using Aragas.Core.Extensions;
-using Aragas.Core.Wrappers;
+using Aragas.Network.Data;
+using Aragas.Network.Extensions;
 
-using PCLStorage;
+using PCLExt.Config;
+using PCLExt.Network;
+using PCLExt.Thread;
+using PCLExt.FileStorage;
+
 using PokeD.Core.Data.PokeD.Battle;
 using PokeD.Core.Data.PokeD.Monster;
+using PokeD.Core.IO;
 using PokeD.Core.Packets;
 using PokeD.Core.Packets.PokeD.Authorization;
 using PokeD.Core.Packets.PokeD.Chat;
@@ -21,6 +25,7 @@ using PokeD.Core.Packets.PokeD.Trade;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.PokeD;
+using PokeD.Server.Extensions;
 
 using TMXParserPCL;
 
@@ -30,7 +35,7 @@ namespace PokeD.Server
     {
         const string FileName = "ModulePokeD";
 
-        static IFolder Maps => FileSystemWrapper.ContentFolder.CreateFolderAsync("Maps", CreationCollisionOption.OpenIfExists).Result;
+        static IFolder Maps => Storage.ContentFolder.CreateFolderAsync("Maps", CreationCollisionOption.OpenIfExists).Result;
         static IFolder TileSets => Maps.CreateFolderAsync("TileSets", CreationCollisionOption.OpenIfExists).Result;
 
         #region Settings
@@ -69,7 +74,7 @@ namespace PokeD.Server
 
         public bool Start()
         {
-            var status = FileSystemWrapper.LoadSettings(FileName, this);
+            var status = FileSystemExtensions.LoadSettings(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to load PokeD settings!");
 
@@ -85,7 +90,7 @@ namespace PokeD.Server
         }
         public void Stop()
         {
-            var status = FileSystemWrapper.SaveSettings(FileName, this);
+            var status = FileSystemExtensions.SaveSettings(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save PokeD settings!");
 
@@ -99,7 +104,7 @@ namespace PokeD.Server
 
         public void StartListen()
         {
-            Listener = TCPListenerWrapper.Create(Port);
+            Listener = TCPListener.Create(Port);
             Listener.Start();
         }
         public void CheckListener()
@@ -310,7 +315,7 @@ namespace PokeD.Server
 
                 Server.ClientTradeConfirm(this, sender, destClient);
 
-                ThreadWrapper.Sleep(5000);
+                Thread.Sleep(5000);
             }
             else
                 Server.ClientTradeConfirm(this, sender, destClient);

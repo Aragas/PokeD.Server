@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 
-using Aragas.Core.Wrappers;
+using PCLExt.Config;
+using PCLExt.Network;
 
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Packets.P3D.Chat;
@@ -9,6 +10,7 @@ using PokeD.Core.Packets.PokeD.Chat;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.P3DProxy;
+using PokeD.Server.Extensions;
 
 namespace PokeD.Server
 {
@@ -46,7 +48,7 @@ namespace PokeD.Server
 
         public bool Start()
         {
-            var status = FileSystemWrapper.LoadSettings(FileName, this);
+            var status = FileSystemExtensions.LoadSettings(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to load P3DProxy settings!");
 
@@ -63,7 +65,7 @@ namespace PokeD.Server
         }
         public void Stop()
         {
-            var status = FileSystemWrapper.SaveSettings(FileName, this);
+            var status = FileSystemExtensions.SaveSettings(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save P3DProxy settings!");
 
@@ -77,7 +79,7 @@ namespace PokeD.Server
 
         public void StartListen()
         {
-            var client = TCPClientWrapper.Create();
+            var client = TCPClient.Create();
             client.Connect(Host, Port);
 
             Proxy = new P3DProxyPlayer(client, this, PlayerName);

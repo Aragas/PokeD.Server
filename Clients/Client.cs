@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Globalization;
 
-using Aragas.Core.Data;
-using Aragas.Core.Interfaces;
-using Aragas.Core.Packets;
+using Aragas.Network.Data;
+using Aragas.Network.Packets;
 
+using PokeD.Core;
 using PokeD.Core.Packets.P3D.Shared;
 
 using PokeD.Server.Data;

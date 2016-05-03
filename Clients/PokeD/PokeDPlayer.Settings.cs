@@ -1,4 +1,4 @@
-using Aragas.Core.Data;
+using Aragas.Network.Data;
 
 using PokeD.Core.Packets.P3D.Chat;
 

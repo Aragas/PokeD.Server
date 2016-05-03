@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Globalization;
 
-using Aragas.Core.Data;
-using Aragas.Core.IO;
-using Aragas.Core.Packets;
-using Aragas.Core.Wrappers;
+using Aragas.Network.Data;
+using Aragas.Network.IO;
+using Aragas.Network.Packets;
+
+using PCLExt.Network;
 
 using PokeD.Core.Data.PokeD.Trainer;
 using PokeD.Core.Packets;

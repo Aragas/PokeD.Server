@@ -1,6 +1,6 @@
 ﻿using System;
 
-using Aragas.Core.Wrappers;
+using PCLExt.Input;
 
 namespace PokeD.Server
 {
@@ -58,13 +58,13 @@ namespace PokeD.Server
     {
         public static void Log(LogType type, string message)
         {
-            InputWrapper.LogWriteLine(DateTime.Now, $"[{type}]: {message}");
+            Input.LogWriteLine(DateTime.Now, $"[{type}]: {message}");
             /*InputWrapper.LogWriteLine($"[{DateTime.Now:yyyy-MM-dd_HH:mm:ss}]_[{type}]: {message}");*/
         }
 
         public static void LogChatMessage(string player, string message)
         {
-            InputWrapper.LogWriteLine(DateTime.Now, $"<{player}>: {message}");
+            Input.LogWriteLine(DateTime.Now, $"<{player}>: {message}");
             /*InputWrapper.LogWriteLine($"[{DateTime.Now:yyyy-MM-dd_HH:mm:ss}]_<{player}>_{message}");*/
         }
     }

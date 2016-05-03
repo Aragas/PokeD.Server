@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-using Aragas.Core.Wrappers;
+using PCLExt.Config;
+using PCLExt.Network;
+using PCLExt.Thread;
 
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Data.PokeD.Monster;
@@ -15,6 +17,7 @@ using PokeD.Core.Packets.P3D.Trade;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.P3D;
+using PokeD.Server.Extensions;
 
 namespace PokeD.Server
 {
@@ -80,7 +83,7 @@ namespace PokeD.Server
 
         public bool Start()
         {
-            var status = FileSystemWrapper.LoadSettings(FileName, this);
+            var status = FileSystemExtensions.LoadSettings(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to load P3D settings!");
 
@@ -94,12 +97,12 @@ namespace PokeD.Server
             
             if (MoveCorrectionEnabled)
             {
-                PlayerWatcherThread = ThreadWrapper.Create(PlayerWatcherCycle);
+                PlayerWatcherThread = Thread.Create(PlayerWatcherCycle);
                 PlayerWatcherThread.Name = "PlayerWatcherThread";
                 PlayerWatcherThread.IsBackground = true;
                 PlayerWatcherThread.Start();
 
-                PlayerCorrectionThread = ThreadWrapper.Create(PlayerCorrectionCycle);
+                PlayerCorrectionThread = Thread.Create(PlayerCorrectionCycle);
                 PlayerCorrectionThread.Name = "PlayerCorrectionThread";
                 PlayerCorrectionThread.IsBackground = true;
                 PlayerCorrectionThread.Start();
@@ -109,7 +112,7 @@ namespace PokeD.Server
         }
         public void Stop()
         {
-            var status = FileSystemWrapper.SaveSettings(FileName, this);
+            var status = FileSystemExtensions.SaveSettings(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save P3D settings!");
 
@@ -157,7 +160,7 @@ namespace PokeD.Server
 
                     var time = (int)(400 - watch.ElapsedMilliseconds);
                     if (time < 0) time = 0;
-                    ThreadWrapper.Sleep(time);
+                    Thread.Sleep(time);
                 }
                 watch.Reset();
                 watch.Start();
@@ -206,7 +209,7 @@ namespace PokeD.Server
 
                     var time = (int)(5 - watch.ElapsedMilliseconds);
                     if (time < 0) time = 0;
-                    ThreadWrapper.Sleep(time);
+                    Thread.Sleep(time);
                 }
                 watch.Reset();
                 watch.Start();
@@ -216,7 +219,7 @@ namespace PokeD.Server
 
         public void StartListen()
         {
-            Listener = TCPListenerWrapper.Create(Port);
+            Listener = TCPListener.Create(Port);
             Listener.Start();
         }
         public void CheckListener()

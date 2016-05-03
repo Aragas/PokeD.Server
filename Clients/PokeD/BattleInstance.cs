@@ -2,10 +2,10 @@
 using System.Diagnostics;
 using System.Linq;
 
-using Aragas.Core.Interfaces;
-
+using PokeD.Core;
 using PokeD.Core.Data.PokeD.Battle;
 using PokeD.Core.Packets.PokeD.Battle;
+
 using PokeD.Server.DatabaseData;
 
 namespace PokeD.Server.Clients.PokeD

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-using Aragas.Core.Wrappers;
+using PCLExt.Input;
 
 using PokeD.Core.Data.PokeApi;
 
@@ -41,7 +41,7 @@ namespace PokeD.Server
         {
             try
             {
-                InputWrapper.ConsoleWrite($"Caching Pokemon {index.ToString("000")}");
+                Input.ConsoleWrite($"Caching Pokemon {index.ToString("000")}");
                 await PokeApiV2.GetPokemon(new ResourceUri($"api/v2/pokemon/{index}/", true));
             }
             catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Pokemon {index.ToString("000")}"); }
@@ -50,7 +50,7 @@ namespace PokeD.Server
         {
             try
             {
-                InputWrapper.ConsoleWrite($"Caching Pokemon Species {index.ToString("000")}");
+                Input.ConsoleWrite($"Caching Pokemon Species {index.ToString("000")}");
                 await PokeApiV2.GetPokemonSpecies(new ResourceUri($"api/v2/pokemon-species/{index}/", true));
             }
             catch (Exception)
@@ -62,7 +62,7 @@ namespace PokeD.Server
         {
             try
             {
-                InputWrapper.ConsoleWrite($"Caching Item {index.ToString("000")}");
+                Input.ConsoleWrite($"Caching Item {index.ToString("000")}");
                 await PokeApiV2.GetItems(new ResourceUri($"api/v2/item/{index}/", true));
             }
             catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Item {index.ToString("000")}"); }
@@ -73,7 +73,7 @@ namespace PokeD.Server
             {
                 try
                 {
-                    InputWrapper.ConsoleWrite($"Caching Type {i.ToString("00")}");
+                    Input.ConsoleWrite($"Caching Type {i.ToString("00")}");
                     await PokeApiV2.GetTypes(new ResourceUri($"api/v2/type/{i}/", true));
                 }
                 catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Type {i.ToString("00")}"); }
@@ -85,7 +85,7 @@ namespace PokeD.Server
             {
                 try
                 {
-                    InputWrapper.ConsoleWrite($"Caching Ability {i.ToString("000")}");
+                    Input.ConsoleWrite($"Caching Ability {i.ToString("000")}");
                     await PokeApiV2.GetAbilities(new ResourceUri($"api/v2/ability/{i}/", true));
                 }
                 catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Ability {i.ToString("000")}"); }
@@ -97,7 +97,7 @@ namespace PokeD.Server
             {
                 try
                 {
-                    InputWrapper.ConsoleWrite($"Caching Egg Group {i.ToString("00")}");
+                    Input.ConsoleWrite($"Caching Egg Group {i.ToString("00")}");
                     await PokeApiV2.GetEggGroups(new ResourceUri($"api/v2/egg-group/{i}/", true));
                 }
                 catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Egg Group {i.ToString("00")}"); }

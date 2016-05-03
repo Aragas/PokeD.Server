@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 
-using Aragas.Core.Data;
+using Aragas.Network.Data;
 
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Extensions;

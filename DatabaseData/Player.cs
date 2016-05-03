@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
 
-using Aragas.Core.Wrappers;
+using PCLExt.Database;
 
 using PokeD.Core.Extensions;
 

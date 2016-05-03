@@ -2,7 +2,7 @@
 using System;
 using System.Linq;
 
-using Aragas.Core.Data;
+using Aragas.Network.Data;
 
 using Newtonsoft.Json;
 

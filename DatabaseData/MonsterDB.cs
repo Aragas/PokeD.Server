@@ -1,6 +1,6 @@
 ﻿using System;
 
-using Aragas.Core.Wrappers;
+using PCLExt.Database;
 
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Data.PokeD.Monster.Data;

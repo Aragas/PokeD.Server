@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-using Aragas.Core.Wrappers;
+using PCLExt.AppDomain;
 
 using PokeD.Server.Clients;
 
@@ -25,7 +25,7 @@ namespace PokeD.Server.Commands
         }
         private void AutoLoadCommands()
         {
-            var asm = AppDomainWrapper.GetAssembly(typeof (CommandManager));
+            var asm = AppDomain.GetAssembly(typeof (CommandManager));
 
             var types = asm.DefinedTypes
                 .Where(t => typeof(Command).GetTypeInfo().IsAssignableFrom(t))

@@ -1,7 +1,6 @@
 using System;
 
-using Aragas.Core.Interfaces;
-
+using PokeD.Core;
 using PokeD.Core.Data.PokeD.Monster;
 
 using PokeD.Server.Clients;

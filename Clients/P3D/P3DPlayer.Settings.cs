@@ -1,6 +1,6 @@
-using Aragas.Core.Data;
-
 using PokeD.Core.Packets.P3D.Chat;
+
+using Aragas.Network.Data;
 
 namespace PokeD.Server.Clients.P3D
 {

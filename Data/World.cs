@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-using Aragas.Core.Interfaces;
-
+using PokeD.Core;
 using PokeD.Core.Data.P3D;
 
 namespace PokeD.Server.Data

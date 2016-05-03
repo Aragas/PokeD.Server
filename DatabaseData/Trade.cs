@@ -1,6 +1,6 @@
 ﻿using System;
 
-using Aragas.Core.Wrappers;
+using PCLExt.Database;
 
 using PokeD.Server.Data;
 
@@ -16,7 +16,7 @@ namespace PokeD.Server.DatabaseData
 
 
         public Trade() { }
-        public Trade(Database database, TradeInstance trade)
+        public Trade(BaseDatabase database, TradeInstance trade)
         {
             var tradePlayer0 = new TradePlayer(database, trade.Player_0_ID, trade.Player_0_Monster);
             database.Insert(tradePlayer0);

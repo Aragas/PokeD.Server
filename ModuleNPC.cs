@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
-using Aragas.Core.Wrappers;
+﻿using PCLExt.Config;
 
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Packets.P3D.Chat;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.NPC;
+using PokeD.Server.Extensions;
 
 namespace PokeD.Server
 {
@@ -36,7 +36,7 @@ namespace PokeD.Server
 
         public bool Start()
         {
-            var status = FileSystemWrapper.LoadSettings(FileName, this);
+            var status = FileSystemExtensions.LoadSettings(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to load NPC settings!");
 
@@ -54,7 +54,7 @@ namespace PokeD.Server
         }
         public void Stop()
         {
-            var status = FileSystemWrapper.SaveSettings(FileName, this);
+            var status = FileSystemExtensions.SaveSettings(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save NPC settings!");
             

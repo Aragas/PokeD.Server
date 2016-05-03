@@ -1,6 +1,6 @@
 ﻿using System;
 
-using Aragas.Core.Wrappers;
+using PCLExt.Database;
 
 using PokeD.Server.Clients.PokeD;
 

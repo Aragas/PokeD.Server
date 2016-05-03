@@ -1,13 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-using Aragas.Core.Wrappers;
-
 using Newtonsoft.Json;
+
+using PCLExt.Config;
+using PCLExt.Nancy;
 
 using PokeD.Core.Data.PokeD.Monster;
     
 using PokeD.Server.Clients;
+using PokeD.Server.Extensions;
 
 namespace PokeD.Server
 {
@@ -55,7 +57,7 @@ namespace PokeD.Server
 
         public bool Start()
         {
-            var status = FileSystemWrapper.LoadSettings(FileName, this);
+            var status = FileSystemExtensions.LoadSettings(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to load Nancy settings!");
 
@@ -71,7 +73,7 @@ namespace PokeD.Server
         }
         public void Stop()
         {
-            var status = FileSystemWrapper.SaveSettings(FileName, this);
+            var status = FileSystemExtensions.SaveSettings(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save Nancy settings!");
             
@@ -88,8 +90,8 @@ namespace PokeD.Server
             var dataApi = new NancyData();
             dataApi.Add("online", GetOnlineClients);
 
-            NancyWrapper.SetDataApi(dataApi);
-            NancyWrapper.Start(Host, Port);
+            Nancy.SetDataApi(dataApi);
+            Nancy.Start(Host, Port);
         }
 
         private dynamic GetOnlineClients(dynamic args)
@@ -127,7 +129,7 @@ namespace PokeD.Server
 
         public void Dispose()
         {
-            NancyWrapper.Stop();
+            Nancy.Stop();
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System;
 
-using Aragas.Core;
+using Aragas.Network;
 
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Prng;
@@ -14,7 +14,6 @@ using PokeD.Core.Packets.PokeD.Chat;
 using PokeD.Core.Packets.PokeD.Overworld.Map;
 using PokeD.Core.Packets.PokeD.Overworld;
 using PokeD.Core.Packets.PokeD.Trade;
-
 
 namespace PokeD.Server.Clients.PokeD
 {

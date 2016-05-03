@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
-
-using Aragas.Core.Interfaces;
-using Aragas.Core.Wrappers;
 
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Digests;
@@ -12,17 +10,28 @@ using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
 
-using PokeD.Core.Data.PokeApi;
+using PCLExt.Config;
+using PCLExt.Database;
+using PCLExt.FileStorage;
+using PCLExt.Thread;
 
+using PokeD.Core;
+using PokeD.Core.Data.PokeApi;
 using PokeD.Server.Commands;
 using PokeD.Server.Data;
 using PokeD.Server.DatabaseData;
+using PokeD.Server.Extensions;
 
 namespace PokeD.Server
 {
     public partial class Server : IUpdatable, IDisposable
     {
         const string FileName = "Server";
+
+        [ConfigIgnore]
+        public ConfigType ConfigType { get; }
+        [ConfigIgnore]
+        public DatabaseType DatabaseType { get; }
 
         #region Settings
 
@@ -52,7 +61,8 @@ namespace PokeD.Server
 
         #endregion Settings
 
-        List<IServerModule> Modules { get; } = new List<IServerModule>();
+        [ConfigIgnore]
+        public List<IServerModule> Modules { get; } = new List<IServerModule>();
         
         IThread ListenToConnectionsThread { get; set; }
 
@@ -64,11 +74,14 @@ namespace PokeD.Server
         public AsymmetricCipherKeyPair RSAKeyPair { get; private set; }
         const int RsaKeySize = 1024;
 
-        Database Database { get; set; }
+        BaseDatabase BaseDatabase { get; set; }
 
 
-        public Server()
+        public Server(ConfigType configType, DatabaseType databaseType)
         {
+            ConfigType = configType;
+            DatabaseType = databaseType;
+
             Modules.Add(new ModuleP3D(this));
             Modules.Add(new ModuleSCON(this));
             Modules.Add(new ModulePokeD(this));
@@ -92,7 +105,7 @@ namespace PokeD.Server
 
         public bool Start()
         {
-            var status = FileSystemWrapper.LoadSettings(FileName, this);
+            var status = FileSystemExtensions.LoadSettings(ConfigType, FileName, this);
             if(!status)
                 Logger.Log(LogType.Warning, "Failed to load Server settings!");
 
@@ -105,12 +118,12 @@ namespace PokeD.Server
 
 
             Logger.Log(LogType.Info, $"Loading {DatabaseName}.");
-            Database = DatabaseWrapper.Create(DatabaseName);
-            Database.CreateTable<Player>();
-            Database.CreateTable<Battle>();
-            Database.CreateTable<MonsterDB>();
-            Database.CreateTable<Trade>();
-            Database.CreateTable<TradePlayer>();
+            BaseDatabase = Database.Create(Path.Combine(Storage.DatabaseFolder.Path, DatabaseName), DatabaseType);
+            BaseDatabase.CreateTable<Player>();
+            BaseDatabase.CreateTable<Battle>();
+            BaseDatabase.CreateTable<MonsterDB>();
+            BaseDatabase.CreateTable<Trade>();
+            BaseDatabase.CreateTable<TradePlayer>();
 
 
             Logger.Log(LogType.Info, $"Starting Server.");
@@ -119,7 +132,7 @@ namespace PokeD.Server
             foreach (var module in toRemove)
                 Modules.Remove(module);
 
-            ListenToConnectionsThread = ThreadWrapper.Create(ListenToConnectionsCycle);
+            ListenToConnectionsThread = Thread.Create(ListenToConnectionsCycle);
             ListenToConnectionsThread.Name = "ListenToConnectionsThread";
             ListenToConnectionsThread.IsBackground = true;
             ListenToConnectionsThread.Start();
@@ -129,7 +142,7 @@ namespace PokeD.Server
         }
         public bool Stop()
         {
-            var status = FileSystemWrapper.SaveSettings(FileName, this);
+            var status = FileSystemExtensions.SaveSettings(ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save Server settings!");
 
@@ -171,7 +184,7 @@ namespace PokeD.Server
 
                     var time = (int) (250 - watch.ElapsedMilliseconds);
                     if (time < 0) time = 0;
-                    ThreadWrapper.Sleep(time);
+                    Thread.Sleep(time);
                 }
 
                 watch.Reset();

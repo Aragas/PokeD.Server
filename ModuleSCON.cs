@@ -1,8 +1,10 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-using Aragas.Core.Data;
-using Aragas.Core.Wrappers;
+using Aragas.Network.Data;
+
+using PCLExt.Config;
+using PCLExt.Network;
 
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Packets;
@@ -11,6 +13,7 @@ using PokeD.Core.Packets.SCON.Chat;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.SCON;
+using PokeD.Server.Extensions;
 
 namespace PokeD.Server
 {
@@ -53,7 +56,7 @@ namespace PokeD.Server
 
         public bool Start()
         {
-            var status = FileSystemWrapper.LoadSettings(FileName, this);
+            var status = FileSystemExtensions.LoadSettings(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to load SCON settings!");
 
@@ -69,7 +72,7 @@ namespace PokeD.Server
         }
         public void Stop()
         {
-            var status = FileSystemWrapper.SaveSettings(FileName, this);
+            var status = FileSystemExtensions.SaveSettings(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save SCON settings!");
             
@@ -83,7 +86,7 @@ namespace PokeD.Server
         
         public void StartListen()
         {
-            Listener = TCPListenerWrapper.Create(Port);
+            Listener = TCPListener.Create(Port);
             Listener.Start();
         }
         public void CheckListener()

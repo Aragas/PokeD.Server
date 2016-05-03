@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-using Aragas.Core;
-using Aragas.Core.Wrappers;
+using Aragas.Network;
 
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Prng;
 
-using PCLStorage;
+using PCLExt.FileStorage;
 
 using PokeD.Core.Data.SCON;
 using PokeD.Core.Extensions;
+using PokeD.Core.IO;
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
 using PokeD.Core.Packets.SCON.Chat;
@@ -140,7 +140,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            var list = FileSystemWrapper.LogFolder.GetFilesAsync().Result;
+            var list = Storage.LogFolder.GetFilesAsync().Result;
 
             var logs = new List<Log>();
             foreach (var file in list)
@@ -156,8 +156,8 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            if (FileSystemWrapper.LogFolder.CheckExistsAsync(packet.LogFilename).Result == ExistenceCheckResult.FileExists)
-                using (var reader = new StreamReader(FileSystemWrapper.LogFolder.GetFileAsync(packet.LogFilename).Result.OpenAsync(FileAccess.Read).Result))
+            if (Storage.LogFolder.CheckExistsAsync(packet.LogFilename).Result == ExistenceCheckResult.FileExists)
+                using (var reader = new StreamReader(Storage.LogFolder.GetFileAsync(packet.LogFilename).Result.OpenAsync(FileAccess.Read).Result))
                 {
                     var logText = reader.ReadToEnd();
                     SendPacket(new LogFileResponsePacket { LogFilename = packet.LogFilename, LogFile = logText });
@@ -172,7 +172,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            var list = FileSystemWrapper.CrashLogFolder.GetFilesAsync().Result;
+            var list = Storage.CrashLogFolder.GetFilesAsync().Result;
 
             var crashLogs = new List<Log>();
             foreach (var file in list)
@@ -188,8 +188,8 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            if (FileSystemWrapper.CrashLogFolder.CheckExistsAsync(packet.CrashLogFilename).Result == ExistenceCheckResult.FileExists)
-                using (var reader = new StreamReader(FileSystemWrapper.CrashLogFolder.GetFileAsync(packet.CrashLogFilename).Result.OpenAsync(FileAccess.Read).Result))
+            if (Storage.CrashLogFolder.CheckExistsAsync(packet.CrashLogFilename).Result == ExistenceCheckResult.FileExists)
+                using (var reader = new StreamReader(Storage.CrashLogFolder.GetFileAsync(packet.CrashLogFilename).Result.OpenAsync(FileAccess.Read).Result))
                 {
                     var logText = reader.ReadToEnd();
                     SendPacket(new CrashLogFileResponsePacket {CrashLogFilename = packet.CrashLogFilename, CrashLogFile = logText});
