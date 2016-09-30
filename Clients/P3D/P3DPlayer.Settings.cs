@@ -1,6 +1,6 @@
-using PokeD.Core.Packets.P3D.Chat;
-
 using Aragas.Network.Data;
+
+using PokeD.Core.Packets.P3D.Chat;
 
 namespace PokeD.Server.Clients.P3D
 {
@@ -62,15 +62,15 @@ namespace PokeD.Server.Clients.P3D
             var name = message.Remove(0, 5);
             switch (Module.MutePlayer(ID, name))
             {
-                case MuteStatus.Completed:
+                case ModuleP3D.MuteStatus.Completed:
                     SendCommandResponse($"Successfull muted {name} !");
                     break;
 
-                case MuteStatus.MutedYourself:
+                case ModuleP3D.MuteStatus.MutedYourself:
                     SendCommandResponse("You can't mute yourself!");
                     break;
 
-                case MuteStatus.PlayerNotFound:
+                case ModuleP3D.MuteStatus.PlayerNotFound:
                     SendCommandResponse($"Player {name} not found.");
                     break;
             }
@@ -79,15 +79,15 @@ namespace PokeD.Server.Clients.P3D
         {
             switch (Module.UnMutePlayer(ID, name))
             {
-                case MuteStatus.Completed:
+                case ModuleP3D.MuteStatus.Completed:
                     SendCommandResponse($"Successfull unmuted {name} !");
                     break;
 
-                case MuteStatus.IsNotMuted:
+                case ModuleP3D.MuteStatus.IsNotMuted:
                     SendCommandResponse($"Player {name} is not muted!");
                     break;
 
-                case MuteStatus.PlayerNotFound:
+                case ModuleP3D.MuteStatus.PlayerNotFound:
                     SendCommandResponse($"Player {name} not found.");
                     break;
             }

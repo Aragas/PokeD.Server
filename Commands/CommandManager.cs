@@ -25,18 +25,15 @@ namespace PokeD.Server.Commands
         }
         private void AutoLoadCommands()
         {
-            var asm = AppDomain.GetAssembly(typeof (CommandManager));
+            var types = AppDomain.GetAssembly(typeof(CommandManager)).DefinedTypes
+                .Where(typeInfo => typeof(Command).GetTypeInfo().IsAssignableFrom(typeInfo))
+                .Where(typeInfo => !typeInfo.IsDefined(typeof(DisableAutoLoadAttribute), true))
+                .Where(typeInfo => !typeInfo.IsAbstract);
 
-            var types = asm.DefinedTypes
-                .Where(t => typeof(Command).GetTypeInfo().IsAssignableFrom(t))
-                .Where(t => !t.IsDefined(typeof(DisableAutoLoadAttribute), true))
-                .Where(t => !t.IsAbstract);
-
-            foreach (var command in types.Select(type => (Command) Activator.CreateInstance(type.AsType())))
-            {
-                command.CommandManager = this;
+            foreach (var command in types.Where(type => type != typeof(CommandLua).GetTypeInfo()).Select(type => (Command) Activator.CreateInstance(type.AsType(), this)))
                 Commands.Add(command);
-            }
+
+            Commands.AddRange(CommandLuaLoader.LoadCommands(this));
         }
 
         public void HandleCommand(Client client, string alias, string[] arguments)

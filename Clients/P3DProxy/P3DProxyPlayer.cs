@@ -11,14 +11,13 @@ using PCLExt.Network;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Extensions;
 using PokeD.Core.IO;
-using PokeD.Core.Packets;
+using PokeD.Core.Packets.P3D;
 using PokeD.Core.Packets.P3D.Battle;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Client;
 using PokeD.Core.Packets.P3D.Server;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
-
 using PokeD.Server.Data;
 using PokeD.Server.DatabaseData;
 
@@ -42,8 +41,8 @@ namespace PokeD.Server.Clients.P3DProxy
         public override string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {_name}" : _name; } protected set { _name = value; } }
 
 
-        public override string LevelFile { get { return "None"; } protected set { throw new NotSupportedException(); } }
-        public override Vector3 Position { get { return new Vector3(0, 0, 0); } protected set { throw new NotSupportedException(); } }
+        public override string LevelFile { get { return "None"; } set { throw new NotSupportedException(); } }
+        public override Vector3 Position { get { return new Vector3(0, 0, 0); } set { throw new NotSupportedException(); } }
 
         public int Facing => 0;
         public bool Moving => false;
@@ -97,7 +96,7 @@ namespace PokeD.Server.Clients.P3DProxy
         Stopwatch UpdateWatch = Stopwatch.StartNew();
         public override void Update()
         {
-            if (Stream.Connected)
+            if (Stream.IsConnected)
             {
                 if (Stream.DataAvailable > 0)
                 {
@@ -125,11 +124,12 @@ namespace PokeD.Server.Clients.P3DProxy
                 int id;
                 if (P3DPacket.TryParseID(data, out id))
                 {
-                    if (P3DPacketResponses.Packets.Length > id)
+                    Func<P3DPacket> func;
+                    if (P3DPacketResponses.TryGetPacketFunc(id, out func))
                     {
-                        if (P3DPacketResponses.Packets[id] != null)
+                        if (func != null)
                         {
-                            var packet = P3DPacketResponses.Packets[id]();
+                            var packet = func();
                             if (packet.TryParseData(data))
                             {
                                 HandlePacket(packet);
@@ -145,7 +145,7 @@ namespace PokeD.Server.Clients.P3DProxy
                             Logger.Log(LogType.Error, $"P3D Reading Error: SCONPacketResponses.Packets[{id}] is null.");
                     }
                     else
-                        Logger.Log(LogType.Error, $"P3D Reading Error: Packets Length {P3DPacketResponses.Packets.Length} > Packet ID {id}, Packet Data: {data}.");
+                        Logger.Log(LogType.Error, $"P3D Reading Error: Packet ID {id} doesn't exist, Packet Data: {data}.");
                 }
                 else
                     Logger.Log(LogType.Error, $"P3D Reading Error: Packet TryParseID error. Packet Data: {data}.");

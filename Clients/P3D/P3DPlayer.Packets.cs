@@ -10,6 +10,7 @@ using PokeD.Core.Packets.P3D.Client;
 using PokeD.Core.Packets.P3D.Server;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
+using PokeD.Server.Extensions;
 
 namespace PokeD.Server.Clients.P3D
 {
@@ -160,7 +161,7 @@ namespace PokeD.Server.Clients.P3D
                 if(!packet.Message.ToLower().StartsWith("/login"))
                     SendPacket(new ChatMessageGlobalPacket { Origin = ID, Message = packet.Message });
 
-                if (Module.Server.ProcessCommand(this, packet.Message)) return;
+                if (Module.Server.ExecuteClientCommand(this, packet.Message)) return;
                 if (ExecuteCommand(packet.Message)) return;
                 SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = "Invalid command!" });
             }
@@ -270,12 +271,12 @@ namespace PokeD.Server.Clients.P3D
         private void HandleServerDataRequest(ServerDataRequestPacket packet)
         {
             var spacket = new ServerInfoDataPacket();
-            spacket.CurrentPlayers = Module.Server.AllClients().Count();
+            spacket.CurrentPlayers = Module.Server.GetAllClients().Count();
             spacket.MaxPlayers = Module.MaxPlayers;
             spacket.ServerName = Module.ServerName;
             spacket.ServerMessage = Module.ServerMessage;
-            if (Module.Server.AllClients().Any())
-                spacket.PlayerNames = Module.Server.GetAllClientsInfo().Select(client => client.Name).ToArray();
+            if (Module.Server.GetAllClients().Any())
+                spacket.PlayerNames = Module.Server.GetAllClients().ClientInfos().Select(client => client.Name).ToArray();
 
             spacket.Origin = ID;
             SendPacket(spacket);

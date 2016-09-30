@@ -12,13 +12,13 @@ using PCLExt.FileStorage;
 
 using PokeD.Core.Data.SCON;
 using PokeD.Core.Extensions;
-using PokeD.Core.IO;
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
 using PokeD.Core.Packets.SCON.Chat;
 using PokeD.Core.Packets.SCON.Logs;
 using PokeD.Core.Packets.SCON.Lua;
 using PokeD.Core.Packets.SCON.Status;
+using PokeD.Server.Extensions;
 
 namespace PokeD.Server.Clients.SCON
 {
@@ -129,7 +129,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            SendPacket(new PlayerInfoListResponsePacket { PlayerInfos = Module.Server.GetAllClientsInfo().ToArray() });
+            SendPacket(new PlayerInfoListResponsePacket { PlayerInfos = Module.Server.GetAllClients().ClientInfos().ToArray() });
         }
 
         private void HandleLogListRequest(LogListRequestPacket packet)

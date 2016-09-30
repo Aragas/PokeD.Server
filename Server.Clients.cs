@@ -1,118 +1,44 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
-using PokeD.Core.Data.PokeD.Monster;
-
 using PokeD.Server.Clients;
-using PokeD.Server.Data;
-
 
 namespace PokeD.Server
 {
     public partial class Server
     {
-        private List<TradeInstance> CurrentTrades { get; } = new List<TradeInstance>(); 
+        /// <summary>
+        /// Get all connected <see cref="Client"/>.
+        /// </summary>
+        /// <returns>Returns <see langword="null"/> if there are no <see cref="Client"/> connected.</returns>
+        public IEnumerable<Client> GetAllClients() => Modules.Where(module => module.ClientsVisible).SelectMany(module => module.Clients);
 
+        /// <summary>
+        /// Get <see cref="Client"/> by <paramref name="id"/>.
+        /// </summary>
+        /// <param name="id"><see cref="Client.ID"/></param>
+        /// <returns>Returns <see langword="null"/> if <see cref="Client"/> was not found.</returns>
+        public Client GetClient(int id) => GetAllClients().FirstOrDefault(client => client.ID == id);
 
-        private static Client ServerClient { get; } = new ServerClient();
+        /// <summary>
+        /// Get <see cref="Client"/> by <paramref name="name"/>.
+        /// </summary>
+        /// <param name="name"><see cref="Client.Name"/></param>
+        /// <returns>Returns <see langword="null"/> if <see cref="Client"/> was not found.</returns>
+        public Client GetClient(string name) => GetAllClients().FirstOrDefault(client => client.Name == name);
 
-        public void ClientConnected(IServerModule caller, Client client)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.OtherConnected(client);
+        /// <summary>
+        /// Get <see cref="Client"/> <see cref="Client.ID"/> by <paramref name="name"/>.
+        /// </summary>
+        /// <param name="name"><see cref="Client.Name"/></param>
+        /// <returns>Returns <see cref="-1"/> if <see cref="Client"/> was not found.</returns>
+        public int GetClientID(string name) => GetClient(name)?.ID ?? -1;
 
-            if(caller.ClientsVisible)
-                Logger.Log(LogType.Event, $"The player {client.Name} joined the game from IP {client.IP}");
-        }
-        public void ClientDisconnected(IServerModule caller, Client client)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.OtherDisconnected(client);
-
-            if (caller.ClientsVisible)
-                Logger.Log(LogType.Event, $"The player {client.Name} disconnected, playtime was {DateTime.Now - client.ConnectionTime:hh\\:mm\\:ss}");
-        }
-
-        public void ClientServerMessage(IServerModule caller, Client sender, string message)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.SendServerMessage(sender, message);
-
-            Logger.Log(LogType.Chat, message);
-        }
-        public void ClientPrivateMessage(IServerModule caller, Client sender, Client destClient, string message)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.SendPrivateMessage(sender, destClient, message);
-        }
-        public void ClientGlobalMessage(IServerModule caller, Client sender, string message)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.SendGlobalMessage(sender, message);
-
-            Logger.Log(LogType.Chat, $"<{sender.Name}> {message}");
-        }
-
-        public void ClientTradeOffer(IServerModule caller, Client client, Monster monster, Client destClient)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.SendTradeRequest(client, monster, destClient);
-        }
-        public void ClientTradeConfirm(IServerModule caller, Client client, Client destClient)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.SendTradeConfirm(client, destClient);
-        }
-        public void ClientTradeCancel(IServerModule caller, Client client, Client destClient)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.SendTradeCancel(client, destClient);
-        }
-
-        public void OnClientTradeOffer(Client client, Monster monster, Client destClient)
-        {
-            if (!CurrentTrades.Any(t => t.Equals(client.ID, destClient.ID)))
-                CurrentTrades.Add(new TradeInstance { Player_0_ID = client.ID, Player_1_ID = destClient.ID });
-
-            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.ID, destClient.ID));
-            if (trade != null)
-            {
-                if(trade.Player_0_ID == client.ID)
-                    trade.Player_0_Monster = monster;
-
-                if (trade.Player_1_ID == client.ID)
-                    trade.Player_1_Monster = monster;
-            }
-        }
-        public void OnClientTradeConfirm(Client client, Client destClient)
-        {
-            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.ID, destClient.ID));
-            if (trade != null)
-            {
-                if (trade.Player_0_ID == client.ID)
-                    trade.Player_0_Confirmed = true;
-                if (trade.Player_1_ID == client.ID)
-                    trade.Player_1_Confirmed = true;
-
-                if (trade.Player_0_Confirmed && trade.Player_1_Confirmed)
-                {
-                    DatabaseTradeSave(trade);
-                    CurrentTrades.Remove(trade);
-                }
-            }
-        }
-        public void OnClientTradeCancel(Client client, Client destClient)
-        {
-            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.ID, destClient.ID));
-            if (trade != null)
-                CurrentTrades.Remove(trade);
-        }
-
-        public void ClientPosition(IServerModule caller, Client sender)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.SendPosition(sender);
-        }
+        /// <summary>
+        /// Get <see cref="Client"/> <see cref="Client.Name"/> by <paramref name="id"/>.
+        /// </summary>
+        /// <param name="id"><see cref="Client.ID"/></param>
+        /// <returns>Returns <see cref="string.Empty"/> if <see cref="Client"/> was not found.</returns>
+        public string GetClientName(int id) => GetClient(id)?.Name ?? string.Empty;
     }
 }

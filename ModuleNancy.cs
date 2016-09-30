@@ -4,10 +4,10 @@ using System.Linq;
 using Newtonsoft.Json;
 
 using PCLExt.Config;
+using PCLExt.Config.Extensions;
 using PCLExt.Nancy;
 
 using PokeD.Core.Data.PokeD.Monster;
-    
 using PokeD.Server.Clients;
 using PokeD.Server.Extensions;
 
@@ -57,7 +57,7 @@ namespace PokeD.Server
 
         public bool Start()
         {
-            var status = FileSystemExtensions.LoadSettings(Server.ConfigType, FileName, this);
+            var status = FileSystemExtensions.LoadConfig(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to load Nancy settings!");
 
@@ -73,7 +73,7 @@ namespace PokeD.Server
         }
         public void Stop()
         {
-            var status = FileSystemExtensions.SaveSettings(Server.ConfigType, FileName, this);
+            var status = FileSystemExtensions.SaveConfig(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save Nancy settings!");
             
@@ -96,7 +96,7 @@ namespace PokeD.Server
 
         private dynamic GetOnlineClients(dynamic args)
         {
-            var response = new OnlineResponseJson(Server.GetAllClientsInfo().Select(playerInfo => new OnlineResponseJson.PlayerJson(playerInfo.Name, playerInfo.Ping, false)));
+            var response = new OnlineResponseJson(Server.GetAllClients().ClientInfos().Select(playerInfo => new OnlineResponseJson.PlayerJson(playerInfo.Name, playerInfo.Ping, false)));
             var jsonResponse = JsonConvert.SerializeObject(response, Formatting.None);
             return jsonResponse;
         }
@@ -111,18 +111,18 @@ namespace PokeD.Server
         public void Update() { }
 
 
-        public void OtherConnected(Client client) { }
-        public void OtherDisconnected(Client client) { }
+        public void ClientConnected(Client client) { }
+        public void ClientDisconnected(Client client) { }
 
-        public void SendServerMessage(Client sender, string message) { }
-        public void SendPrivateMessage(Client sender, Client destClient, string message) { }
-        public void SendGlobalMessage(Client sender, string message) { }
+        public void SendServerMessage(Client sender, string message, bool fromServer = false) { }
+        public void SendPrivateMessage(Client sender, Client destClient, string message, bool fromServer = false) { }
+        public void SendGlobalMessage(Client sender, string message, bool fromServer = false) { }
 
-        public void SendTradeRequest(Client sender, Monster monster, Client destClient) { }
-        public void SendTradeConfirm(Client sender, Client destClient) { }
-        public void SendTradeCancel(Client sender, Client destClient) { }
+        public void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false) { }
+        public void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false) { }
+        public void SendTradeCancel(Client sender, Client destClient, bool fromServer = false) { }
 
-        public void SendPosition(Client sender) { }
+        public void SendPosition(Client sender, bool fromServer = false) { }
 
         public void ExecuteCommand(string command) { }
 

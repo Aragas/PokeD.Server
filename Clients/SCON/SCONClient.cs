@@ -8,7 +8,6 @@ using Aragas.Network.Packets;
 
 using PCLExt.Network;
 
-using PokeD.Core.Packets;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
@@ -16,7 +15,6 @@ using PokeD.Core.Packets.SCON.Chat;
 using PokeD.Core.Packets.SCON.Logs;
 using PokeD.Core.Packets.SCON.Lua;
 using PokeD.Core.Packets.SCON.Status;
-
 using PokeD.Server.Data;
 using PokeD.Server.DatabaseData;
 
@@ -29,8 +27,8 @@ namespace PokeD.Server.Clients.SCON
         public override int ID { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
         public override string Name { get { throw new NotImplementedException(); } protected set { throw new NotImplementedException(); } }
         
-        public override string LevelFile { get { throw new NotImplementedException(); } protected set { throw new NotImplementedException(); } }
-        public override Vector3 Position { get { throw new NotImplementedException(); } protected set { throw new NotImplementedException(); } }
+        public override string LevelFile { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
+        public override Vector3 Position { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
 
         #endregion P3D Values
 
@@ -74,7 +72,7 @@ namespace PokeD.Server.Clients.SCON
 
         public override void Update()
         {
-            if (Stream.Connected)
+            if (Stream.IsConnected)
             {
                 if (Stream.DataAvailable > 0)
                 {
@@ -104,11 +102,12 @@ namespace PokeD.Server.Clients.SCON
                 {
                     var id = reader.Read<VarInt>();
 
-                    if (SCONPacketResponses.Packets.Length > id)
+                    Func<SCONPacket> func;
+                    if (SCONPacketResponses.TryGetPacketFunc(id, out func))
                     {
-                        if (SCONPacketResponses.Packets[id] != null)
+                        if (func != null)
                         {
-                            var packet = SCONPacketResponses.Packets[id]().ReadPacket(reader);
+                            var packet = func().ReadPacket(reader);
                             if (packet != null)
                             {
                                 HandlePacket(packet);

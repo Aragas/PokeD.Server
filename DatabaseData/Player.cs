@@ -3,7 +3,6 @@
 using PCLExt.Database;
 
 using PokeD.Core.Extensions;
-
 using PokeD.Server.Clients;
 using PokeD.Server.Data;
 using PokeD.Server.Extensions;

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Digests;
@@ -11,6 +10,7 @@ using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
 
 using PCLExt.Config;
+using PCLExt.Config.Extensions;
 using PCLExt.Database;
 using PCLExt.FileStorage;
 using PCLExt.Thread;
@@ -20,13 +20,13 @@ using PokeD.Core.Data.PokeApi;
 using PokeD.Server.Commands;
 using PokeD.Server.Data;
 using PokeD.Server.DatabaseData;
-using PokeD.Server.Extensions;
 
 namespace PokeD.Server
 {
     public partial class Server : IUpdatable, IDisposable
     {
-        const string FileName = "Server";
+        private const string FileName = "Server";
+        private const int RsaKeySize = 1024;
 
         [ConfigIgnore]
         public ConfigType ConfigType { get; }
@@ -43,7 +43,7 @@ namespace PokeD.Server
             set
             {
                 if (!value.EndsWith("/"))
-                    value = value + "/";
+                    value += "/";
                 ResourceUri.URL = value;
             }
         }
@@ -55,16 +55,12 @@ namespace PokeD.Server
 
         public World World { get; set; } = new World();
 
-        public List<string> Blacklist { get; private set; }
-        public List<string> Whitelist { get; private set; }
-        public List<string> Oplist { get; private set; }
-
         #endregion Settings
 
         [ConfigIgnore]
         public List<IServerModule> Modules { get; } = new List<IServerModule>();
-        
-        IThread ListenToConnectionsThread { get; set; }
+
+        private IThread ListenToConnectionsThread { get; set; }
 
 
         [ConfigIgnore]
@@ -72,9 +68,8 @@ namespace PokeD.Server
 
         [ConfigIgnore]
         public AsymmetricCipherKeyPair RSAKeyPair { get; private set; }
-        const int RsaKeySize = 1024;
 
-        BaseDatabase BaseDatabase { get; set; }
+        private BaseDatabase Database { get; set; }
 
 
         public Server(ConfigType configType, DatabaseType databaseType)
@@ -83,11 +78,13 @@ namespace PokeD.Server
             DatabaseType = databaseType;
 
             Modules.Add(new ModuleP3D(this));
-            Modules.Add(new ModuleSCON(this));
+            //Modules.Add(new ModuleSCON(this));
             Modules.Add(new ModulePokeD(this));
-            Modules.Add(new ModuleNPC(this));
-            Modules.Add(new ModuleNancy(this));
-            Modules.Add(new ModuleP3DProxy(this));
+            //Modules.Add(new ModuleNPC(this));
+            //Modules.Add(new ModuleNancy(this));
+            //Modules.Add(new ModuleP3DProxy(this));
+            //Modules.Add(new ModulePixelmon(this));
+            //Modules.Add(new ModuleVBA(this));
 
             CommandManager = new CommandManager(this);
         }
@@ -105,44 +102,45 @@ namespace PokeD.Server
 
         public bool Start()
         {
-            var status = FileSystemExtensions.LoadSettings(ConfigType, FileName, this);
+            var status = FileSystemExtensions.LoadConfig(ConfigType, FileName, this);
             if(!status)
                 Logger.Log(LogType.Warning, "Failed to load Server settings!");
 
-            
-            if(PreCacheData)
+
+            if (PreCacheData)
+            {
+                Logger.Log(LogType.Info, "Pre Cache enabled, caching data.");
                 PreCache();
+            }
 
             Logger.Log(LogType.Info, "Generating RSA key pair.");
             RSAKeyPair = GenerateKeyPair();
 
 
-            Logger.Log(LogType.Info, $"Loading {DatabaseName}.");
-            BaseDatabase = Database.Create(Path.Combine(Storage.DatabaseFolder.Path, DatabaseName), DatabaseType);
-            BaseDatabase.CreateTable<Player>();
-            BaseDatabase.CreateTable<Battle>();
-            BaseDatabase.CreateTable<MonsterDB>();
-            BaseDatabase.CreateTable<Trade>();
-            BaseDatabase.CreateTable<TradePlayer>();
+            Logger.Log(LogType.Info, $"Loading {DatabaseName}...");
+            Database = PCLExt.Database.Database.Create(Path.Combine(Storage.DatabaseFolder.Path, DatabaseName), DatabaseType);
+            Database.CreateTable<Player>();
+            Database.CreateTable<Battle>();
+            Database.CreateTable<MonsterDB>();
+            Database.CreateTable<Trade>();
+            Database.CreateTable<TradePlayer>();
 
 
             Logger.Log(LogType.Info, $"Starting Server.");
 
-            var toRemove = Modules.Where(module => !module.Start()).ToList();
-            foreach (var module in toRemove)
-                Modules.Remove(module);
+            Modules.RemoveAll(module => !module.Start()); // -- Removes all modules that failed to start.
 
             ListenToConnectionsThread = Thread.Create(ListenToConnectionsCycle);
             ListenToConnectionsThread.Name = "ListenToConnectionsThread";
             ListenToConnectionsThread.IsBackground = true;
             ListenToConnectionsThread.Start();
-            
+
 
             return status;
         }
         public bool Stop()
         {
-            var status = FileSystemExtensions.SaveSettings(ConfigType, FileName, this);
+            var status = FileSystemExtensions.SaveConfig(ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save Server settings!");
 
@@ -195,18 +193,24 @@ namespace PokeD.Server
 
         public void Update()
         {
+            World.Update();
+
             foreach (var module in Modules)
                 module.Update();
         }
 
-        
+
         public void Dispose()
         {
-            if(IsDisposing)
+            if (IsDisposing)
                 return;
 
             IsDisposing = true;
 
+
+            foreach (var module in Modules)
+                module.Dispose();
+            Modules.Clear();
 
             World.Dispose();
         }

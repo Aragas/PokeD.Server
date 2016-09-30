@@ -6,7 +6,6 @@ using Aragas.Network.Packets;
 
 using PokeD.Core;
 using PokeD.Core.Packets.P3D.Shared;
-
 using PokeD.Server.Data;
 using PokeD.Server.DatabaseData;
 
@@ -19,8 +18,8 @@ namespace PokeD.Server.Clients
         public abstract string Name { get; protected set; }
         public abstract Prefix Prefix { get; protected set; }
         public abstract string PasswordHash { get; set; }
-        public abstract Vector3 Position { get; protected set; }
-        public abstract string LevelFile { get; protected set; }
+        public abstract Vector3 Position { get; set; }
+        public abstract string LevelFile { get; set; }
 
         public abstract string IP { get; }
         public abstract DateTime ConnectionTime { get; }

@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+
+using Aragas.Network.Data;
 
 using PCLExt.FileStorage;
 using PCLExt.Lua;
@@ -8,6 +11,15 @@ namespace PokeD.Server.Clients.NPC
 {
     public static class NPCLoader
     {
+        static NPCLoader()
+        {
+            Lua.RegisterCustomFunc("Vector3", (Func<float, float, float, Vector3>) ((x, y, z) => new Vector3(x, y, z)));
+            Lua.RegisterCustomFunc("Vector2", (Func<float, float, Vector2>) ((x, y) => new Vector2(x, y)));
+
+            Lua.RegisterModule("hook");
+            Lua.RegisterModule("translator");
+        }
+
         private const string Identifier = "npc_";
         private const string Extension = ".lua";
 
@@ -19,6 +31,5 @@ namespace PokeD.Server.Clients.NPC
         }
 
         private static string GetNPCName(string fileName) { return fileName.Remove(0, Identifier.Length).Remove(fileName.Length - Identifier.Length - Extension.Length, Extension.Length); }
-
     }
 }

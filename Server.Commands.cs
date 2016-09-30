@@ -9,13 +9,15 @@ namespace PokeD.Server
 {
     public partial class Server
     {
-        CommandManager CommandManager { get; }
+        private CommandManager CommandManager { get; }
 
-        public bool ProcessCommand(Client client, string message)
+        /// <summary>
+        /// Return <see langword="false"/> if <see cref="Command"/> not found.
+        /// </summary>
+        public bool ExecuteClientCommand(Client client, string message)
         {
             var commandWithoutSlash = message.TrimStart('/');
-            var messageArray = commandWithoutSlash
-                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var messageArray = commandWithoutSlash.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             if (messageArray.Length <= 0)
                 return false; // command not found
@@ -31,32 +33,37 @@ namespace PokeD.Server
             return true;
         }
 
-
-        public bool ExecuteCommand(string message)
+        /// <summary>
+        /// Return <see langword="false"/> if <see cref="Command"/> not found.
+        /// </summary>
+        public bool ExecuteServerCommand(string message)
         {
             var command = message.ToLower();
 
             if (message.StartsWith("say "))
-                ClientServerMessage(null, ServerClient, message.Remove(0, 4));
+                NotifyServerMessage(null, ServerClient, message.Remove(0, 4));
 
             else if (message.StartsWith("message "))
-                ClientServerMessage(null, ServerClient, message.Remove(0, 8));
+                NotifyServerMessage(null, ServerClient, message.Remove(0, 8));
 
             else if (command.StartsWith("help server"))    // help from program
-                return ExecuteHelpCommand(message.Remove(0, 11));
+                return ExecuteServerHelpCommand(message.Remove(0, 11));
 
             else if (command.StartsWith("help"))           // internal help from remote
-                return ExecuteHelpCommand(message.Remove(0, 4));
+                return ExecuteServerHelpCommand(message.Remove(0, 4));
 
             else if (command.StartsWith("world "))
-                return ExecuteWorldCommand(command.Remove(0, 6));
+                return ExecuteServerWorldCommand(command.Remove(0, 6));
 
             else
                 return false;
 
             return true;
         }
-        private bool ExecuteWorldCommand(string command)
+        /// <summary>
+        /// Return <see langword="false"/> if <see cref="Command"/> not found.
+        /// </summary>
+        private bool ExecuteServerWorldCommand(string command)
         {
             if (command.StartsWith("set "))
             {
@@ -155,6 +162,12 @@ namespace PokeD.Server
 
             return true;
         }
-        private static bool ExecuteHelpCommand(string command) { return false; }
+        /// <summary>
+        /// Return <see langword="false"/> if <see cref="Command"/> not found.
+        /// </summary>
+        private static bool ExecuteServerHelpCommand(string command)
+        {
+            return false;
+        }
     }
 }

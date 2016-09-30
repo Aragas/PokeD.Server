@@ -5,7 +5,6 @@ using Aragas.Network.Data;
 using Aragas.Network.Packets;
 
 using PokeD.Core.Packets.P3D.Shared;
-
 using PokeD.Server.Data;
 using PokeD.Server.DatabaseData;
 
@@ -16,25 +15,18 @@ namespace PokeD.Server.Clients
         public override int ID { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
         public override string Name { get { return "SERVER"; } protected set { throw new NotImplementedException(); } }
 
-        public override Prefix Prefix
-        {
-            get { throw new NotSupportedException(); }
-            protected set { throw new NotSupportedException(); }
-        }
+        public override Prefix Prefix { get { throw new NotSupportedException(); } protected set { throw new NotSupportedException(); } }
 
         public override string PasswordHash { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
-        public override Vector3 Position { get { throw new NotSupportedException(); } protected set { throw new NotSupportedException(); } }
-        public override string LevelFile { get { throw new NotSupportedException(); } protected set { throw new NotSupportedException(); } }
+        public override Vector3 Position { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
+        public override string LevelFile { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
         public override string IP { get { throw new NotSupportedException(); } }
         public override DateTime ConnectionTime { get { throw new NotSupportedException(); } }
         public override CultureInfo Language { get; }
         public override GameDataPacket GetDataPacket() { throw new NotSupportedException(); }
 
         public override void SendPacket(Packet packet) { throw new NotSupportedException(); }
-        public override void SendMessage(string text)
-        {
-            throw new NotImplementedException();
-        }
+        public override void SendMessage(string text) { throw new NotImplementedException(); }
 
         public override void LoadFromDB(Player data) { throw new NotSupportedException(); }
 

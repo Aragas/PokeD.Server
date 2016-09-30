@@ -5,7 +5,6 @@ using System.Linq;
 using PokeD.Core;
 using PokeD.Core.Data.PokeD.Battle;
 using PokeD.Core.Packets.PokeD.Battle;
-
 using PokeD.Server.DatabaseData;
 
 namespace PokeD.Server.Clients.PokeD

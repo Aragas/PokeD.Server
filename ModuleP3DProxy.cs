@@ -1,16 +1,15 @@
 ﻿using System.Linq;
 
 using PCLExt.Config;
+using PCLExt.Config.Extensions;
 using PCLExt.Network;
 
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.PokeD.Chat;
-
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.P3DProxy;
-using PokeD.Server.Extensions;
 
 namespace PokeD.Server
 {
@@ -48,7 +47,7 @@ namespace PokeD.Server
 
         public bool Start()
         {
-            var status = FileSystemExtensions.LoadSettings(Server.ConfigType, FileName, this);
+            var status = FileSystemExtensions.LoadConfig(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to load P3DProxy settings!");
 
@@ -65,7 +64,7 @@ namespace PokeD.Server
         }
         public void Stop()
         {
-            var status = FileSystemExtensions.SaveSettings(Server.ConfigType, FileName, this);
+            var status = FileSystemExtensions.SaveConfig(Server.ConfigType, FileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save P3DProxy settings!");
 
@@ -79,7 +78,7 @@ namespace PokeD.Server
 
         public void StartListen()
         {
-            var client = TCPClient.Create();
+            var client = SocketClient.CreateTCP();
             client.Connect(Host, Port);
 
             Proxy = new P3DProxyPlayer(client, this, PlayerName);
@@ -104,7 +103,7 @@ namespace PokeD.Server
                 Server.DatabasePlayerGetID(client);
                 Clients.Add(client);
 
-                Server.ClientConnected(this, client);
+                Server.NotifyClientConnected(this, client);
             }
         }
         public void RemoveClient(int sid)
@@ -114,7 +113,7 @@ namespace PokeD.Server
             {
                 Clients.Remove(client);
 
-                Server.ClientDisconnected(this, client);
+                Server.NotifyClientDisconnected(this, client);
             }
         }
 
@@ -122,32 +121,32 @@ namespace PokeD.Server
         public void Update() { Proxy?.Update(); }
 
 
-        public void OtherConnected(Client client) { }
-        public void OtherDisconnected(Client client) { }
+        public void ClientConnected(Client client) { }
+        public void ClientDisconnected(Client client) { }
 
 
-        public void SendServerMessage(Client sender, string message)
+        public void SendServerMessage(Client sender, string message, bool fromServer = false)
         {
             if (sender is P3DProxyDummy)
-                Server.ClientServerMessage(this, sender, message);
+                Server.NotifyServerMessage(this, sender, message);
             else
                 Proxy.SendPacket(new ChatServerMessagePacket() { Message = message });
         }
 
-        public void SendPrivateMessage(Client sender, Client destClient, string message) { }
-        public void SendGlobalMessage(Client sender, string message)
+        public void SendPrivateMessage(Client sender, Client destClient, string message, bool fromServer = false) { }
+        public void SendGlobalMessage(Client sender, string message, bool fromServer = false)
         {
             if (sender is P3DProxyDummy)
-                Server.ClientGlobalMessage(this, sender, message);
+                Server.NotifyServerGlobalMessage(this, sender, message);
             else
                 Proxy.SendPacket(new ChatMessageGlobalPacket {Message = $"<{sender.Name}>: {message}"});
         }
 
-        public void SendTradeRequest(Client sender, Monster monster, Client destClient) { }
-        public void SendTradeConfirm(Client sender, Client destClient) { }
-        public void SendTradeCancel(Client sender, Client destClient) { }
+        public void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false) { }
+        public void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false) { }
+        public void SendTradeCancel(Client sender, Client destClient, bool fromServer = false) { }
 
-        public void SendPosition(Client sender) { }
+        public void SendPosition(Client sender, bool fromServer = false) { }
 
 
 

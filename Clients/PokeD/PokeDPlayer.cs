@@ -9,7 +9,7 @@ using Aragas.Network.Packets;
 using PCLExt.Network;
 
 using PokeD.Core.Data.PokeD.Trainer;
-using PokeD.Core.Packets;
+using PokeD.Core.Packets.PokeD;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.PokeD.Authorization;
 using PokeD.Core.Packets.PokeD.Battle;
@@ -17,7 +17,6 @@ using PokeD.Core.Packets.PokeD.Chat;
 using PokeD.Core.Packets.PokeD.Overworld.Map;
 using PokeD.Core.Packets.PokeD.Overworld;
 using PokeD.Core.Packets.PokeD.Trade;
-
 using PokeD.Server.Data;
 using PokeD.Server.DatabaseData;
 
@@ -39,8 +38,8 @@ namespace PokeD.Server.Clients.PokeD
 
         public override string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {PlayerRef.Name}" : PlayerRef.Name; } protected set { PlayerRef.Name = value; } }
 
-        public override string LevelFile { get; protected set; }
-        public override Vector3 Position { get { return PlayerRef.Position; } protected set { throw  new NotSupportedException(); } }
+        public override string LevelFile { get; set; }
+        public override Vector3 Position { get { return PlayerRef.Position; } set { throw  new NotSupportedException(); } }
 
         public int Facing => PlayerRef.Facing;
         public bool Moving => true;
@@ -87,7 +86,7 @@ namespace PokeD.Server.Clients.PokeD
 
         public override void Update()
         {
-            if (Stream.Connected)
+            if (Stream.IsConnected)
             {
                 if (Stream.DataAvailable > 0)
                 {
@@ -116,11 +115,12 @@ namespace PokeD.Server.Clients.PokeD
                 {
                     var id = reader.Read<VarInt>();
 
-                    if (PokeDPacketResponses.Packets.Length > id)
+                    Func<PokeDPacket> func;
+                    if (PokeDPacketResponses.TryGetPacketFunc(id, out func))
                     {
-                        if (PokeDPacketResponses.Packets[id] != null)
+                        if (func != null)
                         {
-                            var packet = PokeDPacketResponses.Packets[id]().ReadPacket(reader);
+                            var packet = func().ReadPacket(reader);
 
                             HandlePacket(packet);
 

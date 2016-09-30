@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 
 using Aragas.Network.Data;
+using Aragas.Network.IO;
 using Aragas.Network.Packets;
 
 using PCLExt.Network;
@@ -10,13 +12,12 @@ using PCLExt.Network;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Extensions;
 using PokeD.Core.IO;
-using PokeD.Core.Packets;
+using PokeD.Core.Packets.P3D;
 using PokeD.Core.Packets.P3D.Battle;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Client;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
-
 using PokeD.Server.Data;
 using PokeD.Server.DatabaseData;
 
@@ -40,8 +41,8 @@ namespace PokeD.Server.Clients.P3D
         public override string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {_name}" : _name; } protected set { _name = value; } }
 
 
-        public override string LevelFile { get; protected set; }
-        public override Vector3 Position { get; protected set; }
+        public override string LevelFile { get; set; }
+        public override Vector3 Position { get; set; }
         public int Facing { get; private set; }
         public bool Moving { get; private set; }
 
@@ -80,28 +81,47 @@ namespace PokeD.Server.Clients.P3D
         List<P3DPacket> Sended { get; } = new List<P3DPacket>();
         // -- Debug -- //
 #endif
+        private bool _event;
 
-
-        public P3DPlayer(ITCPClient clientWrapper, ModuleP3D module)
+        public P3DPlayer(ISocketClient socket, ModuleP3D module)
         {
-            Stream = new P3DStream(clientWrapper);
+            Stream = new P3DStream(socket);
             Module = module;
         }
+        public P3DPlayer(ISocketClientEvent socketEvent, ModuleP3D module)
+        {
+            _event = true;
 
+            Stream = new P3DStreamEvent(socketEvent);
+            ((P3DStreamEvent) Stream).DataReceived += P3DPlayer_DataReceived;
+            ((P3DStreamEvent) Stream).Disconnected += P3DPlayer_Disconnected;
+            Module = module;
+        }
+        private void P3DPlayer_DataReceived(PacketStreamDataReceivedArgs args)
+        {
+            HandleData(Encoding.UTF8.GetString(args.Data, 0, args.Data.Length));
+        }
+        private void P3DPlayer_Disconnected(PacketStreamDisconnectedArgs args)
+        {
+            Module.RemoveClient(this);
+        }
 
         public override void Update()
         {
-            if (Stream.Connected)
+            if (!_event)
             {
-                if (Stream.DataAvailable > 0)
+                if (Stream.IsConnected)
                 {
-                    var data = Stream.ReadLine();
+                    if (Stream.DataAvailable > 0)
+                    {
+                        var data = Stream.ReadLine();
 
-                    HandleData(data);
+                        HandleData(data);
+                    }
                 }
+                else
+                    Module.RemoveClient(this);
             }
-            else
-                Module.RemoveClient(this);
         }
 
         private void HandleData(string data)
@@ -111,11 +131,12 @@ namespace PokeD.Server.Clients.P3D
                 int id;
                 if (P3DPacket.TryParseID(data, out id))
                 {
-                    if (P3DPacketResponses.Packets.Length > id)
+                    Func<P3DPacket> func;
+                    if (P3DPacketResponses.TryGetPacketFunc(id, out func))
                     {
-                        if (P3DPacketResponses.Packets[id] != null)
+                        if (func != null)
                         {
-                            var packet = P3DPacketResponses.Packets[id]();
+                            var packet = func();
                             if (packet.TryParseData(data))
                             {
                                 HandlePacket(packet);
@@ -131,7 +152,7 @@ namespace PokeD.Server.Clients.P3D
                             Logger.Log(LogType.Error, $"P3D Reading Error: SCONPacketResponses.Packets[{id}] is null.");
                     }
                     else
-                        Logger.Log(LogType.Error, $"P3D Reading Error: Packets Length {P3DPacketResponses.Packets.Length} > Packet ID {id}, Packet Data: {data}.");
+                        Logger.Log(LogType.Error, $"P3D Reading Error: Packet ID {id} doesn't exist, Packet Data: {data}.");
                 }
                 else
                     Logger.Log(LogType.Error, $"P3D Reading Error: Packet TryParseID error. Packet Data: {data}.");

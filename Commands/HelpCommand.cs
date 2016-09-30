@@ -6,8 +6,10 @@ namespace PokeD.Server.Commands
 {
     public class HelpCommand : Command
     {
-        public override string Name => "help";
-        public override string Description => "Command help menu.";
+        public override string Name { get; protected set; } = "help";
+        public override string Description { get; protected set; } = "Command help menu.";
+
+        public HelpCommand(CommandManager commandManager) : base(commandManager) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {

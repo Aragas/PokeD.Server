@@ -12,10 +12,10 @@ namespace PokeD.Server
     {
         public int DatabasePlayerGetID(Client player)
         {
-            if (AllClients().Any(p => p.Name == player.Name))
+            if (GetAllClients().Any(p => p.Name == player.Name))
                 return -1;
 
-            var data = BaseDatabase.Find<Player>(p => p.Name == player.Name);
+            var data = Database.Find<Player>(p => p.Name == player.Name);
             if (data != null)
             {
                 player.ID = data.Id;
@@ -23,7 +23,7 @@ namespace PokeD.Server
             }
             else
             {
-                BaseDatabase.Insert(new Player(player));
+                Database.Insert(new Player(player));
                 return DatabasePlayerGetID(player);
             }
         }
@@ -37,7 +37,7 @@ namespace PokeD.Server
             if (DatabasePlayerWatch.ElapsedMilliseconds < 2000 && !forceUpdate)
                 return;
 
-            BaseDatabase.Update(new Player(player));
+            Database.Update(new Player(player));
 
             DatabasePlayerWatch.Reset();
             DatabasePlayerWatch.Start();
@@ -45,15 +45,15 @@ namespace PokeD.Server
 
         public bool DatabasePlayerLoad(Client player)
         {
-            if (AllClients().Any(p => p.Name == player.Name))
+            if (GetAllClients().Any(p => p.Name == player.Name))
                 return false;
 
-            var data = BaseDatabase.Find<Player>(p => p.Name == player.Name);
+            var data = Database.Find<Player>(p => p.Name == player.Name);
 
 
             if (data != null && data.PasswordHash == null)
             {
-                BaseDatabase.Update(new Player(player));
+                Database.Update(new Player(player));
                 return true;
             }
             else if (data != null)
@@ -68,8 +68,8 @@ namespace PokeD.Server
             }
             else
             {
-                BaseDatabase.Insert(new Player(player));
-                player.LoadFromDB(BaseDatabase.Find<Player>(p => p.Name == player.Name));
+                Database.Insert(new Player(player));
+                player.LoadFromDB(Database.Find<Player>(p => p.Name == player.Name));
 
                 return true;
             }
@@ -78,14 +78,14 @@ namespace PokeD.Server
 
         public bool DatabaseBatteSave(BattleInstance battleInstance)
         {
-            BaseDatabase.Insert(new Battle(battleInstance));
+            Database.Insert(new Battle(battleInstance));
             return true;
         }
 
 
         public bool DatabaseTradeSave(TradeInstance tradeInstance)
         {
-            BaseDatabase.Insert(new Trade(BaseDatabase, tradeInstance));
+            Database.Insert(new Trade(Database, tradeInstance));
             return true;
         }
     }

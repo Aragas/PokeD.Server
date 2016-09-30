@@ -2,7 +2,6 @@ using System;
 
 using PokeD.Core;
 using PokeD.Core.Data.PokeD.Monster;
-
 using PokeD.Server.Clients;
 
 namespace PokeD.Server
@@ -21,19 +20,17 @@ namespace PokeD.Server
         void StartListen();
         void CheckListener();
 
-        //void AddClient(Client client);
-        //void RemoveClient(Client client, string reason = "");
 
-        void OtherConnected(Client client);
-        void OtherDisconnected(Client client);
+        void ClientConnected(Client client);
+        void ClientDisconnected(Client client);
 
-        void SendPrivateMessage(Client sender, Client destClient, string message);
-        void SendGlobalMessage(Client sender, string message);
-        void SendServerMessage(Client sender, string message);
+        void SendPrivateMessage(Client sender, Client destClient, string message, bool fromServer = false);
+        void SendGlobalMessage(Client sender, string message, bool fromServer = false);
+        void SendServerMessage(Client sender, string message, bool fromServer = false);
 
-        void SendTradeRequest(Client sender, Monster monster, Client destClient);
-        void SendTradeConfirm(Client sender, Client destClient);
-        void SendTradeCancel(Client sender, Client destClient);
+        void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false);
+        void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false);
+        void SendTradeCancel(Client sender, Client destClient, bool fromServer = false);
 
         //void SendBattleRequest(Client sender, Client destClient);
         //void SendBattleAccept(Client sender);
@@ -42,6 +39,6 @@ namespace PokeD.Server
         //void SendBattleSwitch(Client sender);
         //void SendBattleFlee(Client sender);
 
-        void SendPosition(Client sender);
+        void SendPosition(Client sender, bool fromServer = false);
     }
 }

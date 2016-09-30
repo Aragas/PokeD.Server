@@ -9,13 +9,13 @@ namespace PokeD.Server
 {
     public partial class Server
     {
-        private const int MaxPokemon = 721;
-        private const int MaxItem = 749;
-        private const int MaxType = 18;
-        private const int MaxAbility = 190;
-        private const int MaxEgggroup = 15;
+        private const int CacheMaxPokemon = 721;
+        private const int CacheMaxItem = 749;
+        private const int CacheMaxType = 18;
+        private const int CacheMaxAbility = 190;
+        private const int CacheMaxEgggroup = 15;
 
-        private static async Task MultiTask(int size, int max, Func<int, Task> func)
+        private static async Task CacheDoMultiTask(int size, int max, Func<int, Task> func)
         {
             var index = 0;
             var array = new Task[size];
@@ -69,7 +69,7 @@ namespace PokeD.Server
         }
         private static async Task CacheType()
         {
-            for (var i = 1; i <= MaxType; i++)
+            for (var i = 1; i <= CacheMaxType; i++)
             {
                 try
                 {
@@ -81,7 +81,7 @@ namespace PokeD.Server
         }
         private static async Task CacheAbility()
         {
-            for (var i = 1; i <= MaxAbility; i++)
+            for (var i = 1; i <= CacheMaxAbility; i++)
             {
                 try
                 {
@@ -93,7 +93,7 @@ namespace PokeD.Server
         }
         private static async Task CacheEggGroup()
         {
-            for (var i = 1; i <= MaxEgggroup; i++)
+            for (var i = 1; i <= CacheMaxEgggroup; i++)
             {
                 try
                 {
@@ -107,10 +107,12 @@ namespace PokeD.Server
         private static void PreCache()
         {
             Task.WaitAll(
-                MultiTask(16, MaxPokemon, CachePokemon),
-                MultiTask(16, MaxPokemon, CachePokemonSpecies),
-                MultiTask(16, MaxItem, CacheItem),
-                CacheType(), CacheAbility(), CacheEggGroup());
+                CacheDoMultiTask(16, CacheMaxPokemon, CachePokemon),
+                CacheDoMultiTask(16, CacheMaxPokemon, CachePokemonSpecies),
+                CacheDoMultiTask(16, CacheMaxItem, CacheItem),
+                CacheType(),
+                CacheAbility(),
+                CacheEggGroup());
         }
     }
 }

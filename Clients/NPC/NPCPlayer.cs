@@ -1,22 +1,25 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 
 using Aragas.Network.Data;
 using Aragas.Network.Packets;
 
+using PCLExt.FileStorage;
 using PCLExt.Lua;
 
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Extensions;
-using PokeD.Core.Packets;
+using PokeD.Core.Packets.P3D;
 using PokeD.Core.Packets.P3D.Battle;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
-
 using PokeD.Server.Data;
 using PokeD.Server.DatabaseData;
 
@@ -38,8 +41,8 @@ namespace PokeD.Server.Clients.NPC
         public override Prefix Prefix { get; protected set; } = Prefix.NPC;
         public override string PasswordHash { get; set; } = string.Empty;
 
-        public override string LevelFile { get; protected set; } = string.Empty;
-        public override Vector3 Position { get { return _position; } protected set { _position = value; Module.SendPosition(this); } }
+        public override string LevelFile { get; set; } = string.Empty;
+        public override Vector3 Position { get { return _position; } set { _position = value; Module.SendPosition(this); } }
         private Vector3 _position;
         public int Facing { get; set; }
         public bool Moving { get; set; }
@@ -104,7 +107,7 @@ namespace PokeD.Server.Clients.NPC
         //    Hook.CallFunction("Call", "BattleUpdate", battleData);
         //}
 
-        public Client[] GetLocalPlayers() => Module.Server.AllClients().Where(client => client != this && client.LevelFile == LevelFile).ToArray();
+        public Client[] GetLocalPlayers() => Module.Server.GetAllClients().Where(client => client != this && client.LevelFile == LevelFile).ToArray();
         //public Client[] GetLocalPlayers() => Module.Server.AllClients().Where(client => client.LevelFile == LevelFile).ToArray();
 
 
@@ -238,5 +241,61 @@ namespace PokeD.Server.Clients.NPC
         public void SayPlayerPM(Client client, string message) { Module.SendPrivateMessage(this, client, message); }
         public void SayGlobal(string message) { Module.SendGlobalMessage(this, message); }
         public void SayGlobal(object message) {  }
+
+        public void SaveTable(string name, object obj)
+        {
+            var table = PCLExt.Lua.Lua.ToLuaTable(obj);
+            dynamic dyn = table;
+            var ttt = dyn.Serialize();
+
+            var dict = table.ToDictionary();
+            var t = table.ToArray();
+            var tt = ParseTable(obj);
+
+            var file = Storage.DatabaseFolder.CreateFileAsync(name, CreationCollisionOption.OpenIfExists).Result;
+            using (var stream = file.OpenAsync(FileAccess.ReadAndWrite).Result)
+            using (var writer = new StreamWriter(stream))
+            {
+                WriteLine(writer, tt);
+            }
+        }
+        public void WriteLine(StreamWriter writer, object obj)
+        {
+            if (obj == null)
+                return;
+
+            if (typeof (IEnumerable).GetTypeInfo().IsAssignableFrom(obj.GetType().GetTypeInfo()))
+                foreach (var enumer in obj as IEnumerable)
+                    WriteLine(writer, enumer);
+            
+
+            writer.WriteLine(obj);
+        }
+
+        public object[] ParseTable(object obj)
+        {
+            if (obj == null)
+                return new object[] { "" };
+
+            var type = obj.GetType();
+
+            var table = PCLExt.Lua.Lua.ToLuaTable(obj);
+            if (table != null)
+            {
+                return table.ToArray().Select(ParseTable).Cast<object>().ToArray();
+            }
+            else
+            {
+                if (typeof (IEnumerable).GetTypeInfo().IsAssignableFrom(obj.GetType().GetTypeInfo()))
+                    return (obj as IEnumerable).Cast<object>().ToArray();
+
+                return new object[] {obj};
+            }
+        }
+
+        public object LoadTable()
+        {
+            return null;
+        }
     }
 }

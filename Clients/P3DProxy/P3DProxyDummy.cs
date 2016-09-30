@@ -7,7 +7,6 @@ using Aragas.Network.Packets;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Extensions;
 using PokeD.Core.Packets.P3D.Shared;
-
 using PokeD.Server.Data;
 using PokeD.Server.DatabaseData;
 
@@ -31,8 +30,8 @@ namespace PokeD.Server.Clients.P3DProxy
         public override string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {_name}" : _name; } protected set { _name = value; } }
 
 
-        public override string LevelFile { get; protected set; }
-        public override Vector3 Position { get; protected set; }
+        public override string LevelFile { get; set; }
+        public override Vector3 Position { get; set; }
         public int Facing { get; private set; }
         public bool Moving { get; private set; }
 
