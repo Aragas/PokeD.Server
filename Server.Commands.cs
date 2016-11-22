@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 
+using PCLExt.Config;
+
 using PokeD.Server.Clients;
 using PokeD.Server.Commands;
 using PokeD.Server.Data;
@@ -9,7 +11,8 @@ namespace PokeD.Server
 {
     public partial class Server
     {
-        private CommandManager CommandManager { get; }
+        [ConfigIgnore]
+        public CommandManager CommandManager { get; }
 
         /// <summary>
         /// Return <see langword="false"/> if <see cref="Command"/> not found.
@@ -41,10 +44,10 @@ namespace PokeD.Server
             var command = message.ToLower();
 
             if (message.StartsWith("say "))
-                NotifyServerMessage(null, ServerClient, message.Remove(0, 4));
+                NotifyServerMessage(null, message.Remove(0, 4));
 
             else if (message.StartsWith("message "))
-                NotifyServerMessage(null, ServerClient, message.Remove(0, 8));
+                NotifyServerMessage(null, message.Remove(0, 8));
 
             else if (command.StartsWith("help server"))    // help from program
                 return ExecuteServerHelpCommand(message.Remove(0, 11));

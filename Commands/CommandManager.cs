@@ -4,36 +4,33 @@ using System.Linq;
 using System.Reflection;
 
 using PCLExt.AppDomain;
-
 using PokeD.Server.Clients;
 
 namespace PokeD.Server.Commands
 {
-    public class DisableAutoLoadAttribute : Attribute { }
-
     public class CommandManager
     {
-        public Server Server { get; }
+        private Server Server { get; }
         public List<Command> Commands { get; } = new List<Command>();
 
         public CommandManager(Server server, bool autoLoad = true)
         {
             Server = server;
 
-            if(autoLoad)
+            if (autoLoad)
                 AutoLoadCommands();
         }
         private void AutoLoadCommands()
         {
             var types = AppDomain.GetAssembly(typeof(CommandManager)).DefinedTypes
                 .Where(typeInfo => typeof(Command).GetTypeInfo().IsAssignableFrom(typeInfo))
-                .Where(typeInfo => !typeInfo.IsDefined(typeof(DisableAutoLoadAttribute), true))
+                .Where(typeInfo => !typeInfo.IsDefined(typeof(CommandDisableAutoLoadAttribute), true))
                 .Where(typeInfo => !typeInfo.IsAbstract);
 
-            foreach (var command in types.Where(type => type != typeof(CommandLua).GetTypeInfo()).Select(type => (Command) Activator.CreateInstance(type.AsType(), this)))
+            foreach (var command in types.Where(type => type != typeof(CommandLua).GetTypeInfo()).Select(type => (Command) Activator.CreateInstance(type.AsType(), Server)))
                 Commands.Add(command);
 
-            Commands.AddRange(CommandLuaLoader.LoadCommands(this));
+            Commands.AddRange(CommandLuaLoader.LoadCommands(Server));
         }
 
         public void HandleCommand(Client client, string alias, string[] arguments)
@@ -41,7 +38,7 @@ namespace PokeD.Server.Commands
             var command = FindByName(alias) ?? FindByAlias(alias);
             if (command == null)
             {
-                client.SendMessage($@"Invalid command ""{alias}"".");
+                client.SendServerMessage($@"Invalid command ""{alias}"".");
                 return;
             }
             command.Handle(client, alias, arguments);

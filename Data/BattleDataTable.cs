@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿/*
+using System.Collections.Generic;
 
 using PCLExt.Lua;
 
@@ -48,3 +49,4 @@ namespace PokeD.Server.Data
         }
     }
 }
+*/

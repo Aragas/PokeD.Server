@@ -9,6 +9,7 @@ using PokeD.Core.Packets.P3D;
 
 namespace PokeD.Server.PacketHandlers
 {
+    // Not used.
     internal static class P3DPacketHandler
     {
         internal static class ClientPacketResponses

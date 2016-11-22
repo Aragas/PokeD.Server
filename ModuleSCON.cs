@@ -10,38 +10,33 @@ using PCLExt.Network;
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
-using PokeD.Core.Packets.SCON.Chat;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.SCON;
 
 namespace PokeD.Server
 {
-    public class ModuleSCON : IServerModule
+    public class ModuleSCON : ServerModule
     {
         const string FileName = "ModuleSCON";
 
         #region Settings
 
-        public bool Enabled { get; private set; } = false;
+        public override bool Enabled { get; protected set; } = false;
 
-        public ushort Port { get; private set; } = 15126;
+        public override ushort Port { get; protected set; } = 15126;
 
-        public PasswordStorage SCON_Password { get; private set; } = new PasswordStorage();
+        public PasswordStorage SCON_Password { get; protected set; } = new PasswordStorage();
 
-        public bool EncryptionEnabled { get; private set; } = true;
+        public bool EncryptionEnabled { get; protected set; } = true;
         
         #endregion Settings
 
-        [ConfigIgnore]
-        public Server Server { get; }
         bool IsDisposing { get; set; }
 
         ITCPListener Listener { get; set; }
 
         [ConfigIgnore]
-        public ClientList Clients { get; } = new ClientList();
-        [ConfigIgnore]
-        public bool ClientsVisible { get; } = false;
+        public override bool ClientsVisible { get; } = false;
         List<Client> PlayersJoining { get; } = new List<Client>();
         List<Client> PlayersToAdd { get; } = new List<Client>();
         List<Client> PlayersToRemove { get; } = new List<Client>();
@@ -50,10 +45,10 @@ namespace PokeD.Server
         ConcurrentQueue<SCONPacket> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<SCONPacket>();
 
 
-        public ModuleSCON(Server server) { Server = server; }
+        public ModuleSCON(Server server) : base(server) { }
 
 
-        public bool Start()
+        public override bool Start()
         {
             var status = FileSystemExtensions.LoadConfig(Server.ConfigType, FileName, this);
             if (!status)
@@ -69,7 +64,7 @@ namespace PokeD.Server
 
             return true;
         }
-        public void Stop()
+        public override void Stop()
         {
             var status = FileSystemExtensions.SaveConfig(Server.ConfigType, FileName, this);
             if (!status)
@@ -83,12 +78,12 @@ namespace PokeD.Server
         }
         
         
-        public void StartListen()
+        public override void StartListen()
         {
             Listener = SocketServer.CreateTCP(Port);
             Listener.Start();
         }
-        public void CheckListener()
+        public override void CheckListener()
         {
             if (Listener != null && Listener.AvailableClients)
                 if (Listener.AvailableClients)
@@ -110,7 +105,7 @@ namespace PokeD.Server
         }
 
 
-        public void Update()
+        public override void Update()
         {
             #region Player Filtration
 
@@ -162,30 +157,30 @@ namespace PokeD.Server
         }
 
 
-        public void ClientConnected(Client client) { }
-        public void ClientDisconnected(Client client) { }
+        public override void ClientConnected(Client client) { }
+        public override void ClientDisconnected(Client client) { }
 
-        public void SendServerMessage(Client sender, string message, bool fromServer = false)
-        {
-            if (sender is SCONClient)
-                return;
-            else
-                SCONClientSendToAllClients(new ChatMessagePacket { Player = sender.Name, Message = message });
-        }
-        public void SendPrivateMessage(Client sender, Client destClient, string message, bool fromServer = false) { }
-        public void SendGlobalMessage(Client sender, string message, bool fromServer = false)
-        {
-            if (sender is SCONClient)
-                return;
-            else
-                SCONClientSendToAllClients(new ChatMessagePacket { Player = sender.Name, Message = message });
-        }
+        public override void SendPrivateMessage(Client sender, Client destClient, string message, bool fromServer = false) { }
+        //public override void SendGlobalMessage(Client sender, string message, bool fromServer = false)
+        //{
+        //    if (sender is SCONClient)
+        //        return;
+        //    else
+        //        SCONClientSendToAllClients(new ChatMessagePacket { Player = sender.Name, Message = message });
+        //}
+        //public override void SendServerMessage(Client sender, string message)
+        //{
+        //    for (var i = 0; i > Clients.Count; i++)
+        //        Clients[i].SendServerMessage(message);
+        //
+        //    //SCONClientSendToAllClients(new ChatMessagePacket { Player = "SERVER", Message = message });
+        //}
 
-        public void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false) { }
-        public void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false) { }
-        public void SendTradeCancel(Client sender, Client destClient, bool fromServer = false) { }
+        public override void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false) { }
+        public override void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false) { }
+        public override void SendTradeCancel(Client sender, Client destClient, bool fromServer = false) { }
 
-        public void SendPosition(Client sender, bool fromServer = false) { }
+        public override void SendPosition(Client sender, bool fromServer = false) { }
 
         public void ExecuteCommand(string command) { }
 
@@ -196,7 +191,7 @@ namespace PokeD.Server
         }
 
 
-        public void Dispose()
+        public override void Dispose()
         {
             if (IsDisposing)
                 return;

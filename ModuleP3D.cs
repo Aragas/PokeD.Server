@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-using PCLExt.Config;
 using PCLExt.Config.Extensions;
 using PCLExt.Network;
 using PCLExt.Thread;
@@ -20,7 +19,7 @@ using PokeD.Server.Clients.P3D;
 
 namespace PokeD.Server
 {
-    public class ModuleP3D : IServerModule
+    public class ModuleP3D : ServerModule
     {
         public enum MuteStatus
         {
@@ -34,26 +33,24 @@ namespace PokeD.Server
 
         #region Settings
 
-        public bool Enabled { get; private set; } = false;
+        public override bool Enabled { get; protected set; } = false;
 
-        public ushort Port { get; private set; } = 15124;
+        public override ushort Port { get; protected set; } = 15124;
 
-        public string ServerName { get; private set; } = "Put name here";
+        public string ServerName { get; protected set; } = "Put name here";
 
-        public string ServerMessage { get; private set; } = "Put description here";
+        public string ServerMessage { get; protected set; } = "Put description here";
         
-        public int MaxPlayers { get; private set; } = 1000;
+        public int MaxPlayers { get; protected set; } = 1000;
 
-        public bool EncryptionEnabled { get; private set; } = true;
+        public bool EncryptionEnabled { get; protected set; } = true;
 
-        public bool MoveCorrectionEnabled { get; private set; } = true;
+        public bool MoveCorrectionEnabled { get; protected set; } = true;
 
-        public Dictionary<int, List<int>> MutedPlayers { get; private set; } = new Dictionary<int, List<int>>();
+        public Dictionary<int, List<int>> MutedPlayers { get; protected set; } = new Dictionary<int, List<int>>();
 
         #endregion Settings
 
-        [ConfigIgnore]
-        public Server Server { get; }
         bool IsDisposing { get; set; }
 
         ITCPListener Listener { get; set; }
@@ -61,11 +58,6 @@ namespace PokeD.Server
         IThread PlayerWatcherThread { get; set; }
         IThread PlayerCorrectionThread { get; set; }
 
-
-        [ConfigIgnore]
-        public ClientList Clients { get; } = new ClientList();
-        [ConfigIgnore]
-        public bool ClientsVisible { get; } = true;
 
         List<Client> PlayersJoining { get; } = new List<Client>();
         List<Client> PlayersToAdd { get; } = new List<Client>();
@@ -77,10 +69,10 @@ namespace PokeD.Server
 
         ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; } = new ConcurrentDictionary<string, P3DPlayer[]>();
 
-        public ModuleP3D(Server server) { Server = server; }
+        public ModuleP3D(Server server) : base(server) { }
 
 
-        public bool Start()
+        public override bool Start()
         {
             var status = FileSystemExtensions.LoadConfig(Server.ConfigType, FileName, this);
             if (!status)
@@ -109,7 +101,7 @@ namespace PokeD.Server
 
             return true;
         }
-        public void Stop()
+        public override void Stop()
         {
             var status = FileSystemExtensions.SaveConfig(Server.ConfigType, FileName, this);
             if (!status)
@@ -197,12 +189,12 @@ namespace PokeD.Server
         }
 
 
-        public void StartListen()
+        public override void StartListen()
         {
             Listener = SocketServer.CreateTCP(Port);
             Listener.Start();
         }
-        public void CheckListener()
+        public override void CheckListener()
         {
             if (Listener != null && Listener.AvailableClients)
                 if (Listener.AvailableClients)
@@ -250,6 +242,8 @@ namespace PokeD.Server
 
             PlayersToAdd.Add(client);
             PlayersJoining.Remove(client);
+
+            //Server.ChatChannelManager.FindByAlias("global").Subscribe(client);
         }
         public void RemoveClient(Client client, string reason = "")
         {
@@ -261,7 +255,7 @@ namespace PokeD.Server
 
 
         Stopwatch UpdateWatch = Stopwatch.StartNew();
-        public void Update()
+        public override void Update()
         {
             #region Player Filtration
 
@@ -353,27 +347,20 @@ namespace PokeD.Server
         }
 
 
-        public void ClientConnected(Client client)
+        public override void ClientConnected(Client client)
         {
             P3DPlayerSendToAllClients(new CreatePlayerPacket { PlayerID = client.ID }, -1);
             P3DPlayerSendToAllClients(client.GetDataPacket(), client.ID);
             P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = $"Player {client.Name} joined the game!" });
         }
-        public void ClientDisconnected(Client client)
+        public override void ClientDisconnected(Client client)
         {
             P3DPlayerSendToAllClients(new DestroyPlayerPacket { PlayerID = client.ID });
             P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = $"Player {client.Name} disconnected!" });
         }
 
 
-        public void SendServerMessage(Client sender, string message, bool fromServer = false)
-        {
-            if (!fromServer)
-                Server.NotifyServerMessage(this, sender, message);
-
-            P3DPlayerSendToAllClients(new ServerMessagePacket { Message = message }, -1);
-        }
-        public void SendPrivateMessage(Client sender, Client destClient, string message, bool fromServer = false)
+        public override void SendPrivateMessage(Client sender, Client destClient, string message, bool fromServer = false)
         {
             if (!fromServer)
                 Server.NotifyClientPrivateMessage(this, sender, destClient, message);
@@ -381,17 +368,9 @@ namespace PokeD.Server
             if (destClient is P3DPlayer)
                 P3DPlayerSendToClient(destClient, new ChatMessagePrivatePacket { DataItems = new DataItems(message) }, sender.ID);
         }
-        public void SendGlobalMessage(Client sender, string message, bool fromServer = false)
-        {
-            if (!fromServer)
-                Server.NotifyServerGlobalMessage(this, sender, message);
-
-            if (sender is P3DPlayer)
-                P3DPlayerSendToAllClients(new ChatMessageGlobalPacket { Message = message }, sender.ID);
-        }
 
 
-        public void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false)
+        public override void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false)
         {
             if (!fromServer)
                 Server.NotifyClientTradeOffer(this, sender, monster, destClient);
@@ -399,7 +378,7 @@ namespace PokeD.Server
             if (destClient is P3DPlayer)
                 P3DPlayerSendToClient(destClient, new TradeOfferPacket { DataItems = monster.ToDataItems() }, sender.ID);
         }
-        public void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false)
+        public override void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false)
         {
             if (!fromServer)
                 Server.NotifyClientTradeConfirm(this, destClient, sender);
@@ -407,7 +386,7 @@ namespace PokeD.Server
             if (destClient is P3DPlayer)
                 P3DPlayerSendToClient(destClient, new TradeStartPacket(), sender.ID);
         }
-        public void SendTradeCancel(Client sender, Client destClient, bool fromServer = false)
+        public override void SendTradeCancel(Client sender, Client destClient, bool fromServer = false)
         {
             if (!fromServer)
                 Server.NotifyClientTradeCancel(this, sender, destClient);
@@ -416,7 +395,7 @@ namespace PokeD.Server
                 P3DPlayerSendToClient(destClient, new TradeQuitPacket(), sender.ID);
         }
 
-        public void SendPosition(Client sender, bool fromServer = false)
+        public override void SendPosition(Client sender, bool fromServer = false)
         {
             if(!fromServer)
                 Server.NotifyClientPosition(this, sender);
@@ -523,7 +502,7 @@ namespace PokeD.Server
 
 
 
-        public void Dispose()
+        public override void Dispose()
         {
             if (IsDisposing)
                 return;

@@ -2,38 +2,29 @@
 using PCLExt.Config.Extensions;
 
 using PokeD.Core.Data.PokeD.Monster;
-using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.NPC;
 
 namespace PokeD.Server
 {
-    public class ModuleNPC : IServerModule
+    public class ModuleNPC : ServerModule
     {
         const string FileName = "ModuleNPC";
 
         #region Settings
 
-        public bool Enabled { get; private set; } = false;
+        public override bool Enabled { get; protected set; } = false;
 
         [ConfigIgnore]
-        public ushort Port => 0;
+        public override ushort Port { get; protected set; } = 0;
 
         #endregion Settings
 
-        [ConfigIgnore]
-        public Server Server { get; }
 
-        [ConfigIgnore]
-        public ClientList Clients { get; } = new ClientList();
-        [ConfigIgnore]
-        public bool ClientsVisible { get; } = true;
+        public ModuleNPC(Server server) : base(server) { }
 
 
-        public ModuleNPC(Server server) { Server = server; }
-
-
-        public bool Start()
+        public override bool Start()
         {
             var status = FileSystemExtensions.LoadConfig(Server.ConfigType, FileName, this);
             if (!status)
@@ -51,7 +42,7 @@ namespace PokeD.Server
 
             return true;
         }
-        public void Stop()
+        public override void Stop()
         {
             var status = FileSystemExtensions.SaveConfig(Server.ConfigType, FileName, this);
             if (!status)
@@ -65,14 +56,14 @@ namespace PokeD.Server
         }
         
         
-        public void StartListen() { }
-        public void CheckListener() { }
+        public override void StartListen() { }
+        public override void CheckListener() { }
 
 
         private bool LoadNPCs()
         {
             Logger.Log(LogType.Info, "Loading NPC's.");
-            var npcs = NPCLoader.LoadNPCs(this);
+            var npcs = NPCLuaLoader.LoadNPCs(this);
 
             foreach (var npc in npcs)
                 AddClient(npc);
@@ -106,32 +97,34 @@ namespace PokeD.Server
         }
 
 
-        public void Update()
+        public override void Update()
         {
             for (var i = 0; i < Clients.Count; i++)
                 Clients[i]?.Update();
         }
 
 
-        public void ClientConnected(Client client) { }
-        public void ClientDisconnected(Client client) { }
+        public override void ClientConnected(Client client) { }
+        public override void ClientDisconnected(Client client) { }
 
-        public void SendServerMessage(Client sender, string message, bool fromServer = false) { }
-        public void SendPrivateMessage(Client sender, Client destClient, string message, bool fromServer = false)
+        public override void SendPrivateMessage(Client sender, Client destClient, string message, bool fromServer = false)
         {
+            /*
             if (destClient is NPCPlayer)
                 destClient.SendPacket(new ChatMessagePrivatePacket() { DestinationPlayerName = sender.Name, Message = message});
                 //PokeDPlayerSendToClient(destClient, new ChatPrivateMessagePacket() { Message = message });
             else
                 Server.NotifyClientPrivateMessage(this, sender, destClient, message);
+            */
         }
-        public void SendGlobalMessage(Client sender, string message, bool fromServer = false) { }
+        //public override void SendGlobalMessage(Client sender, string message, bool fromServer = false) { }
+        //public override void SendServerMessage(Client sender, string message) { }
 
-        public void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false) { }
-        public void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false) { }
-        public void SendTradeCancel(Client sender, Client destClient, bool fromServer = false) { }
+        public override void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false) { }
+        public override void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false) { }
+        public override void SendTradeCancel(Client sender, Client destClient, bool fromServer = false) { }
 
-        public void SendPosition(Client sender, bool fromServer = false)
+        public override void SendPosition(Client sender, bool fromServer = false)
         {
             if (sender is NPCPlayer)
             {
@@ -145,7 +138,7 @@ namespace PokeD.Server
         public void ExecuteCommand(string command) { }
 
 
-        public void Dispose()
+        public override void Dispose()
         {
             for (int i = 0; i < Clients.Count; i++)
                 Clients[i].Dispose();

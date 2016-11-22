@@ -10,6 +10,7 @@ using PokeD.Core.Packets.P3D.Client;
 using PokeD.Core.Packets.P3D.Server;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
+using PokeD.Server.Chat;
 using PokeD.Server.Extensions;
 
 namespace PokeD.Server.Clients.P3D
@@ -53,7 +54,7 @@ namespace PokeD.Server.Clients.P3D
                                 break;
 
                             case 4:
-                                Name = packet.Name;
+                                Nickname = packet.Name;
                                 break;
 
                             case 5:
@@ -166,7 +167,8 @@ namespace PokeD.Server.Clients.P3D
                 SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = "Invalid command!" });
             }
             else if(IsInitialized)
-                Module.SendGlobalMessage(this, packet.Message);
+                //Module.SendGlobalMessage(this, packet.Message);
+                Module.SendChatMessage(new ChatMessage(this, packet.Message));
         }
         private void HandlePrivateMessage(ChatMessagePrivatePacket packet)
         {
@@ -189,7 +191,7 @@ namespace PokeD.Server.Clients.P3D
             {
                 var message = $"The player {playerName} {packet.EventMessage}";
 
-                Module.SendServerMessage(this, message);
+                SendServerMessage(message);
             }
         }
 

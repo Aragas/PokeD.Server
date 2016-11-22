@@ -1,6 +1,6 @@
 ﻿using PokeD.Core.Data.PokeD.Monster;
 
-namespace PokeD.Server.Data
+namespace PokeD.Server.Database
 {
     public class TradeInstance
     {

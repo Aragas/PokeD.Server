@@ -1,13 +1,13 @@
 ﻿using System;
 
-using PCLExt.Database;
-
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Data.PokeD.Monster.Data;
 
-namespace PokeD.Server.DatabaseData
+using SQLite.Net.Attributes;
+
+namespace PokeD.Server.Database
 {
-    public sealed class MonsterDB : DatabaseTable<Guid>
+    public sealed class MonsterDB : IDatabaseTable
     {
         private static string GetString(MonsterStats monsterStats)
         {
@@ -35,7 +35,8 @@ namespace PokeD.Server.DatabaseData
 
 
 
-        public override Guid Id { get; protected set; } = Guid.NewGuid();
+        [PrimaryKey]
+        public Guid Id { get; protected set; } = Guid.NewGuid();
 
 
         public short Species { get; private set; }

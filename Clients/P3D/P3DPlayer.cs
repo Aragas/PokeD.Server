@@ -18,8 +18,10 @@ using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Client;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
+using PokeD.Server.Chat;
+using PokeD.Server.Commands;
 using PokeD.Server.Data;
-using PokeD.Server.DatabaseData;
+using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.P3D
 {
@@ -37,8 +39,7 @@ namespace PokeD.Server.Clients.P3D
         private char DecimalSeparator { get; set; }
 
 
-        private string _name;
-        public override string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {_name}" : _name; } protected set { _name = value; } }
+        public override string Nickname { get; protected set; }
 
 
         public override string LevelFile { get; set; }
@@ -65,6 +66,7 @@ namespace PokeD.Server.Clients.P3D
 
         public override DateTime ConnectionTime { get; } = DateTime.Now;
         public override CultureInfo Language => new CultureInfo("en");
+        public override PermissonFlags Permissions { get; set; }
 
         bool IsInitialized { get; set; }
 
@@ -257,10 +259,11 @@ namespace PokeD.Server.Clients.P3D
             Sended.Add(p3dPacket);
 #endif
         }
-        public override void SendMessage(string text) { SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = text }); }
+        public override void SendChatMessage(ChatMessage chatMessage) { SendPacket(new ChatMessageGlobalPacket { Origin = chatMessage.Sender.ID, Message = chatMessage.Message }); }
+        public override void SendServerMessage(string text) { SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = text }); }
 
 
-        public override void LoadFromDB(Player data)
+        public override void LoadFromDB(ClientTable data)
         {
             if (ID == 0)
                 ID = data.Id;

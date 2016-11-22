@@ -4,21 +4,21 @@ using System.Linq;
 using PCLExt.FileStorage;
 using PCLExt.Lua;
 
-namespace PokeD.Server.Commands
+namespace PokeD.Server.Chat
 {
-    public static class CommandLuaLoader
+    public static class ChatChannelLuaLoader
     {
-        private const string Identifier = "command_";
+        private const string Identifier = "chatchannel_";
         private const string Extension = ".lua";
 
-        static CommandLuaLoader()
+        static ChatChannelLuaLoader()
         {
             Lua.RegisterModule("hook");
             Lua.RegisterModule("translator");
         }
 
-        public static IEnumerable<CommandLua> LoadCommands(Server server) => Storage.LuaFolder.GetFilesAsync().Result
+        public static IEnumerable<ChatChannelLua> LoadChatChannels() => Storage.LuaFolder.GetFilesAsync().Result
             .Where(file => file.Name.ToLower().StartsWith(Identifier) && file.Name.ToLower().EndsWith(Extension))
-            .Select(file => new CommandLua(server, Lua.CreateLuaScript(file.Name)));
+            .Select(file => new ChatChannelLua(Lua.CreateLuaScript(file.Name)));
     }
 }

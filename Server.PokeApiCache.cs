@@ -41,31 +41,31 @@ namespace PokeD.Server
         {
             try
             {
-                Input.ConsoleWrite($"Caching Pokemon {index.ToString("000")}");
+                Input.ConsoleWrite($"Caching Pokemon {index:000}");
                 await PokeApiV2.GetPokemon(new ResourceUri($"api/v2/pokemon/{index}/", true));
             }
-            catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Pokemon {index.ToString("000")}"); }
+            catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Pokemon {index:000}"); }
         }
         private static async Task CachePokemonSpecies(int index)
         {
             try
             {
-                Input.ConsoleWrite($"Caching Pokemon Species {index.ToString("000")}");
+                Input.ConsoleWrite($"Caching Pokemon Species {index:000}");
                 await PokeApiV2.GetPokemonSpecies(new ResourceUri($"api/v2/pokemon-species/{index}/", true));
             }
             catch (Exception)
             {
-                Logger.Log(LogType.Warning, $"Failed Caching Pokemon Species {index.ToString("000")}");
+                Logger.Log(LogType.Warning, $"Failed Caching Pokemon Species {index:000}");
             }
         }
         private static async Task CacheItem(int index)
         {
             try
             {
-                Input.ConsoleWrite($"Caching Item {index.ToString("000")}");
+                Input.ConsoleWrite($"Caching Item {index:000}");
                 await PokeApiV2.GetItems(new ResourceUri($"api/v2/item/{index}/", true));
             }
-            catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Item {index.ToString("000")}"); }
+            catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Item {index:000}"); }
         }
         private static async Task CacheType()
         {
@@ -73,10 +73,10 @@ namespace PokeD.Server
             {
                 try
                 {
-                    Input.ConsoleWrite($"Caching Type {i.ToString("00")}");
+                    Input.ConsoleWrite($"Caching Type {i:00}");
                     await PokeApiV2.GetTypes(new ResourceUri($"api/v2/type/{i}/", true));
                 }
-                catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Type {i.ToString("00")}"); }
+                catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Type {i:00}"); }
             }
         }
         private static async Task CacheAbility()
@@ -85,10 +85,10 @@ namespace PokeD.Server
             {
                 try
                 {
-                    Input.ConsoleWrite($"Caching Ability {i.ToString("000")}");
+                    Input.ConsoleWrite($"Caching Ability {i:000}");
                     await PokeApiV2.GetAbilities(new ResourceUri($"api/v2/ability/{i}/", true));
                 }
-                catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Ability {i.ToString("000")}"); }
+                catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Ability {i:000}"); }
             }
         }
         private static async Task CacheEggGroup()
@@ -97,10 +97,10 @@ namespace PokeD.Server
             {
                 try
                 {
-                    Input.ConsoleWrite($"Caching Egg Group {i.ToString("00")}");
+                    Input.ConsoleWrite($"Caching Egg Group {i:00}");
                     await PokeApiV2.GetEggGroups(new ResourceUri($"api/v2/egg-group/{i}/", true));
                 }
-                catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Egg Group {i.ToString("00")}"); }
+                catch (Exception) { Logger.Log(LogType.Warning, $"Failed Caching Egg Group {i:00}"); }
             }
         }
 

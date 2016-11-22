@@ -9,9 +9,9 @@ using PCLExt.Lua;
 
 namespace PokeD.Server.Clients.NPC
 {
-    public static class NPCLoader
+    public static class NPCLuaLoader
     {
-        static NPCLoader()
+        static NPCLuaLoader()
         {
             Lua.RegisterCustomFunc("Vector3", (Func<float, float, float, Vector3>) ((x, y, z) => new Vector3(x, y, z)));
             Lua.RegisterCustomFunc("Vector2", (Func<float, float, Vector2>) ((x, y) => new Vector2(x, y)));
@@ -23,13 +23,9 @@ namespace PokeD.Server.Clients.NPC
         private const string Identifier = "npc_";
         private const string Extension = ".lua";
 
-        public static List<Client> LoadNPCs(IServerModule server)
-        {
-            return new List<Client>(Storage.LuaFolder.GetFilesAsync().Result
+        public static List<Client> LoadNPCs(ServerModule server)=>
+            new List<Client>(Storage.LuaFolder.GetFilesAsync().Result
                 .Where(file => file.Name.ToLower().StartsWith(Identifier) && file.Name.ToLower().EndsWith(Extension))
-                .Select(file => new NPCPlayer(GetNPCName(file.Name), Lua.CreateLuaScript(file.Name), server)));
-        }
-
-        private static string GetNPCName(string fileName) { return fileName.Remove(0, Identifier.Length).Remove(fileName.Length - Identifier.Length - Extension.Length, Extension.Length); }
+                .Select(file => new NPCPlayer(Lua.CreateLuaScript(file.Name), server)));
     }
 }

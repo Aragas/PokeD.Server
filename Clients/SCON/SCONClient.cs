@@ -15,8 +15,10 @@ using PokeD.Core.Packets.SCON.Chat;
 using PokeD.Core.Packets.SCON.Logs;
 using PokeD.Core.Packets.SCON.Lua;
 using PokeD.Core.Packets.SCON.Status;
+using PokeD.Server.Chat;
+using PokeD.Server.Commands;
 using PokeD.Server.Data;
-using PokeD.Server.DatabaseData;
+using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.SCON
 {
@@ -24,24 +26,25 @@ namespace PokeD.Server.Clients.SCON
     {
         #region P3D Values
 
-        public override int ID { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
-        public override string Name { get { throw new NotImplementedException(); } protected set { throw new NotImplementedException(); } }
+        public override int ID { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
+        public override string Nickname { get { throw new NotSupportedException(); } protected set { throw new NotSupportedException(); } }
         
-        public override string LevelFile { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
-        public override Vector3 Position { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
+        public override string LevelFile { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
+        public override Vector3 Position { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
 
         #endregion P3D Values
 
         #region Values
 
-        public override Prefix Prefix { get { throw new NotImplementedException(); } protected set { throw new NotImplementedException(); } }
+        public override Prefix Prefix { get { throw new NotSupportedException(); } protected set { throw new NotSupportedException(); } }
 
-        public override string PasswordHash { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
+        public override string PasswordHash { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
 
         public override string IP => Stream.Host;
 
         public override DateTime ConnectionTime { get; } = DateTime.Now;
         public override CultureInfo Language { get; }
+        public override PermissonFlags Permissions { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
 
         bool EncryptionEnabled => Module.EncryptionEnabled;
 
@@ -227,9 +230,10 @@ namespace PokeD.Server.Clients.SCON
             Sended.Add(sconPacket);
 #endif
         }
-        public override void SendMessage(string text) { }
+        public override void SendChatMessage(ChatMessage chatMessage) { }
+        public override void SendServerMessage(string text) { }
 
-        public override void LoadFromDB(Player data) { }
+        public override void LoadFromDB(ClientTable data) { }
 
 
         public override void Dispose()

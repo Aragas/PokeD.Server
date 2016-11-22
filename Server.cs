@@ -11,15 +11,17 @@ using Org.BouncyCastle.Security;
 
 using PCLExt.Config;
 using PCLExt.Config.Extensions;
-using PCLExt.Database;
 using PCLExt.FileStorage;
 using PCLExt.Thread;
 
 using PokeD.Core;
 using PokeD.Core.Data.PokeApi;
+using PokeD.Server.Chat;
 using PokeD.Server.Commands;
 using PokeD.Server.Data;
-using PokeD.Server.DatabaseData;
+
+using SQLite.Net;
+using SQLite.Net.Platform.Generic;
 
 namespace PokeD.Server
 {
@@ -30,8 +32,6 @@ namespace PokeD.Server
 
         [ConfigIgnore]
         public ConfigType ConfigType { get; }
-        [ConfigIgnore]
-        public DatabaseType DatabaseType { get; }
 
         #region Settings
 
@@ -58,7 +58,7 @@ namespace PokeD.Server
         #endregion Settings
 
         [ConfigIgnore]
-        public List<IServerModule> Modules { get; } = new List<IServerModule>();
+        public List<ServerModule> Modules { get; } = new List<ServerModule>();
 
         private IThread ListenToConnectionsThread { get; set; }
 
@@ -69,24 +69,22 @@ namespace PokeD.Server
         [ConfigIgnore]
         public AsymmetricCipherKeyPair RSAKeyPair { get; private set; }
 
-        private BaseDatabase Database { get; set; }
+        private SQLiteConnection Database { get; set; }
 
 
-        public Server(ConfigType configType, DatabaseType databaseType)
+        public Server(ConfigType configType)
         {
             ConfigType = configType;
-            DatabaseType = databaseType;
 
+            Modules.Add(new ModuleSCON(this));
+            Modules.Add(new ModuleNPC(this));
             Modules.Add(new ModuleP3D(this));
-            //Modules.Add(new ModuleSCON(this));
             Modules.Add(new ModulePokeD(this));
-            //Modules.Add(new ModuleNPC(this));
-            //Modules.Add(new ModuleNancy(this));
-            //Modules.Add(new ModuleP3DProxy(this));
-            //Modules.Add(new ModulePixelmon(this));
-            //Modules.Add(new ModuleVBA(this));
+
+            Modules.AddRange(LoadModules());
 
             CommandManager = new CommandManager(this);
+            ChatChannelManager = new ChatChannelManager(this);
         }
 
         private static AsymmetricCipherKeyPair GenerateKeyPair()
@@ -118,13 +116,8 @@ namespace PokeD.Server
 
 
             Logger.Log(LogType.Info, $"Loading {DatabaseName}...");
-            Database = PCLExt.Database.Database.Create(Path.Combine(Storage.DatabaseFolder.Path, DatabaseName), DatabaseType);
-            Database.CreateTable<Player>();
-            Database.CreateTable<Battle>();
-            Database.CreateTable<MonsterDB>();
-            Database.CreateTable<Trade>();
-            Database.CreateTable<TradePlayer>();
-
+            Database = new SQLiteConnection(new SQLitePlatformGeneric(), Path.Combine(Storage.DatabaseFolder.Path, $"{DatabaseName}.sqlite3"));
+            CreateTables();
 
             Logger.Log(LogType.Info, $"Starting Server.");
 

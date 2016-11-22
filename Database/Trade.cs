@@ -1,14 +1,14 @@
 ﻿using System;
 
-using PCLExt.Database;
+using SQLite.Net;
+using SQLite.Net.Attributes;
 
-using PokeD.Server.Data;
-
-namespace PokeD.Server.DatabaseData
+namespace PokeD.Server.Database
 {
-    public sealed class Trade : DatabaseTable<Guid>
+    public sealed class Trade : IDatabaseTable
     {
-        public override Guid Id { get; protected set; } = Guid.NewGuid();
+        [PrimaryKey]
+        public Guid Id { get; protected set; } = Guid.NewGuid();
 
 
         public Guid TradePlayerID_0 { get; private set; }
@@ -16,7 +16,7 @@ namespace PokeD.Server.DatabaseData
 
 
         public Trade() { }
-        public Trade(BaseDatabase database, TradeInstance trade)
+        public Trade(SQLiteConnection database, TradeInstance trade)
         {
             var tradePlayer0 = new TradePlayer(database, trade.Player_0_ID, trade.Player_0_Monster);
             database.Insert(tradePlayer0);

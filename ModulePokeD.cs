@@ -8,13 +8,11 @@ using System.Text;
 using Aragas.Network.Data;
 using Aragas.Network.Extensions;
 
-using PCLExt.Config;
 using PCLExt.Config.Extensions;
 using PCLExt.Network;
 using PCLExt.Thread;
 using PCLExt.FileStorage;
 
-using PokeD.Core.Data.PokeD.Battle;
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Packets.PokeD;
 using PokeD.Core.Packets.PokeD.Authorization;
@@ -29,7 +27,7 @@ using TMXParserPCL;
 
 namespace PokeD.Server
 {
-    public class ModulePokeD : IServerModule
+    public class ModulePokeD : ServerModule
     {
         const string FileName = "ModulePokeD";
 
@@ -38,25 +36,19 @@ namespace PokeD.Server
 
         #region Settings
 
-        public bool Enabled { get; private set; } = false;
+        public override bool Enabled { get; protected set; } = false;
 
-        public ushort Port { get; private set; } = 15130;
+        public override ushort Port { get; protected set; } = 15130;
 
-        public bool EncryptionEnabled { get; private set; } = true;
+        public bool EncryptionEnabled { get; protected set; } = true;
         
         #endregion Settings
 
-        [ConfigIgnore]
-        public Server Server { get; }
         bool IsDisposing { get; set; }
 
         ITCPListener Listener { get; set; }
 
 
-        [ConfigIgnore]
-        public ClientList Clients { get; } = new ClientList();
-        [ConfigIgnore]
-        public bool ClientsVisible { get; } = true;
         List<Client> PlayersJoining { get; } = new List<Client>();
         List<Client> PlayersToAdd { get; } = new List<Client>();
         List<Client> PlayersToRemove { get; } = new List<Client>();
@@ -64,13 +56,11 @@ namespace PokeD.Server
         ConcurrentQueue<PlayerPacketPokeD> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerPacketPokeD>();
         ConcurrentQueue<PokeDPacket> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<PokeDPacket>();
 
-        List<BattleInstance> Battles { get; } = new List<BattleInstance>();
+
+        public ModulePokeD(Server server) : base(server) { }
 
 
-        public ModulePokeD(Server server) { Server = server; }
-
-
-        public bool Start()
+        public override bool Start()
         {
             var status = FileSystemExtensions.LoadConfig(Server.ConfigType, FileName, this);
             if (!status)
@@ -86,7 +76,7 @@ namespace PokeD.Server
 
             return true;
         }
-        public void Stop()
+        public override void Stop()
         {
             var status = FileSystemExtensions.SaveConfig(Server.ConfigType, FileName, this);
             if (!status)
@@ -100,12 +90,12 @@ namespace PokeD.Server
         }
 
 
-        public void StartListen()
+        public override void StartListen()
         {
             Listener = SocketServer.CreateTCP(Port);
             Listener.Start();
         }
-        public void CheckListener()
+        public override void CheckListener()
         {
             if (Listener != null && Listener.AvailableClients)
                 if (Listener.AvailableClients)
@@ -139,10 +129,10 @@ namespace PokeD.Server
 
 
         Stopwatch UpdateWatch = Stopwatch.StartNew();
-        public void Update()
+        public override void Update()
         {
-            for (var i = 0; i < Battles.Count; i++)
-                Battles[i]?.Update();
+            //for (var i = 0; i < Battles.Count; i++)
+            //    Battles[i]?.Update();
             
             //for (var i = 0; i < Clients.Count; i++)
             //    Clients[i]?.Update();
@@ -257,26 +247,19 @@ namespace PokeD.Server
         }
 
 
-        public void ClientConnected(Client client)
+        public override void ClientConnected(Client client)
         {
             //PokeDPlayerSendToAllClients(new CreatePlayerPacket { PlayerID = client.ID }, -1);
             //PokeDPlayerSendToAllClients(client.GetDataPacket(), client.ID);
             PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() { Message = $"Player {client.Name} joined the game!" });
         }
-        public void ClientDisconnected(Client client)
+        public override void ClientDisconnected(Client client)
         {
             //PokeDPlayerSendToAllClients(new DestroyPlayerPacket { PlayerID = client.ID });
             PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() { Message = $"Player {client.Name} disconnected!" });
         }
 
-        public void SendServerMessage(Client sender, string message, bool fromServer = false)
-        {
-            if (!fromServer)
-                Server.NotifyServerMessage(this, sender, message);
-
-            PokeDPlayerSendToAllClients(new ChatServerMessagePacket() { Message = message });
-        }
-        public void SendPrivateMessage(Client sender, Client destClient, string message, bool fromServer = false)
+        public override void SendPrivateMessage(Client sender, Client destClient, string message, bool fromServer = false)
         {
             if (!fromServer)
                 Server.NotifyClientPrivateMessage(this, sender, destClient, message);
@@ -284,15 +267,25 @@ namespace PokeD.Server
             if (destClient is PokeDPlayer)
                 PokeDPlayerSendToClient(destClient, new ChatPrivateMessagePacket() { Message = message });
         }
-        public void SendGlobalMessage(Client sender, string message, bool fromServer = false)
-        {
-            if (!fromServer)
-                Server.NotifyServerGlobalMessage(this, sender, message);
+        //public override void SendGlobalMessage(Client sender, string message, bool fromServer = false)
+        //{
+        //    if (!fromServer)
+        //        Server.NotifyServerGlobalMessage(this, sender, message);
+        //
+        //    PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() { Message = message });
+        //}
+        //public override void SendServerMessage(Client sender, string message)
+        //{
+        //    for (var i = 0; i > Clients.Count; i++)
+        //        Clients[i].SendServerMessage(message);
+        //
+        //    //if (!fromServer)
+        //    //    Server.NotifyServerMessage(this, sender, message);
+        //    //
+        //    //PokeDPlayerSendToAllClients(new ChatServerMessagePacket() { Message = message });
+        //}
 
-            PokeDPlayerSendToAllClients(new ChatGlobalMessagePacket() { Message = message });
-        }
-
-        public void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false)
+        public override void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false)
         {
             if (!fromServer)
                 Server.NotifyClientTradeOffer(this, sender, monster, destClient);
@@ -300,7 +293,7 @@ namespace PokeD.Server
             if (destClient is PokeDPlayer)
                 PokeDPlayerSendToClient(destClient, new TradeOfferPacket() { DestinationID = new VarInt(-1), MonsterData = monster.InstanceData });
         }
-        public void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false)
+        public override void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false)
         {
             if (!fromServer)
                 Server.NotifyClientTradeConfirm(this, sender, destClient);
@@ -312,7 +305,7 @@ namespace PokeD.Server
                 Thread.Sleep(5000);
             }
         }
-        public void SendTradeCancel(Client sender, Client destClient, bool fromServer = false)
+        public override void SendTradeCancel(Client sender, Client destClient, bool fromServer = false)
         {
             if (!fromServer)
                 Server.NotifyClientTradeCancel(this, sender, destClient);
@@ -321,7 +314,7 @@ namespace PokeD.Server
                 PokeDPlayerSendToClient(destClient, new TradeRefusePacket() { DestinationID = new VarInt(-1) });
         }
 
-        public void SendPosition(Client sender, bool fromServer = false)
+        public override void SendPosition(Client sender, bool fromServer = false)
         {
             if (!fromServer)
                 Server.NotifyClientPosition(this, sender);
@@ -375,15 +368,15 @@ namespace PokeD.Server
         }
 
 
-        public BattleInstance CreateBattle(IBattleInfo info, string message)
-        {
-            var battle = new BattleInstance(Server, info, message);
-            Battles.Add(battle);
-            return battle;
-        }
+        //public BattleInstance CreateBattle(IBattleInfo info, string message)
+        //{
+        //    var battle = new BattleInstance(Server, info, message);
+        //    Battles.Add(battle);
+        //    return battle;
+        //}
 
 
-        public void Dispose()
+        public override void Dispose()
         {
             if (IsDisposing)
                 return;

@@ -1,14 +1,16 @@
 ﻿using System;
 
-using PCLExt.Database;
-
 using PokeD.Core.Data.PokeD.Monster;
 
-namespace PokeD.Server.DatabaseData
+using SQLite.Net;
+using SQLite.Net.Attributes;
+
+namespace PokeD.Server.Database
 {
-    public sealed class TradePlayer : DatabaseTable<Guid>
+    public sealed class TradePlayer : IDatabaseTable
     {
-        public override Guid Id { get; protected set; } = Guid.NewGuid();
+        [PrimaryKey]
+        public Guid Id { get; protected set; } = Guid.NewGuid();
 
 
         public int PlayerID { get; private set; }
@@ -17,7 +19,7 @@ namespace PokeD.Server.DatabaseData
 
 
         public TradePlayer() { }
-        public TradePlayer(BaseDatabase database, int playerID, Monster monster)
+        public TradePlayer(SQLiteConnection database, int playerID, Monster monster)
         {
             PlayerID = playerID;
 

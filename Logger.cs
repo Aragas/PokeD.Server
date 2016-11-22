@@ -58,6 +58,6 @@ namespace PokeD.Server
     {
         public static void Log(LogType type, string message) => Input.LogWriteLine(DateTime.Now, $"[{type}]: {message}");
 
-        public static void LogChatMessage(string player, string message) => Input.LogWriteLine(DateTime.Now, $"<{player}>: {message}");
+        public static void LogChatMessage(string player, string chatChannel, string message) => Input.LogWriteLine(DateTime.Now, $"[{chatChannel}]<{player}>: {message}");
     }
 }

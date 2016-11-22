@@ -9,7 +9,7 @@ namespace PokeD.Server.Commands
         public override string Name { get; protected set; } = "help";
         public override string Description { get; protected set; } = "Command help menu.";
 
-        public HelpCommand(CommandManager commandManager) : base(commandManager) { }
+        public HelpCommand(Server server) : base(server) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {
@@ -52,7 +52,7 @@ namespace PokeD.Server.Commands
                 page = 1;
 
             var startingIndex = (page - 1) * perPage;
-            client.SendMessage($"--Help page {page} of {numPages}--");
+            client.SendServerMessage($"--Help page {page} of {numPages}--");
             for (var i = 0; i < perPage; i++)
             {
                 var index = startingIndex + i;
@@ -60,10 +60,10 @@ namespace PokeD.Server.Commands
                     break;
                 
                 var command = CommandManager.Commands[index];
-                client.SendMessage($"/{command.Name} - {command.Description}");
+                client.SendServerMessage($"/{command.Name} - {command.Description}");
             }
         }
 
-        public override void Help(Client client, string alias) { client.SendMessage($"Correct usage is /{alias} <page#/command> [command arguments]"); }
+        public override void Help(Client client, string alias) { client.SendServerMessage($"Correct usage is /{alias} <page#/command> [command arguments]"); }
     }
 }

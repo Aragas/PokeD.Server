@@ -1,27 +1,20 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 
 using Aragas.Network.Data;
 using Aragas.Network.Packets;
 
-using PCLExt.FileStorage;
 using PCLExt.Lua;
 
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Extensions;
-using PokeD.Core.Packets.P3D;
-using PokeD.Core.Packets.P3D.Battle;
-using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Shared;
-using PokeD.Core.Packets.P3D.Trade;
+using PokeD.Server.Chat;
+using PokeD.Server.Commands;
 using PokeD.Server.Data;
-using PokeD.Server.DatabaseData;
+using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.NPC
 {
@@ -36,8 +29,7 @@ namespace PokeD.Server.Clients.NPC
         public override int ID { get; set; }
 
         private char DecimalSeparator { get; set; } = '.';
-        public string PureName { get; set; } = string.Empty;
-        public override string Name { get { return Prefix != Prefix.NONE ? $"[{Prefix}] {PureName}" : PureName; } protected set { PureName = value; } }
+        public override string Nickname { get; protected set; } = string.Empty;
         public override Prefix Prefix { get; protected set; } = Prefix.NPC;
         public override string PasswordHash { get; set; } = string.Empty;
 
@@ -57,35 +49,41 @@ namespace PokeD.Server.Clients.NPC
 
         #region Other Values
 
-        public override string IP => "NPC";
+        public override string IP => string.Empty;
 
         public override DateTime ConnectionTime { get; } = DateTime.MinValue;
         public override CultureInfo Language => new CultureInfo("ru-RU");
+        public override PermissonFlags Permissions { get; set; }
 
         #endregion Other Values
 
 
-        IServerModule Module { get; }
+        ServerModule Module { get; }
 
-        LuaScript Lua { get; }
-        LuaTable Hook => PCLExt.Lua.Lua.ToLuaTable(Lua["hook"]);
-
-        
-#if DEBUG
-        List<P3DPacket> Received { get; } =  new List<P3DPacket>();
-#endif
+        LuaScript Script { get; }
+        LuaTable Hook => Lua.ToLuaTable(Script["hook"]);
 
 
-        public NPCPlayer(string name, LuaScript luaScript, IServerModule module)
+
+        public NPCPlayer(LuaScript luaScript, ServerModule module)
         {
             Module = module;
 
-            Name = name;
-            Lua = luaScript;
+            Script = luaScript;
+
+            Script["NPC"] = this; // Sandbox it, a lot of vars opened
+            Script.ReloadFile();
+        }
+        public NPCPlayer(string name, LuaScript luaScript, ServerModule module)
+        {
+            Module = module;
+
+            Nickname = name;
+            Script = luaScript;
 
 
-            Lua["NPC"] = this; // Sandbox it, a lot of vars opened
-            Lua.ReloadFile();
+            Script["NPC"] = this; // Sandbox it, a lot of vars opened
+            Script.ReloadFile();
         }
 
         Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
@@ -102,103 +100,12 @@ namespace PokeD.Server.Clients.NPC
             UpdateWatch.Reset();
             UpdateWatch.Start();
         }
-        //public void BattleUpdate(BattleDataTable battleData)
-        //{
-        //    Hook.CallFunction("Call", "BattleUpdate", battleData);
-        //}
 
-        public Client[] GetLocalPlayers() => Module.Server.GetAllClients().Where(client => client != this && client.LevelFile == LevelFile).ToArray();
-        //public Client[] GetLocalPlayers() => Module.Server.AllClients().Where(client => client.LevelFile == LevelFile).ToArray();
+        public override void SendPacket(Packet packet) { }
+        public override void SendChatMessage(ChatMessage chatMessage) { }
+        public override void SendServerMessage(string text) { }
 
-
-        public override void SendPacket(Packet packet)
-        {
-            var protoOrigin = packet as P3DPacket;
-            if (protoOrigin == null)
-                throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
-
-#if DEBUG
-            Received.Add(protoOrigin);
-#endif
-
-            HandlePacket(protoOrigin);
-        }
-        public override void SendMessage(string text) { }
-
-        private void HandlePacket(P3DPacket packet)
-        {
-            switch ((P3DPacketTypes) (int) packet.ID)
-            {
-                case P3DPacketTypes.ChatMessagePrivate:
-                    HandlePrivateMessage((ChatMessagePrivatePacket) packet);
-                    break;
-
-                case P3DPacketTypes.ChatMessageGlobal:
-                    HandleChatMessage((ChatMessageGlobalPacket) packet);
-                    break;
-
-
-                case P3DPacketTypes.GameStateMessage:
-                    HandleGameStateMessage((GameStateMessagePacket) packet);
-                    break;
-
-
-                case P3DPacketTypes.TradeRequest:
-                    HandleTradeRequest((TradeRequestPacket) packet);
-                    break;
-
-                case P3DPacketTypes.TradeJoin:
-                    HandleTradeJoin((TradeJoinPacket) packet);
-                    break;
-
-                case P3DPacketTypes.TradeQuit:
-                    HandleTradeQuit((TradeQuitPacket) packet);
-                    break;
-
-                case P3DPacketTypes.TradeOffer:
-                    HandleTradeOffer((TradeOfferPacket) packet);
-                    break;
-
-                case P3DPacketTypes.TradeStart:
-                    HandleTradeStart((TradeStartPacket) packet);
-                    break;
-
-
-                case P3DPacketTypes.BattleRequest:
-                    HandleBattleRequest((BattleRequestPacket) packet);
-                    break;
-
-                case P3DPacketTypes.BattleJoin:
-                    HandleBattleJoin((BattleJoinPacket) packet);
-                    break;
-
-                case P3DPacketTypes.BattleQuit:
-                    HandleBattleQuit((BattleQuitPacket) packet);
-                    break;
-
-                case P3DPacketTypes.BattleOffer:
-                    HandleBattleOffer((BattleOfferPacket) packet);
-                    break;
-
-                case P3DPacketTypes.BattleStart:
-                    HandleBattleStart((BattleStartPacket) packet);
-                    break;
-
-                case P3DPacketTypes.BattleClientData:
-                    HandleBattleClientData((BattleClientDataPacket) packet);
-                    break;
-
-                case P3DPacketTypes.BattleHostData:
-                    HandleBattleHostData((BattleHostDataPacket) packet);
-                    break;
-
-                case P3DPacketTypes.BattlePokemonData:
-                    HandleBattlePokemonData((BattlePokemonDataPacket) packet);
-                    break;
-            }
-        }
-
-        public override void LoadFromDB(Player data)
+        public override void LoadFromDB(ClientTable data)
         {
             if (ID == 0)
                 ID = data.Id;
@@ -225,77 +132,21 @@ namespace PokeD.Server.Clients.NPC
                 PokemonSkin,
                 PokemonFacing.ToString(CultureInfo));
         }
-        public override GameDataPacket GetDataPacket() { return new GameDataPacket { DataItems = GenerateDataItems() }; }
-        
+        public override GameDataPacket GetDataPacket() => new GameDataPacket { DataItems = GenerateDataItems() };
+
         public override void Dispose()
         {
 
         }
 
 
-        public void Move(int x, int y, int z)
-        {
+        public void SetNickname(string nickname) { Nickname = nickname; }
 
-        }
+        public Client[] GetLocalPlayers() => Module.Server.GetAllClients().Where(client => client != this && client.LevelFile == LevelFile).ToArray();
 
-        public void SayPlayerPM(Client client, string message) { Module.SendPrivateMessage(this, client, message); }
-        public void SayGlobal(string message) { Module.SendGlobalMessage(this, message); }
-        public void SayGlobal(object message) {  }
+        public void Move(int x, int y, int z) { }
 
-        public void SaveTable(string name, object obj)
-        {
-            var table = PCLExt.Lua.Lua.ToLuaTable(obj);
-            dynamic dyn = table;
-            var ttt = dyn.Serialize();
-
-            var dict = table.ToDictionary();
-            var t = table.ToArray();
-            var tt = ParseTable(obj);
-
-            var file = Storage.DatabaseFolder.CreateFileAsync(name, CreationCollisionOption.OpenIfExists).Result;
-            using (var stream = file.OpenAsync(FileAccess.ReadAndWrite).Result)
-            using (var writer = new StreamWriter(stream))
-            {
-                WriteLine(writer, tt);
-            }
-        }
-        public void WriteLine(StreamWriter writer, object obj)
-        {
-            if (obj == null)
-                return;
-
-            if (typeof (IEnumerable).GetTypeInfo().IsAssignableFrom(obj.GetType().GetTypeInfo()))
-                foreach (var enumer in obj as IEnumerable)
-                    WriteLine(writer, enumer);
-            
-
-            writer.WriteLine(obj);
-        }
-
-        public object[] ParseTable(object obj)
-        {
-            if (obj == null)
-                return new object[] { "" };
-
-            var type = obj.GetType();
-
-            var table = PCLExt.Lua.Lua.ToLuaTable(obj);
-            if (table != null)
-            {
-                return table.ToArray().Select(ParseTable).Cast<object>().ToArray();
-            }
-            else
-            {
-                if (typeof (IEnumerable).GetTypeInfo().IsAssignableFrom(obj.GetType().GetTypeInfo()))
-                    return (obj as IEnumerable).Cast<object>().ToArray();
-
-                return new object[] {obj};
-            }
-        }
-
-        public object LoadTable()
-        {
-            return null;
-        }
+        public void SayPrivateMessage(Client client, string message) => Module.SendPrivateMessage(this, client, message);
+        public void SayGlobalMessage(string message) => Module.SendChatMessage(new ChatMessage(this, message));
     }
 }
