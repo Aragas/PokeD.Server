@@ -7,9 +7,9 @@ namespace PokeD.Server.Commands
     public enum PermissionFlags
     {
         Default = 0,
-        GameJolt = 1,
+        Verified = 1,
         Moderator = 2,
         Administrator = 4,
-        Owner = 8
+        Owner = 7
     }
 }
