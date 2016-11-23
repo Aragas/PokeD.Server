@@ -47,8 +47,7 @@ namespace PokeD.Server
         bool IsDisposing { get; set; }
 
         ITCPListener Listener { get; set; }
-
-
+        
         List<Client> PlayersJoining { get; } = new List<Client>();
         List<Client> PlayersToAdd { get; } = new List<Client>();
         List<Client> PlayersToRemove { get; } = new List<Client>();
@@ -119,7 +118,7 @@ namespace PokeD.Server
             PlayersToAdd.Add(client);
             PlayersJoining.Remove(client);
         }
-        public void RemoveClient(Client client, string reason = "")
+        public override void RemoveClient(Client client, string reason = "")
         {
             if (!string.IsNullOrEmpty(reason))
                 client.SendPacket(new DisconnectPacket { Reason = reason });

@@ -87,7 +87,7 @@ namespace PokeD.Server
 
             Server.NotifyClientConnected(this, client);
         }
-        public void RemoveClient(Client client, string reason = "")
+        public override void RemoveClient(Client client, string reason = "")
         {
             Server.DatabasePlayerSave(client, true);
 

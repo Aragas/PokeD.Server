@@ -2,15 +2,16 @@
 
 using PokeD.Server.Clients;
 
+// ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
-    public class ChangeChatChannelCommand : Command
+    public class ChatChannelChangeCommand : Command
     {
-        public override string Name { get; protected set; } = "changechatchannel";
-        public override string Description { get; protected set; } = "Change Client chat channel permission.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "changechannel", "cchat", "cchan", "cc" };
+        public override string Name { get; protected set; } = "chatchannelchange";
+        public override string Description { get; protected set; } = "Change Clients Chat Channel.";
+        public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "channelchange", "chatc", "chanc", "cc" };
 
-        public ChangeChatChannelCommand(Server server) : base(server) { }
+        public ChatChannelChangeCommand(Server server) : base(server) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {
@@ -27,6 +28,6 @@ namespace PokeD.Server.Commands
                 client.SendServerMessage($"Invalid arguments given.");
         }
 
-        public override void Help(Client client, string alias){ client.SendServerMessage($"Correct usage is /{alias} <global/local/custom>"); }
+        public override void Help(Client client, string alias){ client.SendServerMessage($"Correct usage is /{alias} <global/local/'custom'>"); }
     }
 }

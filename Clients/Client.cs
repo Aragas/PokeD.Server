@@ -24,7 +24,7 @@ namespace PokeD.Server.Clients
         public abstract Vector3 Position { get; set; }
         public abstract string LevelFile { get; set; }
 
-        public abstract PermissonFlags Permissions { get; set; }
+        public abstract PermissionFlags Permissions { get; set; }
         public abstract string IP { get; }
         public abstract DateTime ConnectionTime { get; }
         public abstract CultureInfo Language { get; }
@@ -38,7 +38,21 @@ namespace PokeD.Server.Clients
 
         public abstract void LoadFromDB(ClientTable data);
 
+        public abstract void Kick(string reason = "");
+        public abstract void Ban(string reason = "");
+
         public abstract void Update();
         public abstract void Dispose();
+    }
+    public abstract class Client<TServerModule> : Client where TServerModule : ServerModule
+    {
+        protected TServerModule Module { get; }
+
+
+        protected Client(TServerModule module) { Module = module; }
+
+
+        public sealed override void Kick(string reason = "") { Module.RemoveClient(this, reason); }
+        public sealed override void Ban(string reason = "") { Module.RemoveClient(this, reason); }
     }
 }

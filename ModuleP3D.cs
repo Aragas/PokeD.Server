@@ -245,7 +245,7 @@ namespace PokeD.Server
 
             //Server.ChatChannelManager.FindByAlias("global").Subscribe(client);
         }
-        public void RemoveClient(Client client, string reason = "")
+        public override void RemoveClient(Client client, string reason = "")
         {
             if (!string.IsNullOrEmpty(reason))
                 client.SendPacket(new KickedPacket { Origin = -1, Reason = reason });

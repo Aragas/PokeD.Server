@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+
 using PokeD.Server.Chat;
 using PokeD.Server.Clients;
 using PokeD.Server.Data;
@@ -21,7 +21,7 @@ namespace PokeD.Server.Commands
         public abstract string Name { get; protected set; }
         public abstract string Description { get; protected set; }
         public virtual IEnumerable<string> Aliases { get; protected set; } = new string[0];
-        public virtual PermissonFlags Permissons { get; protected set; } = PermissonFlags.Default;
+        public virtual PermissionFlags Permissions { get; protected set; } = PermissionFlags.Default;
 
         public Command(Server server) { Server = server; }
 

@@ -22,7 +22,7 @@ using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.SCON
 {
-    public partial class SCONClient : Client
+    public partial class SCONClient : Client<ModuleSCON>
     {
         #region P3D Values
 
@@ -44,7 +44,7 @@ namespace PokeD.Server.Clients.SCON
 
         public override DateTime ConnectionTime { get; } = DateTime.Now;
         public override CultureInfo Language { get; }
-        public override PermissonFlags Permissions { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
+        public override PermissionFlags Permissions { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
 
         bool EncryptionEnabled => Module.EncryptionEnabled;
 
@@ -56,8 +56,6 @@ namespace PokeD.Server.Clients.SCON
 
         ProtobufStream Stream { get; }
 
-        ModuleSCON Module { get; }
-
 #if DEBUG
         // -- Debug -- //
         List<ProtobufPacket> Received { get; } = new List<ProtobufPacket>();
@@ -65,10 +63,9 @@ namespace PokeD.Server.Clients.SCON
         // -- Debug -- //
 #endif
 
-        public SCONClient(ITCPClient clientWrapper, ModuleSCON module)
+        public SCONClient(ITCPClient clientWrapper, ModuleSCON module) : base(module)
         {
             Stream = new ProtobufStream(clientWrapper);
-            Module = module;
 
             AuthorizationStatus = (EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0);
         }

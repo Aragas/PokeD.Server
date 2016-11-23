@@ -4,6 +4,7 @@ using System.Linq;
 using PCLExt.FileStorage;
 using PCLExt.Lua;
 
+// ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
     public static class CommandLuaLoader

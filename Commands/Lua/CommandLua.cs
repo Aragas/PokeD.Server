@@ -1,9 +1,12 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 using PCLExt.Lua;
 
 using PokeD.Server.Clients;
 
+// ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
     public sealed class CommandLua : Command
@@ -25,6 +28,23 @@ namespace PokeD.Server.Commands
             Name = (string) Script["Name"];
             Description = (string) Script["Description"];
             Aliases = Lua.ToLuaTable(Script["Aliases"]).ToList().Select(obj => obj.ToString().Replace("\"", ""));
+            Permissions = ParsePermissionFlags((string) Script["Permission"]);
+        }
+        private static PermissionFlags ParsePermissionFlags(string permissionFlags)
+        {
+            var permissions = permissionFlags.Split(' ');
+            var flags = new List<PermissionFlags>();
+            foreach (var permission in permissions)
+            {
+                PermissionFlags flag;
+                if (Enum.TryParse(permission, out flag))
+                    flags.Add(flag);
+            }
+
+            var value = PermissionFlags.Default;
+            foreach (var flag in flags)
+                value |= flag;
+            return value;
         }
 
         public override void Handle(Client client, string alias, string[] arguments) => Hook.CallFunction("Call", "Handle", client, alias, arguments);

@@ -29,6 +29,8 @@ namespace PokeD.Server
         public abstract void StartListen();
         public abstract void CheckListener();
 
+        public abstract void RemoveClient(Client client, string reason = "");
+
         public abstract void Update();
 
         public abstract void ClientConnected(Client client);

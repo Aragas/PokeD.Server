@@ -20,7 +20,7 @@ namespace PokeD.Server.Database
 
 
         public Prefix Prefix { get; private set; }
-        public PermissonFlags Permissions { get; private set; }
+        public PermissionFlags Permissions { get; private set; }
         public string Name { get; private set; }
         public string PasswordHash { get; private set; }
 

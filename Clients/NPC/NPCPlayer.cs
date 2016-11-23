@@ -20,7 +20,7 @@ namespace PokeD.Server.Clients.NPC
 {
 
     // Call Lua funcs, but put default variables first. So lua can override
-    public partial class NPCPlayer : Client, INPC
+    public partial class NPCPlayer : Client<ModuleNPC>, INPC
     {
         CultureInfo CultureInfo => CultureInfo.InvariantCulture;
 
@@ -49,35 +49,31 @@ namespace PokeD.Server.Clients.NPC
 
         #region Other Values
 
+        public string NPCName { get { return Nickname; } set { Nickname = value; } }
+
         public override string IP => string.Empty;
 
         public override DateTime ConnectionTime { get; } = DateTime.MinValue;
         public override CultureInfo Language => new CultureInfo("ru-RU");
-        public override PermissonFlags Permissions { get; set; }
+        public override PermissionFlags Permissions { get; set; }
 
         #endregion Other Values
 
-
-        ServerModule Module { get; }
 
         LuaScript Script { get; }
         LuaTable Hook => Lua.ToLuaTable(Script["hook"]);
 
 
 
-        public NPCPlayer(LuaScript luaScript, ServerModule module)
+        public NPCPlayer(LuaScript luaScript, ModuleNPC module) : base(module)
         {
-            Module = module;
-
             Script = luaScript;
 
             Script["NPC"] = this; // Sandbox it, a lot of vars opened
             Script.ReloadFile();
         }
-        public NPCPlayer(string name, LuaScript luaScript, ServerModule module)
+        public NPCPlayer(string name, LuaScript luaScript, ModuleNPC module) : base(module)
         {
-            Module = module;
-
             Nickname = name;
             Script = luaScript;
 

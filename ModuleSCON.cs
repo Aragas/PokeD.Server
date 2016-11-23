@@ -96,7 +96,7 @@ namespace PokeD.Server
             PlayersToAdd.Add(client);
             PlayersJoining.Remove(client);
         }
-        public void RemoveClient(Client client, string reason = "")
+        public override void RemoveClient(Client client, string reason = "")
         {
             if (!string.IsNullOrEmpty(reason))
                 client.SendPacket(new AuthorizationDisconnectPacket { Reason = reason });

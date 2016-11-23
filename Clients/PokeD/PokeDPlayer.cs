@@ -24,7 +24,7 @@ using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.PokeD
 {
-    public partial class PokeDPlayer : Client
+    public partial class PokeDPlayer : Client<ModulePokeD>
     {
         Trainer PlayerRef { get; set; } = new Trainer("1112");
 
@@ -63,15 +63,13 @@ namespace PokeD.Server.Clients.PokeD
 
         public override DateTime ConnectionTime { get; } = DateTime.Now;
         public override CultureInfo Language { get; }
-        public override PermissonFlags Permissions { get; set; }
+        public override PermissionFlags Permissions { get; set; }
 
         bool IsInitialized { get; set; }
         
         #endregion Other Values
 
         ProtobufStream Stream { get; }
-        
-        ModulePokeD Module { get; }
 
 #if DEBUG
         // -- Debug -- //
@@ -80,11 +78,7 @@ namespace PokeD.Server.Clients.PokeD
         // -- Debug -- //
 #endif
 
-        public PokeDPlayer(ITCPClient clientWrapper, ModulePokeD module)
-        {
-            Stream = new ProtobufStream(clientWrapper);
-            Module = module;
-        }
+        public PokeDPlayer(ITCPClient clientWrapper, ModulePokeD module) : base(module) { Stream = new ProtobufStream(clientWrapper); }
 
 
         public override void Update()

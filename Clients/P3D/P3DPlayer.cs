@@ -25,7 +25,7 @@ using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.P3D
 {
-    public partial class P3DPlayer : Client
+    public partial class P3DPlayer : Client<ModuleP3D>
     {
         CultureInfo CultureInfo => CultureInfo.InvariantCulture;
 
@@ -66,15 +66,13 @@ namespace PokeD.Server.Clients.P3D
 
         public override DateTime ConnectionTime { get; } = DateTime.Now;
         public override CultureInfo Language => new CultureInfo("en");
-        public override PermissonFlags Permissions { get; set; }
+        public override PermissionFlags Permissions { get; set; }
 
         bool IsInitialized { get; set; }
 
         #endregion Values
 
         P3DStream Stream { get; }
-        
-        ModuleP3D Module { get; }
 
 
 #if DEBUG
@@ -85,19 +83,14 @@ namespace PokeD.Server.Clients.P3D
 #endif
         private bool _event;
 
-        public P3DPlayer(ISocketClient socket, ModuleP3D module)
-        {
-            Stream = new P3DStream(socket);
-            Module = module;
-        }
-        public P3DPlayer(ISocketClientEvent socketEvent, ModuleP3D module)
+        public P3DPlayer(ISocketClient socket, ModuleP3D module) : base(module) { Stream = new P3DStream(socket); }
+        public P3DPlayer(ISocketClientEvent socketEvent, ModuleP3D module) : base(module)
         {
             _event = true;
 
             Stream = new P3DStreamEvent(socketEvent);
             ((P3DStreamEvent) Stream).DataReceived += P3DPlayer_DataReceived;
             ((P3DStreamEvent) Stream).Disconnected += P3DPlayer_Disconnected;
-            Module = module;
         }
         private void P3DPlayer_DataReceived(PacketStreamDataReceivedArgs args)
         {

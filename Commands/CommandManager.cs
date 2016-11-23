@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 
 using PCLExt.AppDomain;
+
 using PokeD.Server.Clients;
 
 namespace PokeD.Server.Commands
@@ -41,6 +42,13 @@ namespace PokeD.Server.Commands
                 client.SendServerMessage($@"Invalid command ""{alias}"".");
                 return;
             }
+
+            if ((client.Permissions & command.Permissions) == 0)
+            {
+                client.SendServerMessage($"You have not the permission to use this command!");
+                return;
+            }
+
             command.Handle(client, alias, arguments);
         }
 

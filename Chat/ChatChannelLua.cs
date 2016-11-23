@@ -1,5 +1,4 @@
-﻿using System;
-using PCLExt.Lua;
+﻿using PCLExt.Lua;
 
 using PokeD.Server.Clients;
 
