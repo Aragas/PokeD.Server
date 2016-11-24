@@ -12,7 +12,7 @@ namespace PokeD.Server.Commands
         public override string Name { get; protected set; } = "setweather";
         public override string Description { get; protected set; } = "Set World Weather.";
         public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "sw" };
-        public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.Moderator | PermissionFlags.Administrator | PermissionFlags.Owner;
+        public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.ModeratorOrHigher;
 
         public WeatherCommand(Server server) : base(server) { }
 

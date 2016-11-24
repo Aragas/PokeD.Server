@@ -2,15 +2,14 @@
 
 using PokeD.Core.Data.PokeD.Monster;
 
-using SQLite.Net;
-using SQLite.Net.Attributes;
+using SQLite;
 
 namespace PokeD.Server.Database
 {
     public sealed class TradePlayer : IDatabaseTable
     {
         [PrimaryKey]
-        public Guid Id { get; protected set; } = Guid.NewGuid();
+        public Guid Id { get; private set; } = Guid.NewGuid();
 
 
         public int PlayerID { get; private set; }

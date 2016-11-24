@@ -18,15 +18,15 @@ namespace PokeD.Server
                 Database.CreateTable(typeInfo.AsType());
         }
 
-        public bool DatabaseFind<T>(T obj) where T : class
+        public bool DatabaseFind<T>(T obj) where T : class, new()
         {
             return Database.Find<T>(obj) != null;
         }
-        public bool DatabaseFind<T>(ref T obj) where T : class
+        public bool DatabaseFind<T>(ref T obj) where T : class, new()
         {
             return (obj = Database.Find<T>(obj)) != null;
         }
-        public bool DatabaseSave<T>(T obj) where T : class
+        public bool DatabaseSave<T>(T obj) where T : class, new()
         {
             if (!DatabaseFind(obj))
                 Database.Insert(obj);
@@ -35,7 +35,7 @@ namespace PokeD.Server
 
             return false;
         }
-        public bool DatabaseLoad<T>(ref T obj) where T : class
+        public bool DatabaseLoad<T>(ref T obj) where T : class, new()
         {
             if (!DatabaseFind(ref obj))
                 return false;

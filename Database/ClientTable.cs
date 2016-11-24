@@ -6,7 +6,7 @@ using PokeD.Server.Commands;
 using PokeD.Server.Data;
 using PokeD.Server.Extensions;
 
-using SQLite.Net.Attributes;
+using SQLite;
 
 namespace PokeD.Server.Database
 {

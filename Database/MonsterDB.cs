@@ -3,7 +3,7 @@
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Data.PokeD.Monster.Data;
 
-using SQLite.Net.Attributes;
+using SQLite;
 
 namespace PokeD.Server.Database
 {
@@ -36,7 +36,7 @@ namespace PokeD.Server.Database
 
 
         [PrimaryKey]
-        public Guid Id { get; protected set; } = Guid.NewGuid();
+        public Guid Id { get; private set; } = Guid.NewGuid();
 
 
         public short Species { get; private set; }

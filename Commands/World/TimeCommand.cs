@@ -11,7 +11,7 @@ namespace PokeD.Server.Commands
         public override string Name { get; protected set; } = "settime";
         public override string Description { get; protected set; } = "Set World Time.";
         public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "st" };
-        public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.Moderator | PermissionFlags.Administrator | PermissionFlags.Owner;
+        public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.ModeratorOrHigher;
 
         public TimeCommand(Server server) : base(server) { }
 

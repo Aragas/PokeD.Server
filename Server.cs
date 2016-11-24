@@ -20,8 +20,7 @@ using PokeD.Server.Chat;
 using PokeD.Server.Commands;
 using PokeD.Server.Data;
 
-using SQLite.Net;
-using SQLite.Net.Platform.Generic;
+using SQLite;
 
 namespace PokeD.Server
 {
@@ -51,7 +50,7 @@ namespace PokeD.Server
         public bool CacheData { get { return PokeApiV2.CacheData; } set { PokeApiV2.CacheData = value; } }
         public bool PreCacheData { get; private set; } = false;
 
-        public bool AutomaticErrorReporting { get; private set; } = true;
+        //public bool AutomaticErrorReporting { get; private set; } = true;
 
         public World World { get; set; } = new World();
 
@@ -116,7 +115,7 @@ namespace PokeD.Server
 
 
             Logger.Log(LogType.Info, $"Loading {DatabaseName}...");
-            Database = new SQLiteConnection(new SQLitePlatformGeneric(), Path.Combine(Storage.DatabaseFolder.Path, $"{DatabaseName}.sqlite3"));
+            Database = new SQLiteConnection(Path.Combine(Storage.DatabaseFolder.Path, $"{DatabaseName}.sqlite3"));
             CreateTables();
 
             Logger.Log(LogType.Info, $"Starting Server.");

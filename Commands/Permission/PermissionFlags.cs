@@ -10,6 +10,10 @@ namespace PokeD.Server.Commands
         Verified = 1,
         Moderator = 2,
         Administrator = 4,
-        Owner = 7
+        Owner = 7,
+
+        VerifiedOrHigher = Verified | Moderator | Administrator,
+        ModeratorOrHigher = Moderator | Administrator,
+        AdministratorOrHigher = Administrator,
     }
 }

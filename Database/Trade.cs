@@ -1,14 +1,13 @@
 ﻿using System;
 
-using SQLite.Net;
-using SQLite.Net.Attributes;
+using SQLite;
 
 namespace PokeD.Server.Database
 {
     public sealed class Trade : IDatabaseTable
     {
         [PrimaryKey]
-        public Guid Id { get; protected set; } = Guid.NewGuid();
+        public Guid Id { get; private set; } = Guid.NewGuid();
 
 
         public Guid TradePlayerID_0 { get; private set; }
