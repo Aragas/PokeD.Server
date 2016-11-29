@@ -1,15 +1,13 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using Aragas.Network.Data;
+using Aragas.Network.Packets;
 
 using PCLExt.Config;
 using PCLExt.Config.Extensions;
 using PCLExt.Network;
 
 using PokeD.Core.Data.PokeD.Monster;
-using PokeD.Core.Packets.SCON;
-using PokeD.Core.Packets.SCON.Authorization;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.SCON;
 
@@ -40,9 +38,6 @@ namespace PokeD.Server
         List<Client> PlayersJoining { get; } = new List<Client>();
         List<Client> PlayersToAdd { get; } = new List<Client>();
         List<Client> PlayersToRemove { get; } = new List<Client>();
-
-        ConcurrentQueue<PlayerPacketSCON> PacketsToPlayer { get; set; } = new ConcurrentQueue<PlayerPacketSCON>();
-        ConcurrentQueue<SCONPacket> PacketsToAllPlayers { get; set; } = new ConcurrentQueue<SCONPacket>();
 
 
         public ModuleSCON(Server server) : base(server) { }
@@ -91,15 +86,14 @@ namespace PokeD.Server
         }
 
 
-        public void AddClient(Client client)
+        public override void AddClient(Client client)
         {
             PlayersToAdd.Add(client);
             PlayersJoining.Remove(client);
         }
         public override void RemoveClient(Client client, string reason = "")
         {
-            if (!string.IsNullOrEmpty(reason))
-                client.SendPacket(new AuthorizationDisconnectPacket { Reason = reason });
+            client.Kick(reason);
 
             PlayersToRemove.Add(client);
         }
@@ -141,54 +135,23 @@ namespace PokeD.Server
                 PlayersJoining[i]?.Update();
 
             #endregion Player Updating
-
-            #region Packet Sending
-
-            PlayerPacketSCON packetToPlayer;
-            while (!IsDisposing && PacketsToPlayer.TryDequeue(out packetToPlayer))
-                packetToPlayer.Player.SendPacket(packetToPlayer.Packet);
-
-            SCONPacket packetToAllPlayers;
-            while (!IsDisposing && PacketsToAllPlayers.TryDequeue(out packetToAllPlayers))
-                for (var i = 0; i < Clients.Count; i++)
-                    Clients[i].SendPacket(packetToAllPlayers);
-
-            #endregion Packet Sending
         }
 
 
         public override void ClientConnected(Client client) { }
         public override void ClientDisconnected(Client client) { }
 
-        public override void SendPrivateMessage(Client sender, Client destClient, string message, bool fromServer = false) { }
-        //public override void SendGlobalMessage(Client sender, string message, bool fromServer = false)
-        //{
-        //    if (sender is SCONClient)
-        //        return;
-        //    else
-        //        SCONClientSendToAllClients(new ChatMessagePacket { Player = sender.Name, Message = message });
-        //}
-        //public override void SendServerMessage(Client sender, string message)
-        //{
-        //    for (var i = 0; i > Clients.Count; i++)
-        //        Clients[i].SendServerMessage(message);
-        //
-        //    //SCONClientSendToAllClients(new ChatMessagePacket { Player = "SERVER", Message = message });
-        //}
+        public override void SendPacketToAll(Packet packet)
+        {
+            for (var i = 0; i < Clients.Count; i++)
+                Clients[i]?.SendPacket(packet);
+        }
 
         public override void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false) { }
         public override void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false) { }
         public override void SendTradeCancel(Client sender, Client destClient, bool fromServer = false) { }
 
         public override void SendPosition(Client sender, bool fromServer = false) { }
-
-        public void ExecuteCommand(string command) { }
-
-
-        public void SCONClientSendToAllClients(SCONPacket packet)
-        {
-            PacketsToAllPlayers.Enqueue(packet);
-        }
 
 
         public override void Dispose()
@@ -205,42 +168,20 @@ namespace PokeD.Server
 
             for (var i = 0; i < Clients.Count; i++)
             {
-                Clients[i].SendPacket(new AuthorizationDisconnectPacket() { Reason = "Closing server!" });
+                Clients[i].Kick("Closing server!");
                 Clients[i].Dispose();
             }
             Clients.Clear();
 
             for (var i = 0; i < PlayersToAdd.Count; i++)
             {
-                PlayersToAdd[i].SendPacket(new AuthorizationDisconnectPacket() { Reason = "Closing server!" });
+                PlayersToAdd[i].Kick("Closing server!");
                 PlayersToAdd[i].Dispose();
             }
             PlayersToAdd.Clear();
 
             // Do not dispose PlayersToRemove!
             PlayersToRemove.Clear();
-
-
-            PacketsToPlayer = null;
-            PacketsToAllPlayers = null;
-        }
-
-
-        private class PlayerPacketSCON
-        {
-            public readonly Client Player;
-            public readonly SCONPacket Packet;
-
-            public PlayerPacketSCON(Client player, ref SCONPacket packet)
-            {
-                Player = player;
-                Packet = packet;
-            }
-            public PlayerPacketSCON(Client player, SCONPacket packet)
-            {
-                Player = player;
-                Packet = packet;
-            }
         }
     }
 }

@@ -20,8 +20,8 @@ namespace PokeD.Server.Chat
             Script.ReloadFile();
 
             Name = (string) Script["Name"];
-            Description = (string) Script["Description"];
-            Alias = (string) Script["Alias"];
+            Description = (string) (Script["Description"] ?? string.Empty);
+            Alias = (string) (Script["Alias"] ?? string.Empty);
         }
 
         public override bool MessageSend(ChatMessage chatMessage) => (bool) Hook.CallFunction("Call", "MessageSend", chatMessage)[0];

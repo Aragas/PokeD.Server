@@ -30,11 +30,15 @@ namespace PokeD.Server.Clients
         public abstract CultureInfo Language { get; }
 
 
+        public abstract bool RegisterOrLogIn(string password);
+        public abstract bool ChangePassword(string oldPassword, string newPassword);
+
         public abstract GameDataPacket GetDataPacket();
 
         public abstract void SendPacket(Packet packet);
         public abstract void SendChatMessage(ChatMessage chatMessage);
         public abstract void SendServerMessage(string text);
+        public abstract void SendPrivateMessage(ChatMessage chatMessage);
 
         public abstract void LoadFromDB(ClientTable data);
 
@@ -52,7 +56,7 @@ namespace PokeD.Server.Clients
         protected Client(TServerModule module) { Module = module; }
 
 
-        public sealed override void Kick(string reason = "") { Module.RemoveClient(this, reason); }
-        public sealed override void Ban(string reason = "") { Module.RemoveClient(this, reason); }
+        public override void Kick(string reason = "") { Module.RemoveClient(this, reason); }
+        public override void Ban(string reason = "") { Module.RemoveClient(this, reason); }
     }
 }

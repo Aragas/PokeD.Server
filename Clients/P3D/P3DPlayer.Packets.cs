@@ -17,10 +17,9 @@ namespace PokeD.Server.Clients.P3D
 {
     public partial class P3DPlayer
     {
-        private static bool PokemonsValid(string pokemonData) => new DataItems(pokemonData).DataItemsToMonsters().All(pokemon => pokemon.IsValid());
-        private static bool PokemonValid(string pokemonData) => new DataItems(pokemonData).ToMonster().IsValid();
+        private bool PokemonsValid(string pokemonData) => Module.ValidatePokemons && new DataItems(pokemonData).DataItemsToMonsters().All(pokemon => pokemon.IsValid);
+        private bool PokemonValid(string pokemonData) => Module.ValidatePokemons && new DataItems(pokemonData).ToMonster().IsValid;
 
-        bool FirstGameData { get; set; } = false;
         private void ParseGameData(GameDataPacket packet)
         {
             if (packet.DataItems != null)
@@ -115,172 +114,176 @@ namespace PokeD.Server.Clients.P3D
             else
                 Logger.Log(LogType.Error, $"P3D Reading Error: ParseGameData DataItems is null.");
         }
+
+        private bool FirstGameData { get; set; } = false;
         private void HandleGameData(GameDataPacket packet)
         {
             ParseGameData(packet);
             Module.SendPosition(this);
 
             if(IsInitialized)
-                Module.Server.DatabasePlayerSave(this);
+                Module.SaveClient(this);
 
-            if(!Moving)
-                Module.P3DPlayerSendToAllClients(packet, packet.Origin);
+            if (!Moving)
+                Module.SendPacketToAll(packet);
 
             var dataPacket = GetDataPacket();
             dataPacket.Origin = ID;
             SendPacket(dataPacket);
+
 
             // We assume that if we get a GameData, it's a client that wanna play
             if (FirstGameData)
                 return;
             FirstGameData = true;
 
+            if (!Module.SetClientId(this))
+                return;
+
+            SendPacket(new IDPacket { Origin = -1, PlayerID = ID });
+            SendPacket(new WorldDataPacket { Origin = -1, DataItems = Module.World.GenerateDataItems() });
+
             if (!IsGameJoltPlayer)
             {
-                Module.PreAdd(this);
-
-                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = "Please use /login %PASSWORD% for logging in or registering" });
-                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = "Please note that chat data  isn't sended secure to server" });
-                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = "So it can be seen via traffic sniffing" });
-                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = "Don't use your regular passwords" });
-                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = "On server it's stored fully secure via SHA-512" });
+                SendServerMessage("Please use /login %PASSWORD% for logging in or registering");
+                SendServerMessage("Please note that chat data  isn't sended secure to server");
+                SendServerMessage("So it can be seen via traffic sniffing");
+                SendServerMessage("Don't use your regular passwords");
+                SendServerMessage("On server it's stored fully secure via SHA-512");
             }
             else
-            {
-                PasswordHash = GameJoltID.ToString();
-                Module.PreAdd(this);
                 Initialize();
-            }
         }
 
 
         private void HandleChatMessage(ChatMessageGlobalPacket packet)
         {
+            var message = new ChatMessage(this, packet.Message);
             if (packet.Message.StartsWith("/"))
             {
                 // Do not show login command
-                if(!packet.Message.ToLower().StartsWith("/login"))
-                    SendPacket(new ChatMessageGlobalPacket { Origin = ID, Message = packet.Message });
+                if (!packet.Message.ToLower().StartsWith("/login"))
+                    SendChatMessage(message);
 
-                if (Module.Server.ExecuteClientCommand(this, packet.Message)) return;
-                if (ExecuteCommand(packet.Message)) return;
-                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = "Invalid command!" });
+                if (Module.ExecuteClientCommand(this, packet.Message))
+                    return;
+
+                if (ExecuteCommand(packet.Message))
+                    return;
+
+                SendServerMessage("Invalid command!");
             }
             else if(IsInitialized)
-                //Module.SendGlobalMessage(this, packet.Message);
-                Module.SendChatMessage(new ChatMessage(this, packet.Message));
+                Module.SendChatMessage(message);
         }
         private void HandlePrivateMessage(ChatMessagePrivatePacket packet)
         {
-            var destClient = Module.Server.GetClient(packet.DestinationPlayerName);
+            var destClient = Module.GetClient(packet.DestinationPlayerName);
             if (destClient != null)
-            {
-                Module.P3DPlayerSendToClient(this, new ChatMessagePrivatePacket { DataItems = packet.DataItems }, packet.Origin);
-                Module.SendPrivateMessage(this, destClient, packet.Message);
-            }
+                destClient.SendPrivateMessage(new ChatMessage(this, packet.Message));
             else
-                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = $"The player with the name \"{packet.DestinationPlayerName}\" doesn't exist." });
+                SendServerMessage($"The player with the name \"{packet.DestinationPlayerName}\" doesn't exist.");
         }
 
 
         private void HandleGameStateMessage(GameStateMessagePacket packet)
         {
-            var playerName = Module.Server.GetClientName(packet.Origin);
+            var playerName = Module.GetClientName(packet.Origin);
 
             if (!string.IsNullOrEmpty(playerName))
-            {
-                var message = $"The player {playerName} {packet.EventMessage}";
-
-                SendServerMessage(message);
-            }
+                SendServerMessage($"The player {playerName} {packet.EventMessage}");
         }
 
 
         private void HandleTradeRequest(TradeRequestPacket packet)
         {
-            var destClient = Module.Server.GetClient(packet.DestinationPlayerID);
+            var destClient = Module.GetClient(packet.DestinationPlayerID);
             if (destClient is P3DPlayer)
             {
                 // XNOR
                 if (IsGameJoltPlayer == ((P3DPlayer) destClient).IsGameJoltPlayer)
-                    Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeRequestPacket(), packet.Origin);
+                    destClient.SendPacket(new TradeRequestPacket { Origin = packet.Origin });
                 else
-                { 
-                    SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = $"Can not start trade with {destClient.Name}! Online-Offline trade disabled." });
+                {
+                    SendServerMessage($"Can not start trade with {destClient.Name}! Online-Offline trade disabled.");
                     Module.SendTradeCancel(this, destClient);
                 }
             }
             else
-                Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeRequestPacket(), packet.Origin);
+                destClient.SendPacket(new TradeRequestPacket { Origin = packet.Origin });
         }
-        private void HandleTradeJoin(TradeJoinPacket packet) { Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new TradeJoinPacket(), packet.Origin); }
-        private void HandleTradeQuit(TradeQuitPacket packet) { Module.SendTradeCancel(this, Module.Server.GetClient(packet.DestinationPlayerID)); }
+
+        private void HandleTradeJoin(TradeJoinPacket packet) => Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new TradeJoinPacket {Origin = packet.Origin});
+        private void HandleTradeQuit(TradeQuitPacket packet) => Module.SendTradeCancel(this, Module.GetClient(packet.DestinationPlayerID));
         private void HandleTradeOffer(TradeOfferPacket packet)
         {
-            var destClient = Module.Server.GetClient(packet.DestinationPlayerID);
+            var destClient = Module.GetClient(packet.DestinationPlayerID);
 
             if (PokemonValid(packet.TradeData))
                 Module.SendTradeRequest(this, packet.DataItems.ToMonster(), destClient);
             else
             {
-                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = $"Your Pokemon is not valid!" });
+                SendServerMessage("Your Pokemon is not valid!");
                 Module.SendTradeCancel(this, destClient);
             }
         }
-        private void HandleTradeStart(TradeStartPacket packet) { Module.SendTradeConfirm(this, Module.Server.GetClient(packet.DestinationPlayerID)); }
+        private void HandleTradeStart(TradeStartPacket packet) => Module.SendTradeConfirm(this, Module.GetClient(packet.DestinationPlayerID));
 
 
         private void HandleBattleClientData(BattleClientDataPacket packet)
         {
-            Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleClientDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleClientDataPacket { Origin = packet.Origin, DataItems = new DataItems(packet.BattleData) });
         }
         private void HandleBattleHostData(BattleHostDataPacket packet)
         {
-            Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleHostDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleHostDataPacket { Origin = packet.Origin, DataItems = new DataItems(packet.BattleData) });
         }
         private void HandleBattleJoin(BattleJoinPacket packet)
         {
-            Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleJoinPacket() , packet.Origin);
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleJoinPacket { Origin = packet.Origin });
         }
         private void HandleBattleOffer(BattleOfferPacket packet)
         {
             if (PokemonsValid(packet.BattleData))
-                Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleOfferPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
+                Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleOfferPacket { Origin = packet.Origin, DataItems = new DataItems(packet.BattleData) });
             else
             {
-                SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = $"One of your Pokemon is not valid!" });
+                SendServerMessage($"One of your Pokemon is not valid!");
                 SendPacket(new BattleQuitPacket { Origin = packet.DestinationPlayerID });
             }
         }
         private void HandleBattlePokemonData(BattlePokemonDataPacket packet)
         {
-            Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattlePokemonDataPacket { DataItems = new DataItems(packet.BattleData) }, packet.Origin);
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattlePokemonDataPacket { Origin = packet.Origin, DataItems = new DataItems(packet.BattleData) });
         }
         private void HandleBattleQuit(BattleQuitPacket packet)
         {
-            Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleQuitPacket(), packet.Origin);
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleQuitPacket { Origin = packet.Origin });
         }
         private void HandleBattleRequest(BattleRequestPacket packet)
         {
-            Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleRequestPacket(), packet.Origin);
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleRequestPacket { Origin = packet.Origin });
         }
         private void HandleBattleStart(BattleStartPacket packet)
         {
-            Module.P3DPlayerSendToClient(packet.DestinationPlayerID, new BattleStartPacket(), packet.Origin);
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleStartPacket { Origin = packet.Origin });
         }
 
 
         private void HandleServerDataRequest(ServerDataRequestPacket packet)
         {
-            var spacket = new ServerInfoDataPacket();
-            spacket.CurrentPlayers = Module.Server.GetAllClients().Count();
-            spacket.MaxPlayers = Module.MaxPlayers;
-            spacket.ServerName = Module.ServerName;
-            spacket.ServerMessage = Module.ServerMessage;
-            if (Module.Server.GetAllClients().Any())
-                spacket.PlayerNames = Module.Server.GetAllClients().ClientInfos().Select(client => client.Name).ToArray();
+            var clients = Module.GetAllClients().ToList();
+            var spacket = new ServerInfoDataPacket
+            {
+                Origin = ID,
 
-            spacket.Origin = ID;
+                CurrentPlayers = Module.GetAllClients().Count(),
+                MaxPlayers = Module.MaxPlayers,
+                PlayerNames = clients.Any() ? clients.ClientInfos().Select(client => client.Name).ToArray() : new string[0],
+
+                ServerName = Module.ServerName,
+                ServerMessage = Module.ServerMessage,
+            };
             SendPacket(spacket);
 
             Module.RemoveClient(this);

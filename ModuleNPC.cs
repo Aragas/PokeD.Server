@@ -1,4 +1,6 @@
-﻿using PCLExt.Config;
+﻿using Aragas.Network.Packets;
+
+using PCLExt.Config;
 using PCLExt.Config.Extensions;
 
 using PokeD.Core.Data.PokeD.Monster;
@@ -58,7 +60,7 @@ namespace PokeD.Server
         
         public override void StartListen() { }
         public override void CheckListener() { }
-
+        
 
         private bool LoadNPCs()
         {
@@ -78,14 +80,17 @@ namespace PokeD.Server
             return LoadNPCs();
         }
 
-        public void AddClient(Client client)
+
+        public override void AddClient(Client client)
         {
-            Server.DatabasePlayerGetID(client);
-            Server.DatabasePlayerLoad(client);
+            if (Server.DatabaseSetClientId(client))
+            {
+                Server.DatabasePlayerLoad(client);
 
-            Clients.Add(client);
+                Clients.Add(client);
 
-            Server.NotifyClientConnected(this, client);
+                Server.NotifyClientConnected(this, client);
+            }
         }
         public override void RemoveClient(Client client, string reason = "")
         {
@@ -93,7 +98,7 @@ namespace PokeD.Server
 
             Clients.Remove(client);
 
-            Server.NotifyClientDisconnected(this, client);
+            base.RemoveClient(client, reason);
         }
 
 
@@ -107,18 +112,7 @@ namespace PokeD.Server
         public override void ClientConnected(Client client) { }
         public override void ClientDisconnected(Client client) { }
 
-        public override void SendPrivateMessage(Client sender, Client destClient, string message, bool fromServer = false)
-        {
-            /*
-            if (destClient is NPCPlayer)
-                destClient.SendPacket(new ChatMessagePrivatePacket() { DestinationPlayerName = sender.Name, Message = message});
-                //PokeDPlayerSendToClient(destClient, new ChatPrivateMessagePacket() { Message = message });
-            else
-                Server.NotifyClientPrivateMessage(this, sender, destClient, message);
-            */
-        }
-        //public override void SendGlobalMessage(Client sender, string message, bool fromServer = false) { }
-        //public override void SendServerMessage(Client sender, string message) { }
+        public override void SendPacketToAll(Packet packet) { }
 
         public override void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false) { }
         public override void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false) { }
@@ -126,17 +120,10 @@ namespace PokeD.Server
 
         public override void SendPosition(Client sender, bool fromServer = false)
         {
-            if (sender is NPCPlayer)
-            {
+            if (!fromServer)
                 Server.NotifyClientPosition(this, sender);
-                //P3DPlayerSendToAllClients(sender.GetDataPacket(), sender.ID);
-            }
-            else
-                ;//P3DPlayerSendToAllClients(sender.GetDataPacket(), sender.ID);
         }
         
-        public void ExecuteCommand(string command) { }
-
 
         public override void Dispose()
         {

@@ -6,18 +6,18 @@ using PokeD.Server.Clients;
 // ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
-    public class TimeCommand : Command
+    public class SetTimeCommand : Command
     {
         public override string Name { get; protected set; } = "settime";
         public override string Description { get; protected set; } = "Set World Time.";
         public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "st" };
         public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.ModeratorOrHigher;
 
-        public TimeCommand(Server server) : base(server) { }
+        public SetTimeCommand(Server server) : base(server) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {
-            if (arguments.Length >= 1)
+            if (arguments.Length == 1)
             {
                 if (arguments[0].ToLower() == "real")
                 {

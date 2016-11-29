@@ -66,9 +66,7 @@ namespace PokeD.Server
         public bool IsDisposing { get; private set; }
 
         [ConfigIgnore]
-        public AsymmetricCipherKeyPair RSAKeyPair { get; private set; }
-
-        private SQLiteConnection Database { get; set; }
+        public AsymmetricCipherKeyPair RSAKeyPair { get; set; }
 
 
         public Server(ConfigType configType)

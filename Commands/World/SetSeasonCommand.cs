@@ -7,18 +7,18 @@ using PokeD.Server.Data;
 // ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
-    public class SeasonCommand : Command
+    public class SetSeasonCommand : Command
     {
         public override string Name { get; protected set; } = "setseason";
         public override string Description { get; protected set; } = "Set World Season.";
         public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "ss" };
         public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.ModeratorOrHigher;
 
-        public SeasonCommand(Server server) : base(server) { }
+        public SetSeasonCommand(Server server) : base(server) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {
-            if (arguments.Length >= 1)
+            if (arguments.Length == 1)
             {
                 Season season;
                 if (Enum.TryParse(arguments[0], true, out season))

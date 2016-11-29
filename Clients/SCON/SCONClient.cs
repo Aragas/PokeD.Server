@@ -209,6 +209,9 @@ namespace PokeD.Server.Clients.SCON
         }
 
 
+        public override bool RegisterOrLogIn(string password) => false;
+        public override bool ChangePassword(string oldPassword, string newPassword) => false;
+
         public override GameDataPacket GetDataPacket() { throw new NotSupportedException(); }
 
         public override void SendPacket(Packet packet)
@@ -229,6 +232,21 @@ namespace PokeD.Server.Clients.SCON
         }
         public override void SendChatMessage(ChatMessage chatMessage) { }
         public override void SendServerMessage(string text) { }
+        public override void SendPrivateMessage(ChatMessage chatMessage) { }
+
+        public override void Kick(string reason = "")
+        {
+            SendPacket(new AuthorizationDisconnectPacket { Reason = reason });
+
+            base.Kick(reason);
+        }
+        public override void Ban(string reason = "")
+        {
+            SendPacket(new AuthorizationDisconnectPacket { Reason = reason });
+
+            base.Ban(reason);
+        }
+
 
         public override void LoadFromDB(ClientTable data) { }
 

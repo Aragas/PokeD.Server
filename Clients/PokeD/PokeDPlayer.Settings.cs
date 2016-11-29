@@ -24,7 +24,12 @@ namespace PokeD.Server.Clients.PokeD
         private void ExecuteLoginCommand(string password)
         {
             PasswordHash = new PasswordStorage(password).Hash;
-            Initialize();
+
+            if (!IsInitialized)
+            {
+                Module.AddClient(this);
+                IsInitialized = true;
+            }
         }
         private void ExecuteChangePasswordCommand(string command)
         {

@@ -38,7 +38,7 @@ namespace PokeD.Server.Clients.SCON
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                var publicKey = Module.Server.RSAKeyPair.PublicKeyToByteArray();
+                var publicKey = Module.RSAKeyPair.PublicKeyToByteArray();
 
                 VerificationToken = new byte[4];
                 var drg = new DigestRandomGenerator(new Sha512Digest());
@@ -54,7 +54,7 @@ namespace PokeD.Server.Clients.SCON
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                var pkcs = new PKCS1Signer(Module.Server.RSAKeyPair);
+                var pkcs = new PKCS1Signer(Module.RSAKeyPair);
 
                 var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
                 for (int i = 0; i < VerificationToken.Length; i++)
@@ -82,8 +82,8 @@ namespace PokeD.Server.Clients.SCON
                 Authorized = true;
                 SendPacket(new AuthorizationCompletePacket());
 
-                IsInitialized = true;
                 Module.AddClient(this);
+                IsInitialized = true;
             }
             else
                 SendPacket(new AuthorizationDisconnectPacket { Reason = "Password not correct!" });
@@ -97,7 +97,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            Module.ExecuteCommand(packet.Command);
+            Module.ExecuteClientCommand(this, packet.Command);
         }
 
         private void HandleStartChatReceiving(StartChatReceivingPacket packet)
@@ -129,7 +129,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            SendPacket(new PlayerInfoListResponsePacket { PlayerInfos = Module.Server.GetAllClients().ClientInfos().ToArray() });
+            SendPacket(new PlayerInfoListResponsePacket { PlayerInfos = Module.GetAllClients().ClientInfos().ToArray() });
         }
 
         private void HandleLogListRequest(LogListRequestPacket packet)

@@ -49,14 +49,6 @@ namespace PokeD.Server
             Logger.Log(LogType.Chat, message);
         }
         /// <summary>
-        /// Notify every <see cref="ServerModule"/> about the <see cref="Client"/> private message.
-        /// </summary>
-        public void NotifyClientPrivateMessage(ServerModule caller, Client sender, Client destClient, string message)
-        {
-            foreach (var module in Modules.Where(module => caller != module))
-                module.SendPrivateMessage(sender, destClient, message, true);
-        }
-        /// <summary>
         /// Notify every <see cref="ServerModule"/> about the <see cref="Client"/> global message.
         /// </summary>
         public void NotifyServerGlobalMessage(ServerModule caller, ChatMessage chatMessage)
@@ -134,7 +126,7 @@ namespace PokeD.Server
 
                 if (trade.Player_0_Confirmed && trade.Player_1_Confirmed)
                 {
-                    DatabaseTradeSave(trade);
+                    DatabaseSave(new TradeTable(Database, trade));
                     CurrentTrades.Remove(trade);
                 }
             }

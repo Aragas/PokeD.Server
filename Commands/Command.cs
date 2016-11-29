@@ -13,17 +13,16 @@ namespace PokeD.Server.Commands
         protected CommandManager CommandManager => Server.CommandManager;
         protected ChatChannelManager ChatChannelManager => Server.ChatChannelManager;
 
-        public IEnumerable<Client> GetAllClients() => Server.GetAllClients();
-        public Client GetClient(int id) => Server.GetClient(id);
-        public Client GetClient(string name) => Server.GetClient(name);
+        protected IEnumerable<Client> GetAllClients() => Server.GetAllClients();
+        protected Client GetClient(string name) => Server.GetClient(name);
 
 
         public abstract string Name { get; protected set; }
         public abstract string Description { get; protected set; }
         public virtual IEnumerable<string> Aliases { get; protected set; } = new string[0];
-        public virtual PermissionFlags Permissions { get; protected set; } = PermissionFlags.Default;
+        public virtual PermissionFlags Permissions { get; protected set; } = PermissionFlags.None;
 
-        public Command(Server server) { Server = server; }
+        protected Command(Server server) { Server = server; }
 
         public virtual void Handle(Client client, string alias, string[] arguments) { Help(client, alias); }
 

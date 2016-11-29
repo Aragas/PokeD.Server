@@ -7,14 +7,14 @@ using PokeD.Server.Clients;
 // ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
-    public class PermissionChangeCommand : Command
+    public class SetPermissionCommand : Command
     {
-        public override string Name { get; protected set; } = "permchange";
+        public override string Name { get; protected set; } = "setperm";
         public override string Description { get; protected set; } = "Change Client permission.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "permc", "pc" };
+        public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "sperm", "sp" };
         public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.AdministratorOrHigher;
 
-        public PermissionChangeCommand(Server server) : base(server) { }
+        public SetPermissionCommand(Server server) : base(server) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {
@@ -40,7 +40,7 @@ namespace PokeD.Server.Commands
                         client.SendServerMessage($"Permission {permission} not found.");
                 }
 
-                client.Permissions = PermissionFlags.Default;
+                client.Permissions = PermissionFlags.None;
                 foreach (var flag in flags)
                     client.Permissions |= flag;
 

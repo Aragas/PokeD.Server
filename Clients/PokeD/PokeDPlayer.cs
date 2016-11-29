@@ -209,6 +209,10 @@ namespace PokeD.Server.Clients.PokeD
             }
         }
 
+
+        public override bool RegisterOrLogIn(string password) => false;
+        public override bool ChangePassword(string oldPassword, string newPassword) => false;
+
         public override void SendPacket(Packet packet)
         {
             var pokeDPacket = packet as PokeDPacket;
@@ -223,6 +227,21 @@ namespace PokeD.Server.Clients.PokeD
         }
         public override void SendChatMessage(ChatMessage chatMessage) { SendPacket(new ChatGlobalMessagePacket { Message = chatMessage.Message }); }
         public override void SendServerMessage(string text) { SendPacket(new ChatServerMessagePacket { Message = text }); }
+        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatPrivateMessagePacket { PlayerID = new VarInt(chatMessage.Sender.ID), Message = chatMessage.Message }); }
+
+        public override void Kick(string reason = "")
+        {
+            SendPacket(new DisconnectPacket { Reason = reason });
+
+            base.Kick(reason);
+        }
+        public override void Ban(string reason = "")
+        {
+            SendPacket(new DisconnectPacket { Reason = reason });
+
+            base.Ban(reason);
+        }
+
 
         public override void LoadFromDB(ClientTable data)
         {
@@ -286,15 +305,6 @@ namespace PokeD.Server.Clients.PokeD
                     return "barktown.dat";
             }
             return "mainmenu";
-        }
-
-        private void Initialize()
-        {
-            if (IsInitialized)
-                return;
-
-            Module.AddClient(this);
-            IsInitialized = true;
         }
     }
 }

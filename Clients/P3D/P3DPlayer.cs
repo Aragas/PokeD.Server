@@ -16,6 +16,7 @@ using PokeD.Core.Packets.P3D;
 using PokeD.Core.Packets.P3D.Battle;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Client;
+using PokeD.Core.Packets.P3D.Server;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
 using PokeD.Server.Chat;
@@ -66,7 +67,7 @@ namespace PokeD.Server.Clients.P3D
 
         public override DateTime ConnectionTime { get; } = DateTime.Now;
         public override CultureInfo Language => new CultureInfo("en");
-        public override PermissionFlags Permissions { get; set; }
+        public override PermissionFlags Permissions { get; set; } = PermissionFlags.UnVerified;
 
         bool IsInitialized { get; set; }
 
@@ -103,20 +104,20 @@ namespace PokeD.Server.Clients.P3D
 
         public override void Update()
         {
-            if (!_event)
-            {
-                if (Stream.IsConnected)
-                {
-                    if (Stream.DataAvailable > 0)
-                    {
-                        var data = Stream.ReadLine();
+            if (_event)
+                return;
 
-                        HandleData(data);
-                    }
+            if (Stream.IsConnected)
+            {
+                if (Stream.DataAvailable > 0)
+                {
+                    var data = Stream.ReadLine();
+
+                    HandleData(data);
                 }
-                else
-                    Module.RemoveClient(this);
             }
+            else
+                Module.RemoveClient(this);
         }
 
         private void HandleData(string data)
@@ -240,6 +241,26 @@ namespace PokeD.Server.Clients.P3D
         }
 
 
+        public override bool RegisterOrLogIn(string password)
+        {
+            PasswordHash = new PasswordStorage(password).Hash;
+
+            if (Module.ClientPasswordCorrect(this, PasswordHash))
+            {
+                Initialize();
+                return true;
+            }
+
+            return false;
+        }
+        public override bool ChangePassword(string oldPassword, string newPassword)
+        {
+            var oldPasswordHash = new PasswordStorage(oldPassword).Hash;
+            var newPasswordHash = new PasswordStorage(newPassword).Hash;
+
+            return Module.ClientPasswordChange(this, oldPasswordHash, newPasswordHash);
+        }
+
         public override void SendPacket(Packet packet)
         {
             var p3dPacket = packet as P3DPacket;
@@ -254,6 +275,18 @@ namespace PokeD.Server.Clients.P3D
         }
         public override void SendChatMessage(ChatMessage chatMessage) { SendPacket(new ChatMessageGlobalPacket { Origin = chatMessage.Sender.ID, Message = chatMessage.Message }); }
         public override void SendServerMessage(string text) { SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = text }); }
+        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatMessagePrivatePacket { Origin = chatMessage.Sender.ID, Message = chatMessage.Message }); }
+
+        public override void Kick(string reason = "")
+        {
+            SendPacket(new KickedPacket { Origin = -1, Reason = reason });
+            base.Kick(reason);
+        }
+        public override void Ban(string reason = "")
+        {
+            SendPacket(new KickedPacket { Origin = -1, Reason = reason });
+            base.Ban(reason);
+        }
 
 
         public override void LoadFromDB(ClientTable data)
@@ -267,11 +300,13 @@ namespace PokeD.Server.Clients.P3D
 
         private void Initialize()
         {
-            if(IsInitialized)
-                return;
+            if (!IsInitialized)
+            {
+                Permissions = PermissionFlags.Verified;
 
-            Module.AddClient(this);
-            IsInitialized = true;
+                Module.AddClient(this);
+                IsInitialized = true;
+            }
         }
 
         private DataItems GenerateDataItems()

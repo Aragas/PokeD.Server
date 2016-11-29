@@ -1,15 +1,21 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 
 using PCLExt.AppDomain;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Database;
 
+using SQLite;
+
 namespace PokeD.Server
 {
     public partial class Server
     {
+        private SQLiteConnection Database { get; set; }
+
         private void CreateTables()
         {
             var asm = AppDomain.GetAssembly(typeof(Server));
@@ -18,46 +24,31 @@ namespace PokeD.Server
                 Database.CreateTable(typeInfo.AsType());
         }
 
-        public bool DatabaseFind<T>(T obj) where T : class, new()
-        {
-            return Database.Find<T>(obj) != null;
-        }
-        public bool DatabaseFind<T>(ref T obj) where T : class, new()
-        {
-            return (obj = Database.Find<T>(obj)) != null;
-        }
-        public bool DatabaseSave<T>(T obj) where T : class, new()
-        {
-            if (!DatabaseFind(obj))
-                Database.Insert(obj);
-            else
-                Database.Update(obj);
 
-            return false;
-        }
-        public bool DatabaseLoad<T>(ref T obj) where T : class, new()
-        {
-            if (!DatabaseFind(ref obj))
-                return false;
+        // Find can return null, Get will throw exception if not found
+        public bool DatabaseFind<T>(object primaryKey) where T : class, new() => Database.Find<T>(primaryKey) != null;
+        public bool DatabaseFind<T>(Expression<Func<T, bool>> exp) where T : class, new() => Database.Find(exp) != null;
+        public void DatabaseSave<T>(T obj) where T : class, new() => Database.Insert(obj);
+        //public T DatabaseLoad<T>(object primaryKey) where T : class, new() => Database.Get<T>(primaryKey);
+        public T DatabaseLoad<T>(object primaryKey) where T : class, new() => Database.Find<T>(primaryKey);
+        public void DatabaseUpdate<T>(T obj) where T : class, new() => Database.Update(obj);
 
-            return true;
-        }
 
-        public int DatabasePlayerGetID(Client player)
+        public bool DatabaseSetClientId(Client player)
         {
             if (GetAllClients().Any(p => p.Nickname == player.Nickname))
-                return -1;
+                return false;
 
             var data = Database.Table<ClientTable>().FirstOrDefault(p => p.Name == player.Nickname);
             if (data != null)
             {
                 player.ID = data.Id;
-                return player.ID;
+                return true;
             }
             else
             {
                 Database.Insert(new ClientTable(player));
-                return DatabasePlayerGetID(player);
+                return DatabaseSetClientId(player);
             }
         }
 
@@ -106,40 +97,6 @@ namespace PokeD.Server
 
                 return true;
             }
-        }
-
-
-        //public bool DatabaseBatteSave(BattleInstance battleInstance)
-        //{
-        //    Database.Insert(new Battle(battleInstance));
-        //    return true;
-        //}
-
-
-        public bool DatabaseTradeSave(TradeInstance tradeInstance)
-        {
-            Database.Insert(new Trade(Database, tradeInstance));
-            return true;
-        }
-
-        public bool DatabasePlayerChannelSave(Client player, int channel)
-        {
-            Database.Insert(new ClientChannelTable(player.ID, channel));
-            return true;
-        }
-        public bool DatabasePlayerChannelLoad(Client player, out int channel)
-        {
-            channel = 0;
-
-            if (GetAllClients().Any(p => p.Nickname == player.Nickname))
-                return false;
-
-            var data = Database.Find<ClientTable>(p => p.Name == player.Nickname);
-
-
-
-            Database.Insert(new ClientChannelTable(player.ID, channel));
-            return true;
         }
     }
 }

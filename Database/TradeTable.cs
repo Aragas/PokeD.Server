@@ -4,7 +4,7 @@ using SQLite;
 
 namespace PokeD.Server.Database
 {
-    public sealed class Trade : IDatabaseTable
+    public sealed class TradeTable : IDatabaseTable
     {
         [PrimaryKey]
         public Guid Id { get; private set; } = Guid.NewGuid();
@@ -14,8 +14,8 @@ namespace PokeD.Server.Database
         public Guid TradePlayerID_1 { get; private set; }
 
 
-        public Trade() { }
-        public Trade(SQLiteConnection database, TradeInstance trade)
+        public TradeTable() { }
+        public TradeTable(SQLiteConnection database, TradeInstance trade)
         {
             var tradePlayer0 = new TradePlayer(database, trade.Player_0_ID, trade.Player_0_Monster);
             database.Insert(tradePlayer0);

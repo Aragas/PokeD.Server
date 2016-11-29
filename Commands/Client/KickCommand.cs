@@ -17,7 +17,7 @@ namespace PokeD.Server.Commands
         {
             if (arguments.Length >= 1)
             {
-                var clientName = arguments[0].ToLower();
+                var clientName = arguments[0];
                 var cClient = GetClient(clientName);
                 if (cClient == null)
                 {

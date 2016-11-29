@@ -5,18 +5,18 @@ using PokeD.Server.Clients;
 // ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
-    public class LocationCommand : Command
+    public class SetLocationCommand : Command
     {
         public override string Name { get; protected set; } = "setlocation";
         public override string Description { get; protected set; } = "Set World Location.";
         public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "sl" };
         public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.ModeratorOrHigher;
 
-        public LocationCommand(Server server) : base(server) { }
+        public SetLocationCommand(Server server) : base(server) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {
-            if (arguments.Length >= 1)
+            if (arguments.Length == 1)
             {
                 World.Location = arguments[0];
                 World.UseLocation = true;

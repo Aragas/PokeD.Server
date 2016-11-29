@@ -26,9 +26,9 @@ namespace PokeD.Server.Commands
             Script.ReloadFile();
 
             Name = (string) Script["Name"];
-            Description = (string) Script["Description"];
+            Description = (string) (Script["Description"] ?? string.Empty);
             Aliases = Lua.ToLuaTable(Script["Aliases"]).ToList().Select(obj => obj.ToString().Replace("\"", ""));
-            Permissions = ParsePermissionFlags((string) Script["Permission"]);
+            Permissions = ParsePermissionFlags((string) (Script["Permission"] ?? string.Empty));
         }
         private static PermissionFlags ParsePermissionFlags(string permissionFlags)
         {
@@ -41,7 +41,7 @@ namespace PokeD.Server.Commands
                     flags.Add(flag);
             }
 
-            var value = PermissionFlags.Default;
+            var value = PermissionFlags.None;
             foreach (var flag in flags)
                 value |= flag;
             return value;

@@ -36,12 +36,13 @@ namespace PokeD.Server.Data
         Stopwatch Watch = Stopwatch.StartNew();
         public void Update()
         {
-            if (Watch.ElapsedMilliseconds < 1000) { return; }
+            if (Watch.ElapsedMilliseconds > 1000)
+            {
+                TimeOffset++;
 
-            Watch.Reset();
-            Watch.Start();
-
-            TimeOffset++;
+                Watch.Reset();
+                Watch.Start();
+            }
         }
 
 

@@ -43,7 +43,13 @@ namespace PokeD.Server.Commands
                 return;
             }
 
-            if (command.Permissions != PermissionFlags.Default &&(client.Permissions & command.Permissions) == 0)
+            if (command.Permissions == PermissionFlags.None)
+            {
+                client.SendServerMessage($@"Command is disabled!");
+                return;
+            }
+
+            if ((client.Permissions & command.Permissions) == PermissionFlags.None)
             {
                 client.SendServerMessage($"You have not the permission to use this command!");
                 return;

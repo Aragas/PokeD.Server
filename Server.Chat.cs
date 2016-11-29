@@ -13,7 +13,7 @@ namespace PokeD.Server
 
         private void ChatClientConnected(Client client)
         {
-
+            ChatChannelManager.FindByAlias("global").Subscribe(client);
         }
         private void ChatClientDisconnected(Client client)
         {

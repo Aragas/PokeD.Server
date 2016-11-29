@@ -97,9 +97,14 @@ namespace PokeD.Server.Clients.NPC
             UpdateWatch.Start();
         }
 
+
+        public override bool RegisterOrLogIn(string password) => false;
+        public override bool ChangePassword(string oldPassword, string newPassword) => false;
+
         public override void SendPacket(Packet packet) { }
         public override void SendChatMessage(ChatMessage chatMessage) { }
         public override void SendServerMessage(string text) { }
+        public override void SendPrivateMessage(ChatMessage chatMessage) { }
 
         public override void LoadFromDB(ClientTable data)
         {
@@ -138,11 +143,11 @@ namespace PokeD.Server.Clients.NPC
 
         public void SetNickname(string nickname) { Nickname = nickname; }
 
-        public Client[] GetLocalPlayers() => Module.Server.GetAllClients().Where(client => client != this && client.LevelFile == LevelFile).ToArray();
+        public Client[] GetLocalPlayers() => Module.GetAllClients().Where(client => client != this && client.LevelFile == LevelFile).ToArray();
 
         public void Move(int x, int y, int z) { }
 
-        public void SayPrivateMessage(Client client, string message) => Module.SendPrivateMessage(this, client, message);
+        public void SayPrivateMessage(Client client, string message) => client.SendPrivateMessage(new ChatMessage(client, message));
         public void SayGlobalMessage(string message) => Module.SendChatMessage(new ChatMessage(this, message));
     }
 }

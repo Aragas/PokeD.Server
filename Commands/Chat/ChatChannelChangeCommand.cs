@@ -10,6 +10,7 @@ namespace PokeD.Server.Commands
         public override string Name { get; protected set; } = "chatchannelchange";
         public override string Description { get; protected set; } = "Change Clients Chat Channel.";
         public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "channelchange", "chatc", "chanc", "cc" };
+        public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.VerifiedOrHigher ^ PermissionFlags.Server;
 
         public ChatChannelChangeCommand(Server server) : base(server) { }
 
