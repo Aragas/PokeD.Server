@@ -5,13 +5,11 @@ using System.Linq;
 
 using Aragas.Network.Packets;
 
-using PCLExt.Config.Extensions;
 using PCLExt.Network;
 using PCLExt.Thread;
 
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Core.Extensions;
-using PokeD.Core.Packets.P3D;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Server;
 using PokeD.Core.Packets.P3D.Trade;
@@ -23,7 +21,7 @@ namespace PokeD.Server
 {
     public class ModuleP3D : ServerModule
     {
-        const string FileName = "ModuleP3D";
+        protected override string ModuleFileName { get; } = "ModuleP3D";
 
         #region Settings
 
@@ -31,52 +29,44 @@ namespace PokeD.Server
 
         public override ushort Port { get; protected set; } = 15124;
 
-        public string ServerName { get; protected set; } = "Put name here";
+        public string ServerName { get; protected set; } = "Put Server Name Here";
 
-        public string ServerMessage { get; protected set; } = "Put description here";
+        public string ServerMessage { get; protected set; } = "Put Server Description Here";
         
         public int MaxPlayers { get; protected set; } = 1000;
 
         public bool ValidatePokemons { get; protected set; } = false;
 
-        public bool EncryptionEnabled { get; protected set; } = true;
+        //public bool EncryptionEnabled { get; protected set; } = true;
 
         public bool MoveCorrectionEnabled { get; protected set; } = true;
 
         #endregion Settings
 
-        bool IsDisposing { get; set; }
+        private ITCPListener Listener { get; set; }
 
-        ITCPListener Listener { get; set; }
+        private IThread PlayerWatcherThread { get; set; }
+        private IThread PlayerCorrectionThread { get; set; }
 
-        IThread PlayerWatcherThread { get; set; }
-        IThread PlayerCorrectionThread { get; set; }
+        private ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; } = new ConcurrentDictionary<string, P3DPlayer[]>();
 
+        private bool IsDisposing { get; set; }
 
-        List<Client> PlayersJoining { get; } = new List<Client>();
-        List<Client> PlayersToAdd { get; } = new List<Client>();
-        List<Client> PlayersToRemove { get; } = new List<Client>();
-
-
-        ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; } = new ConcurrentDictionary<string, P3DPlayer[]>();
 
         public ModuleP3D(Server server) : base(server) { }
 
 
         public override bool Start()
         {
-            var status = FileSystemExtensions.LoadConfig(Server.ConfigType, FileName, this);
-            if (!status)
-                Logger.Log(LogType.Warning, "Failed to load P3D settings!");
-
-            if (!Enabled)
-            {
-                Logger.Log(LogType.Info, $"P3D not enabled!");
+            if (!base.Start())
                 return false;
-            }
 
-            Logger.Log(LogType.Info, $"Starting P3D.");
-            
+
+            Logger.Log(LogType.Info, $"Starting {ModuleFileName}.");
+
+            Listener = SocketServer.CreateTCP(Port);
+            Listener.Start();
+
             if (MoveCorrectionEnabled)
             {
                 PlayerWatcherThread = Thread.Create(PlayerWatcherCycle);
@@ -90,15 +80,16 @@ namespace PokeD.Server
                 PlayerCorrectionThread.Start();
             }
 
+
             return true;
         }
-        public override void Stop()
+        public override bool Stop()
         {
-            var status = FileSystemExtensions.SaveConfig(Server.ConfigType, FileName, this);
-            if (!status)
-                Logger.Log(LogType.Warning, "Failed to save P3D settings!");
+            if (!base.Stop())
+                return false;
 
-            Logger.Log(LogType.Info, $"Stopping P3D.");
+
+            Logger.Log(LogType.Info, $"Stopping {ModuleFileName}.");
 
             if (PlayerWatcherThread.IsRunning)
                 PlayerWatcherThread.Abort();
@@ -108,7 +99,8 @@ namespace PokeD.Server
 
             Dispose();
 
-            Logger.Log(LogType.Info, $"Stopped P3D.");
+
+            return true;
         }
 
 
@@ -118,8 +110,7 @@ namespace PokeD.Server
             var watch = Stopwatch.StartNew();
             while (!IsDisposing)
             {
-                var players = new List<P3DPlayer>(Clients.GetTypeEnumerator<P3DPlayer>());
-                //var players = new List<Client>(Clients.GetConcreteTypeEnumerator<P3DPlayer, ProtobufPlayer>());
+                var players = new List<P3DPlayer>(Clients.Where(client => client is P3DPlayer).Cast<P3DPlayer>());
 
                 foreach (var player in players.Where(player => player.LevelFile != null && !NearPlayers.ContainsKey(player.LevelFile)))
                     NearPlayers.TryAdd(player.LevelFile, null);
@@ -160,7 +151,7 @@ namespace PokeD.Server
                         foreach (var playerToSend in nearPlayers.Value.Where(playerToSend => player != playerToSend))
                         {
                             var packet = player.GetDataPacket();
-                            packet.Origin = player.ID;
+                            packet.Origin = player.Id;
                             playerToSend.SendPacket(packet);
                         }
 
@@ -180,120 +171,69 @@ namespace PokeD.Server
         }
 
 
-        public override void StartListen()
-        {
-            Listener = SocketServer.CreateTCP(Port);
-            Listener.Start();
-        }
-        public override void CheckListener()
-        {
-            if (Listener != null && Listener.AvailableClients)
-                if (Listener.AvailableClients)
-                    PlayersJoining.Add(new P3DPlayer(Listener.AcceptTCPClient(), this));
-        }
-
-
         public override void AddClient(Client client)
         {
-            if (IsGameJoltIDUsed(client as P3DPlayer))
+            // -- We assume the Client is a GameJolt or the Client's password is correct and no one is using the Client's name.
+
+            if (IsGameJoltIdUsed(client as P3DPlayer))
             {
-                RemoveClient(client, "You are already on server!");
+                client.Kick("You are already on server!");
                 return;
             }
             SavePlayerGJ(client as P3DPlayer);
 
-            if (!Server.DatabasePlayerLoad(client))
-            {
-                RemoveClient(client, "Wrong password or you are already on server!");
-                return;
-            }
+
+            ClientUpdate(client, true);
 
 
-            // Send to player his ID
-            client.SendPacket(new CreatePlayerPacket { Origin = -1, PlayerID = client.ID });
-            // Send to player all Players ID
+            // Send to player his Id
+            client.SendPacket(new CreatePlayerPacket { Origin = -1, PlayerId = client.Id });
+            // Send to player all Players Id
             foreach (var aClient in Server.GetAllClients())
             {
-                client.SendPacket(new CreatePlayerPacket { Origin = -1, PlayerID = aClient.ID });
+                client.SendPacket(new CreatePlayerPacket { Origin = -1, PlayerId = aClient.Id });
                 var packet = aClient.GetDataPacket();
-                packet.Origin = aClient.ID;
+                packet.Origin = aClient.Id;
                 client.SendPacket(packet);
             }
-            // Send to Players player ID
-            SendPacketToAll(new CreatePlayerPacket { Origin = -1, PlayerID = client.ID });
+            // Send to Players player Id
+            SendPacketToAll(new CreatePlayerPacket { Origin = -1, PlayerId = client.Id });
             var p = client.GetDataPacket();
-            p.Origin = client.ID;
+            p.Origin = client.Id;
             SendPacketToAll(p);
 
 
-            PlayersToAdd.Add(client);
-            PlayersJoining.Remove(client);
+            ClientConnected(client);
+
+
+            base.AddClient(client);
         }
         public override void RemoveClient(Client client, string reason = "")
         {
-            PlayersToRemove.Add(client);
+            Clients.Remove(client);
+
+            if (client.Id > 0)
+            {
+                ClientDisconnected(client);
+
+                base.RemoveClient(client, reason);
+            }
         }
 
 
         Stopwatch UpdateWatch = Stopwatch.StartNew();
         public override void Update()
         {
-            #region Player Filtration
+            if (Listener?.AvailableClients == true)
+                Clients.Add(new P3DPlayer(Listener.AcceptTCPClient(), this));
 
-            for (var i = 0; i < PlayersToAdd.Count; i++)
-            {
-                var playerToAdd = PlayersToAdd[i];
-
-                Clients.Add(playerToAdd);
-                PlayersToAdd.Remove(playerToAdd);
-
-                if (playerToAdd.ID != 0)
-                {
-                    SendPacketToAll(new ChatMessageGlobalPacket { Origin = -1, Message = $"Player {playerToAdd.Name} joined the game!" });
-
-                    Server.NotifyClientConnected(this, playerToAdd);
-                }
-            }
-
-            for (var i = 0; i < PlayersToRemove.Count; i++)
-            {
-                var playerToRemove = PlayersToRemove[i];
-
-                Clients.Remove(playerToRemove);
-                PlayersJoining.Remove(playerToRemove);
-                PlayersToRemove.Remove(playerToRemove);
-
-                if (playerToRemove.ID != 0)
-                {
-                    SendPacketToAll(new DestroyPlayerPacket { Origin = -1, PlayerID = playerToRemove.ID });
-
-                    SendPacketToAll(new ChatMessageGlobalPacket { Origin = -1, Message = $"Player {playerToRemove.Name} disconnected!" });
-
-                    Server.NotifyClientDisconnected(this, playerToRemove);
-                }
-
-                playerToRemove.Dispose();
-            }
-
-            #endregion Player Filtration
-
-
-            #region Player Updating
-
-            // Update actual players
-            for (var i = 0; i < Clients.Count; i++)
+            for (var i = Clients.Count - 1; i >= 0; i--)
                 Clients[i]?.Update();
-
-            // Update joining players
-            for (var i = 0; i < PlayersJoining.Count; i++)
-                PlayersJoining[i]?.Update();
-
-            #endregion Player Updating
 
 
             if (UpdateWatch.ElapsedMilliseconds > 1000)
             {
-                SendPacketToAll(new WorldDataPacket {Origin = -1, DataItems = Server.World.GenerateDataItems()});
+                SendPacketToAll(new WorldDataPacket { Origin = -1, DataItems = Server.World.GenerateDataItems() });
 
                 UpdateWatch.Reset();
                 UpdateWatch.Start();
@@ -303,21 +243,21 @@ namespace PokeD.Server
 
         public override void ClientConnected(Client client)
         {
-            SendPacketToAll(new CreatePlayerPacket { Origin = -1, PlayerID = client.ID });
+            SendPacketToAll(new CreatePlayerPacket { Origin = -1, PlayerId = client.Id });
             var packet = client.GetDataPacket();
-            packet.Origin = client.ID;
+            packet.Origin = client.Id;
             SendPacketToAll(packet);
             SendPacketToAll(new ChatMessageGlobalPacket { Origin = -1, Message = $"Player {client.Name} joined the game!" });
         }
         public override void ClientDisconnected(Client client)
         {
-            SendPacketToAll(new DestroyPlayerPacket { Origin = -1, PlayerID = client.ID });
+            SendPacketToAll(new DestroyPlayerPacket { Origin = -1, PlayerId = client.Id });
             SendPacketToAll(new ChatMessageGlobalPacket { Origin = -1, Message = $"Player {client.Name} disconnected!" });
         }
 
         public override void SendPacketToAll(Packet packet)
         {
-            for (var i = 0; i < Clients.Count; i++)
+            for (var i = Clients.Count - 1; i >= 0; i--)
                 Clients[i]?.SendPacket(packet);
         }
 
@@ -327,7 +267,7 @@ namespace PokeD.Server
                 Server.NotifyClientTradeOffer(this, sender, monster, destClient);
 
             if (destClient is P3DPlayer)
-                destClient.SendPacket(new TradeOfferPacket { Origin = sender.ID, DataItems = monster.ToDataItems() });
+                destClient.SendPacket(new TradeOfferPacket { Origin = sender.Id, DataItems = monster.ToDataItems() });
         }
         public override void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false)
         {
@@ -335,7 +275,7 @@ namespace PokeD.Server
                 Server.NotifyClientTradeConfirm(this, destClient, sender);
 
             if (destClient is P3DPlayer)
-                destClient.SendPacket(new TradeStartPacket { Origin = sender.ID });
+                destClient.SendPacket(new TradeStartPacket { Origin = sender.Id });
         }
         public override void SendTradeCancel(Client sender, Client destClient, bool fromServer = false)
         {
@@ -343,7 +283,7 @@ namespace PokeD.Server
                 Server.NotifyClientTradeCancel(this, sender, destClient);
 
             if (destClient is P3DPlayer)
-                destClient.SendPacket(new TradeQuitPacket { Origin = sender.ID });
+                destClient.SendPacket(new TradeQuitPacket { Origin = sender.Id });
         }
 
         public override void SendPosition(Client sender, bool fromServer = false)
@@ -352,29 +292,24 @@ namespace PokeD.Server
                 Server.NotifyClientPosition(this, sender);
 
             var packet = sender.GetDataPacket();
-            packet.Origin = sender.ID;
+            packet.Origin = sender.Id;
             SendPacketToAll(packet);
         }
 
 
-        public bool ClientPasswordCorrect(Client client, string passwordHash)
+        public bool ClientPasswordIsCorrect(Client client, string passwordHash)
         {
             ClientTable table;
-            if ((table = Server.DatabaseLoad<ClientTable>(client.ID)) != null)
-                return table.PasswordHash == passwordHash;
-            return false;
-        }
-        public bool ClientPasswordChange(Client client, string oldPassword, string newPassword)
-        {
-            if (client.PasswordHash == oldPassword)
+            if ((table = Server.DatabaseGet<ClientTable>(client.Id)) != null)
             {
-                client.PasswordHash = newPassword;
+                if (table.PasswordHash == null)
+                {
+                    ClientUpdate(client, true);
+                    return true;
+                }
 
-                Server.DatabaseSave(new ClientTable(client));
-
-                return true;
+                return table.PasswordHash == passwordHash;
             }
-
             return false;
         }
 
@@ -382,19 +317,33 @@ namespace PokeD.Server
         {
             if (!Server.DatabaseSetClientId(client))
             {
-                RemoveClient(client, "You are already on server!");
+                client.Kick("You are already on server!");
                 return false;
             }
             return true;
         }
 
+        private bool IsGameJoltIdUsed(P3DPlayer client)
+        {
+            if (!client.IsGameJoltPlayer)
+                return false;
+
+            for (var i = Clients.Count - 1; i >= 0; i--)
+            {
+                var player = (P3DPlayer) Clients[i];
+                if (player != client && player.IsGameJoltPlayer && client.GameJoltId == player.GameJoltId)
+                    return true;
+            }
+
+            return false;
+        }
         private void SavePlayerGJ(P3DPlayer client)
         {
             if (client != null)
             {
-                var obj = new ClientGJTable(client.ID, (int) client.GameJoltID);
+                var obj = new ClientGJTable(client.Id, (int) client.GameJoltId);
                 if (!Server.DatabaseFind<ClientGJTable>(obj.ClientId))
-                    Server.DatabaseSave(obj);
+                    Server.DatabaseSet(obj);
                 else
                     Server.DatabaseUpdate(obj);
             }
@@ -403,25 +352,12 @@ namespace PokeD.Server
         {
             if (client != null)
             {
-                var obj = new ClientGJTable(client.ID, (int) client.GameJoltID);
+                var obj = new ClientGJTable(client.Id, (int) client.GameJoltId);
                 if (!Server.DatabaseFind<ClientGJTable>(obj.ClientId))
-                    Server.DatabaseSave(obj);
+                    Server.DatabaseSet(obj);
                 else
                     Server.DatabaseUpdate(obj);
             }
-        }
-
-
-        private bool IsGameJoltIDUsed(P3DPlayer client)
-        {
-            for (var i = 0; i < Clients.Count; i++)
-            {
-                var player = Clients[i] as P3DPlayer;
-                if (player.IsGameJoltPlayer && client.GameJoltID == player.GameJoltID)
-                    return true;
-            }
-
-            return false;
         }
 
         
@@ -433,28 +369,12 @@ namespace PokeD.Server
             IsDisposing = true;
 
 
-            for (var i = 0; i < PlayersJoining.Count; i++)
-                PlayersJoining[i].Dispose();
-
-            for (var i = 0; i < Clients.Count; i++)
+            for (var i = Clients.Count - 1; i >= 0; i--)
             {
-                Clients[i].Kick("Closing server!");
-                Clients[i].Dispose();
+                Clients[i]?.Kick("Server is closing!");
+                Clients[i]?.Dispose();
             }
-            for (var i = 0; i < PlayersToAdd.Count; i++)
-            {
-                PlayersToAdd[i].Kick("Closing server!");
-                PlayersToAdd[i].Dispose();
-            }
-            for (var i = 0; i < PlayersToRemove.Count; i++)
-                PlayersToRemove[i].Dispose();
-            
-
             Clients.Clear();
-            PlayersJoining.Clear();
-            PlayersToAdd.Clear();
-            PlayersToRemove.Clear();
-
 
             NearPlayers.Clear();
         }

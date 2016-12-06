@@ -11,8 +11,7 @@ namespace PokeD.Server.Chat
         public static Dictionary<Client, ChatChannel> Subscription { get { lock(_dictionaryLock) { return _subscription; } } }
 
         public List<Client> Subscribers { get; } = new List<Client>();
-
-        protected List<ChatMessage> History { get; } = new List<ChatMessage>();
+        public List<ChatMessage> History { get; } = new List<ChatMessage>();
 
         public abstract string Name { get; protected set; }
         public abstract string Description { get; protected set; }

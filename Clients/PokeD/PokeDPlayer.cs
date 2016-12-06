@@ -30,11 +30,11 @@ namespace PokeD.Server.Clients.PokeD
 
         #region Game Values
 
-        public override int ID { get { return PlayerRef.EntityID; } set { PlayerRef.EntityID = new VarInt(value); } }
+        public override int Id { get { return PlayerRef.EntityId; } set { PlayerRef.EntityId = new VarInt(value); } }
 
         public string GameMode => "PokeD Game";
         public bool IsGameJoltPlayer => true;
-        public long GameJoltID => 0;
+        public long GameJoltId => 0;
 
         private char DecimalSeparator => '.';
 
@@ -91,7 +91,7 @@ namespace PokeD.Server.Clients.PokeD
                     if (dataLength == 0)
                     {
                         Logger.Log(LogType.Error, $"PokeD Reading Error: Packet Length size is 0. Disconnecting IClient {Name}.");
-                        Module.RemoveClient(this, "Packet Length size is 0!");
+                        Kick("Packet Length size is 0!");
                         return;
                     }
 
@@ -101,7 +101,7 @@ namespace PokeD.Server.Clients.PokeD
                 }
             }
             else
-                Module.RemoveClient(this);
+                Kick();
         }
 
         private void HandleData(byte[] data)
@@ -128,13 +128,13 @@ namespace PokeD.Server.Clients.PokeD
                         else
                         {
                             Logger.Log(LogType.Error, $"PokeD Reading Error: PokeDPacketResponses.Packets[{id}] is null. Disconnecting IClient {Name}.");
-                            Module.RemoveClient(this, $"Packet ID {id} is not correct!");
+                            Kick($"Packet Id {id} is not correct!");
                         }
                     }
                     else
                     {
-                        Logger.Log(LogType.Error, $"PokeD Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
-                        Module.RemoveClient(this, $"Packet ID {id} is not correct!");
+                        Logger.Log(LogType.Error, $"PokeD Reading Error: Packet Id {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
+                        Kick($"Packet Id {id} is not correct!");
                     }
                 }
             }
@@ -210,7 +210,7 @@ namespace PokeD.Server.Clients.PokeD
         }
 
 
-        public override bool RegisterOrLogIn(string password) => false;
+        public override bool RegisterOrLogIn(string passwordHash) => false;
         public override bool ChangePassword(string oldPassword, string newPassword) => false;
 
         public override void SendPacket(Packet packet)
@@ -227,7 +227,7 @@ namespace PokeD.Server.Clients.PokeD
         }
         public override void SendChatMessage(ChatMessage chatMessage) { SendPacket(new ChatGlobalMessagePacket { Message = chatMessage.Message }); }
         public override void SendServerMessage(string text) { SendPacket(new ChatServerMessagePacket { Message = text }); }
-        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatPrivateMessagePacket { PlayerID = new VarInt(chatMessage.Sender.ID), Message = chatMessage.Message }); }
+        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatPrivateMessagePacket { PlayerId = new VarInt(chatMessage.Sender.Id), Message = chatMessage.Message }); }
 
         public override void Kick(string reason = "")
         {
@@ -245,8 +245,8 @@ namespace PokeD.Server.Clients.PokeD
 
         public override void LoadFromDB(ClientTable data)
         {
-            if (ID == 0)
-                ID = data.Id;
+            if (Id == 0)
+                Id = data.Id;
 
             LevelFile = data.LevelFile;
             Prefix = data.Prefix;
@@ -258,7 +258,7 @@ namespace PokeD.Server.Clients.PokeD
             {
                 GameMode = GameMode,
                 IsGameJoltPlayer = IsGameJoltPlayer,
-                GameJoltID = GameJoltID,
+                GameJoltId = GameJoltId,
                 DecimalSeparator = DecimalSeparator,
                 Name = Name,
                 LevelFile = ToP3DLevelFile(),

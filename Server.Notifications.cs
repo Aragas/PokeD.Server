@@ -101,39 +101,39 @@ namespace PokeD.Server
 
         private void OnClientTradeOffer(Client client, Monster monster, Client destClient)
         {
-            if (!CurrentTrades.Any(t => t.Equals(client.ID, destClient.ID)))
-                CurrentTrades.Add(new TradeInstance { Player_0_ID = client.ID, Player_1_ID = destClient.ID });
+            if (!CurrentTrades.Any(t => t.Equals(client.Id, destClient.Id)))
+                CurrentTrades.Add(new TradeInstance { Client0Id = client.Id, Client1Id = destClient.Id });
 
-            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.ID, destClient.ID));
+            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.Id, destClient.Id));
             if (trade != null)
             {
-                if(trade.Player_0_ID == client.ID)
-                    trade.Player_0_Monster = monster;
+                if(trade.Client0Id == client.Id)
+                    trade.Client0Monster = monster;
 
-                if (trade.Player_1_ID == client.ID)
-                    trade.Player_1_Monster = monster;
+                if (trade.Client1Id == client.Id)
+                    trade.Client1Monster = monster;
             }
         }
         private void OnClientTradeConfirm(Client client, Client destClient)
         {
-            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.ID, destClient.ID));
+            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.Id, destClient.Id));
             if (trade != null)
             {
-                if (trade.Player_0_ID == client.ID)
-                    trade.Player_0_Confirmed = true;
-                if (trade.Player_1_ID == client.ID)
-                    trade.Player_1_Confirmed = true;
+                if (trade.Client0Id == client.Id)
+                    trade.Client0Confirmed = true;
+                if (trade.Client1Id == client.Id)
+                    trade.Client1Confirmed = true;
 
-                if (trade.Player_0_Confirmed && trade.Player_1_Confirmed)
+                if (trade.Client0Confirmed && trade.Client1Confirmed)
                 {
-                    DatabaseSave(new TradeTable(Database, trade));
+                    DatabaseSet(new TradeTable(Database, trade));
                     CurrentTrades.Remove(trade);
                 }
             }
         }
         private void OnClientTradeCancel(Client client, Client destClient)
         {
-            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.ID, destClient.ID));
+            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.Id, destClient.Id));
             if (trade != null)
                 CurrentTrades.Remove(trade);
         }

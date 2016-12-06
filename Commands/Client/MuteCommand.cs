@@ -9,13 +9,16 @@ namespace PokeD.Server.Commands
     {
         public override string Name { get; protected set; } = "mute";
         public override string Description { get; protected set; } = "";
-        public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "mm" };
+        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "mm" };
         public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.VerifiedOrHigher;
 
         public MuteCommand(Server server) : base(server) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {
+            client.SendServerMessage($"Command not implemented.");
+            return;
+
             if (arguments.Length == 1)
             {
                 var clientName = arguments[0];
@@ -26,8 +29,6 @@ namespace PokeD.Server.Commands
                     return;
                 }
 
-                var reason = arguments.Length > 1 ? arguments[1] : "";
-                cClient.Kick(reason);
             }
             else
                 client.SendServerMessage($"Invalid arguments given.");
@@ -38,13 +39,13 @@ namespace PokeD.Server.Commands
             if (!MutedPlayers.ContainsKey(id))
                 MutedPlayers.Add(id, new List<int>());
 
-            var muteID = Server.GetClientID(muteName);
-            if (id == muteID)
+            var muteId = Server.GetClientId(muteName);
+            if (id == muteId)
                 return MuteStatus.MutedYourself;
 
-            if (muteID != -1)
+            if (muteId != -1)
             {
-                MutedPlayers[id].Add(muteID);
+                MutedPlayers[id].Add(muteId);
                 return MuteStatus.Completed;
             }
 

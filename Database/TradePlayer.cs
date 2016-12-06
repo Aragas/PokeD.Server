@@ -6,25 +6,25 @@ using SQLite;
 
 namespace PokeD.Server.Database
 {
-    public sealed class TradePlayer : IDatabaseTable
+    public sealed class TradeClient : IdatabaseTable
     {
         [PrimaryKey]
         public Guid Id { get; private set; } = Guid.NewGuid();
 
 
-        public int PlayerID { get; private set; }
+        public int ClientId { get; private set; }
 
-        public Guid Monster_ID { get; private set; }
+        public Guid MonsterId { get; private set; }
 
 
-        public TradePlayer() { }
-        public TradePlayer(SQLiteConnection database, int playerID, Monster monster)
+        public TradeClient() { }
+        public TradeClient(SQLiteConnection database, int playerId, Monster monster)
         {
-            PlayerID = playerID;
+            ClientId = playerId;
 
             var mon = new MonsterDB(monster);
             database.Insert(mon);
-            Monster_ID = mon.Id;
+            MonsterId = mon.Id;
         }
     }
 }

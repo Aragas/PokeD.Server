@@ -9,7 +9,7 @@ namespace PokeD.Server.Commands
     {
         public override string Name { get; protected set; } = "ban";
         public override string Description { get; protected set; } = "Ban a Player.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "b" };
+        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "b" };
         public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.ModeratorOrHigher;
 
         public BanCommand(Server server) : base(server) { }

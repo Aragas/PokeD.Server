@@ -9,8 +9,9 @@ namespace PokeD.Server.Commands
     {
         public override string Name { get; protected set; } = "login";
         public override string Description { get; protected set; } = "Log in the Server.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "l" };
+        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "l" };
         public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.UnVerified;
+        public override bool LogCommand { get; protected set; } = false;
 
         public LoginCommand(Server server) : base(server) { }
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 
 using Org.BouncyCastle.Crypto;
@@ -12,7 +11,6 @@ using Org.BouncyCastle.Security;
 using PCLExt.Config;
 using PCLExt.Config.Extensions;
 using PCLExt.FileStorage;
-using PCLExt.Thread;
 
 using PokeD.Core;
 using PokeD.Core.Data.PokeApi;
@@ -26,7 +24,7 @@ namespace PokeD.Server
 {
     public partial class Server : IUpdatable, IDisposable
     {
-        private const string FileName = "Server";
+        private const string ServerFileName = "Server";
         private const int RsaKeySize = 1024;
 
         [ConfigIgnore]
@@ -34,12 +32,12 @@ namespace PokeD.Server
 
         #region Settings
 
-        public string DatabaseName { get; set; } = "Database";
+        public string DatabaseName { get; private set; } = "Database";
 
         public string PokeApiUrl
         {
             get { return ResourceUri.URL; }
-            set
+            private set
             {
                 if (!value.EndsWith("/"))
                     value += "/";
@@ -47,26 +45,24 @@ namespace PokeD.Server
             }
         }
 
-        public bool CacheData { get { return PokeApiV2.CacheData; } set { PokeApiV2.CacheData = value; } }
+        public bool CacheData { get { return PokeApiV2.CacheData; } private set { PokeApiV2.CacheData = value; } }
         public bool PreCacheData { get; private set; } = false;
 
         //public bool AutomaticErrorReporting { get; private set; } = true;
 
-        public World World { get; set; } = new World();
+        public World World { get; private set; } = new World();
 
         #endregion Settings
 
         [ConfigIgnore]
         public List<ServerModule> Modules { get; } = new List<ServerModule>();
 
-        private IThread ListenToConnectionsThread { get; set; }
-
 
         [ConfigIgnore]
         public bool IsDisposing { get; private set; }
 
         [ConfigIgnore]
-        public AsymmetricCipherKeyPair RSAKeyPair { get; set; }
+        public AsymmetricCipherKeyPair RSAKeyPair { get; private set; }
 
 
         public Server(ConfigType configType)
@@ -97,7 +93,7 @@ namespace PokeD.Server
 
         public bool Start()
         {
-            var status = FileSystemExtensions.LoadConfig(ConfigType, FileName, this);
+            var status = FileSystemExtensions.LoadConfig(ConfigType, ServerFileName, this);
             if(!status)
                 Logger.Log(LogType.Warning, "Failed to load Server settings!");
 
@@ -120,25 +116,17 @@ namespace PokeD.Server
 
             Modules.RemoveAll(module => !module.Start()); // -- Removes all modules that failed to start.
 
-            ListenToConnectionsThread = Thread.Create(ListenToConnectionsCycle);
-            ListenToConnectionsThread.Name = "ListenToConnectionsThread";
-            ListenToConnectionsThread.IsBackground = true;
-            ListenToConnectionsThread.Start();
-
 
             return status;
         }
         public bool Stop()
         {
-            var status = FileSystemExtensions.SaveConfig(ConfigType, FileName, this);
+            var status = FileSystemExtensions.SaveConfig(ConfigType, ServerFileName, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save Server settings!");
 
             Logger.Log(LogType.Info, $"Stopping Server.");
 
-
-            if (ListenToConnectionsThread.IsRunning)
-                ListenToConnectionsThread.Abort();
 
             foreach (var module in Modules)
                 module.Stop();
@@ -149,35 +137,6 @@ namespace PokeD.Server
             Logger.Log(LogType.Info, $"Stopped Server.");
 
             return status;
-        }
-
-
-        public static long ClientConnectionsThreadTime { get; private set; }
-        private void ListenToConnectionsCycle()
-        {
-            foreach (var module in Modules)
-                module.StartListen();
-            
-
-            var watch = Stopwatch.StartNew();
-            while (!IsDisposing)
-            {
-                foreach (var module in Modules)
-                    module.CheckListener();
-
-
-                if (watch.ElapsedMilliseconds < 250)
-                {
-                    ClientConnectionsThreadTime = watch.ElapsedMilliseconds;
-
-                    var time = (int) (250 - watch.ElapsedMilliseconds);
-                    if (time < 0) time = 0;
-                    Thread.Sleep(time);
-                }
-
-                watch.Reset();
-                watch.Start();
-            }
         }
 
 

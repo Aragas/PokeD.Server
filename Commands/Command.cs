@@ -21,6 +21,7 @@ namespace PokeD.Server.Commands
         public abstract string Description { get; protected set; }
         public virtual IEnumerable<string> Aliases { get; protected set; } = new string[0];
         public virtual PermissionFlags Permissions { get; protected set; } = PermissionFlags.None;
+        public virtual bool LogCommand { get; protected set; } = true;
 
         protected Command(Server server) { Server = server; }
 

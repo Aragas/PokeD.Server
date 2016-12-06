@@ -23,7 +23,7 @@ namespace PokeD.Server.Clients.NPC
         private const string Identifier = "npc_";
         private const string Extension = ".lua";
 
-        public static List<Client> LoadNPCs(ModuleNPC server)=>
+        public static List<Client> LoadAllNPC(ModuleNPC server)=>
             new List<Client>(Storage.LuaFolder.GetFilesAsync().Result
                 .Where(file => file.Name.ToLower().StartsWith(Identifier) && file.Name.ToLower().EndsWith(Extension))
                 .Select(file => new NPCPlayer(Lua.CreateLuaScript(file.Name), server)));

@@ -7,6 +7,7 @@ using PokeD.Server.Clients;
 
 namespace PokeD.Server.Extensions
 {
+    // ReSharper disable once InconsistentNaming
     public static class IEnumarableClientExtensions
     {
         /// <summary>

@@ -9,7 +9,7 @@ namespace PokeD.Server.Commands
     {
         public override string Name { get; protected set; } = "help";
         public override string Description { get; protected set; } = "Command help menu.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "h" };
+        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "h" };
         public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.UnVerifiedOrHigher;
 
         public HelpCommand(Server server) : base(server) { }

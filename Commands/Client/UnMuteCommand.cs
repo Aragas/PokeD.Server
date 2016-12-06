@@ -9,13 +9,16 @@ namespace PokeD.Server.Commands
     {
         public override string Name { get; protected set; } = "unmute";
         public override string Description { get; protected set; } = "";
-        public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "um" };
+        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "um" };
         public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.VerifiedOrHigher;
 
         public UnMuteCommand(Server server) : base(server) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {
+            client.SendServerMessage($"Command not implemented.");
+            return;
+
             if (arguments.Length == 1)
             {
                 var clientName = arguments[0];
@@ -26,8 +29,6 @@ namespace PokeD.Server.Commands
                     return;
                 }
 
-                var reason = arguments.Length > 1 ? arguments[1] : "";
-                cClient.Kick(reason);
             }
             else
                 client.SendServerMessage($"Invalid arguments given.");
@@ -36,13 +37,13 @@ namespace PokeD.Server.Commands
             if (!MutedPlayers.ContainsKey(id))
                 return MuteStatus.IsNotMuted;
 
-            var muteID = Server.GetClientID(muteName);
-            if (id == muteID)
+            var muteId = Server.GetClientId(muteName);
+            if (id == muteId)
                 return MuteStatus.MutedYourself;
 
-            if (muteID != -1)
+            if (muteId != -1)
             {
-                MutedPlayers[id].Remove(muteID);
+                MutedPlayers[id].Remove(muteId);
                 return MuteStatus.Completed;
             }
 

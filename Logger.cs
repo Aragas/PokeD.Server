@@ -56,8 +56,13 @@ namespace PokeD.Server
 
     public static class Logger
     {
-        public static void Log(LogType type, string message) => Input.LogWriteLine(DateTime.Now, $"[{type.ToString().PadRight(7)}]: {message}", "[{0:yyyy-MM-dd HH:mm:ss}] {1}");
+        public static void Log(LogType type, string message) =>
+            Input.LogWriteLine(DateTime.Now, $"[{type}]: {message}", "[{0:yyyy-MM-dd HH:mm:ss}] {1}");
 
-        public static void LogChatMessage(string player, string chatChannel, string message) => Input.LogWriteLine(DateTime.Now, $"<{chatChannel}> {player}: {message}", "[{0:yyyy-MM-dd HH:mm:ss}] {1}");
+        public static void LogChatMessage(string player, string chatChannel, string message) =>
+            Input.LogWriteLine(DateTime.Now, $"[{LogType.Chat}]: <{chatChannel}> {player}: {message}", "[{0:yyyy-MM-dd HH:mm:ss}] {1}");
+
+        public static void LogCommandMessage(string player, string message) => 
+            Input.LogWriteLine(DateTime.Now, $"[{LogType.Command}]: {player}: {message}", "[{0:yyyy-MM-dd HH:mm:ss}] {1}");
     }
 }

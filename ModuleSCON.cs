@@ -4,7 +4,6 @@ using Aragas.Network.Data;
 using Aragas.Network.Packets;
 
 using PCLExt.Config;
-using PCLExt.Config.Extensions;
 using PCLExt.Network;
 
 using PokeD.Core.Data.PokeD.Monster;
@@ -15,7 +14,7 @@ namespace PokeD.Server
 {
     public class ModuleSCON : ServerModule
     {
-        const string FileName = "ModuleSCON";
+        protected override string ModuleFileName { get; } = "ModuleSCON";
 
         #region Settings
 
@@ -23,7 +22,7 @@ namespace PokeD.Server
 
         public override ushort Port { get; protected set; } = 15126;
 
-        public PasswordStorage SCON_Password { get; protected set; } = new PasswordStorage();
+        public PasswordStorage SCONPassword { get; protected set; } = new PasswordStorage();
 
         public bool EncryptionEnabled { get; protected set; } = true;
         
@@ -45,62 +44,54 @@ namespace PokeD.Server
 
         public override bool Start()
         {
-            var status = FileSystemExtensions.LoadConfig(Server.ConfigType, FileName, this);
-            if (!status)
-                Logger.Log(LogType.Warning, "Failed to load SCON settings!");
-
-            if (!Enabled)
-            {
-                Logger.Log(LogType.Info, $"SCON not enabled!");
+            if (!base.Start())
                 return false;
-            }
 
-            Logger.Log(LogType.Info, $"Starting SCON.");
+
+            Logger.Log(LogType.Info, $"Starting {ModuleFileName}.");
+
+            Listener = SocketServer.CreateTCP(Port);
+            Listener.Start();
+
 
             return true;
         }
-        public override void Stop()
+        public override bool Stop()
         {
-            var status = FileSystemExtensions.SaveConfig(Server.ConfigType, FileName, this);
-            if (!status)
-                Logger.Log(LogType.Warning, "Failed to save SCON settings!");
-            
-            Logger.Log(LogType.Info, $"Stopping SCON.");
+            if (!base.Stop())
+                return false;
+
+
+            Logger.Log(LogType.Info, $"Stopping {ModuleFileName}.");
 
             Dispose();
 
-            Logger.Log(LogType.Info, $"Stopped SCON.");
-        }
-        
-        
-        public override void StartListen()
-        {
-            Listener = SocketServer.CreateTCP(Port);
-            Listener.Start();
-        }
-        public override void CheckListener()
-        {
-            if (Listener != null && Listener.AvailableClients)
-                if (Listener.AvailableClients)
-                    PlayersJoining.Add(new SCONClient(Listener.AcceptTCPClient(), this));
-        }
 
+            return true;
+        }
+        
 
         public override void AddClient(Client client)
         {
             PlayersToAdd.Add(client);
             PlayersJoining.Remove(client);
+
+            base.AddClient(client);
         }
         public override void RemoveClient(Client client, string reason = "")
         {
-            client.Kick(reason);
-
             PlayersToRemove.Add(client);
+
+            base.RemoveClient(client, reason);
         }
 
 
         public override void Update()
         {
+            if (Listener != null && Listener.AvailableClients)
+                if (Listener.AvailableClients)
+                    PlayersJoining.Add(new SCONClient(Listener.AcceptTCPClient(), this));
+
             #region Player Filtration
 
             for (var i = 0; i < PlayersToAdd.Count; i++)
@@ -127,11 +118,11 @@ namespace PokeD.Server
             #region Player Updating
 
             // Update actual players
-            for (var i = 0; i < Clients.Count; i++)
+            for (var i = Clients.Count - 1; i >= 0; i--)
                 Clients[i]?.Update();
 
             // Update joining players
-            for (var i = 0; i < PlayersJoining.Count; i++)
+            for (var i = PlayersJoining.Count - 1; i >= 0; i--)
                 PlayersJoining[i]?.Update();
 
             #endregion Player Updating
@@ -143,7 +134,7 @@ namespace PokeD.Server
 
         public override void SendPacketToAll(Packet packet)
         {
-            for (var i = 0; i < Clients.Count; i++)
+            for (var i = Clients.Count - 1; i >= 0; i--)
                 Clients[i]?.SendPacket(packet);
         }
 
@@ -162,18 +153,18 @@ namespace PokeD.Server
             IsDisposing = true;
 
 
-            for (var i = 0; i < PlayersJoining.Count; i++)
+            for (var i = PlayersJoining.Count - 1; i >= 0; i--)
                 PlayersJoining[i].Dispose();
             PlayersJoining.Clear();
 
-            for (var i = 0; i < Clients.Count; i++)
+            for (var i = Clients.Count - 1; i >= 0; i--)
             {
                 Clients[i].Kick("Closing server!");
                 Clients[i].Dispose();
             }
             Clients.Clear();
 
-            for (var i = 0; i < PlayersToAdd.Count; i++)
+            for (var i = PlayersToAdd.Count - 1; i >= 0; i--)
             {
                 PlayersToAdd[i].Kick("Closing server!");
                 PlayersToAdd[i].Dispose();

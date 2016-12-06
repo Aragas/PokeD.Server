@@ -15,7 +15,7 @@ namespace PokeD.Server.Clients
 {
     public abstract class Client : IUpdatable, IDisposable
     {
-        public abstract int ID { get; set; }
+        public abstract int Id { get; set; }
 
         public string Name => Prefix != Prefix.NONE ? $"[{Prefix}] {Nickname}" : Nickname;
         public abstract string Nickname { get; protected set; }
@@ -30,7 +30,7 @@ namespace PokeD.Server.Clients
         public abstract CultureInfo Language { get; }
 
 
-        public abstract bool RegisterOrLogIn(string password);
+        public abstract bool RegisterOrLogIn(string passwordHash);
         public abstract bool ChangePassword(string oldPassword, string newPassword);
 
         public abstract GameDataPacket GetDataPacket();
@@ -42,6 +42,7 @@ namespace PokeD.Server.Clients
 
         public abstract void LoadFromDB(ClientTable data);
 
+        public abstract void Join();
         public abstract void Kick(string reason = "");
         public abstract void Ban(string reason = "");
 
@@ -56,6 +57,7 @@ namespace PokeD.Server.Clients
         protected Client(TServerModule module) { Module = module; }
 
 
+        public override void Join() { Module.AddClient(this); }
         public override void Kick(string reason = "") { Module.RemoveClient(this, reason); }
         public override void Ban(string reason = "") { Module.RemoveClient(this, reason); }
     }

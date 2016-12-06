@@ -28,7 +28,7 @@ namespace PokeD.Server.Commands
                 .Where(typeInfo => !typeInfo.IsDefined(typeof(CommandDisableAutoLoadAttribute), true))
                 .Where(typeInfo => !typeInfo.IsAbstract);
 
-            foreach (var command in types.Where(type => type != typeof(CommandLua).GetTypeInfo()).Select(type => (Command) Activator.CreateInstance(type.AsType(), Server)))
+            foreach (var command in types.Where(type => !Equals(type, typeof(CommandLua).GetTypeInfo())).Select(type => (Command) Activator.CreateInstance(type.AsType(), Server)))
                 Commands.Add(command);
 
             Commands.AddRange(CommandLuaLoader.LoadCommands(Server));
@@ -43,6 +43,9 @@ namespace PokeD.Server.Commands
                 return;
             }
 
+            if(command.LogCommand && !client.Permissions.HasFlag(PermissionFlags.UnVerified))
+                Logger.LogCommandMessage(client.Name, $"/{alias} {string.Join(" ", arguments)}");
+
             if (command.Permissions == PermissionFlags.None)
             {
                 client.SendServerMessage($@"Command is disabled!");
@@ -51,7 +54,7 @@ namespace PokeD.Server.Commands
 
             if ((client.Permissions & command.Permissions) == PermissionFlags.None)
             {
-                client.SendServerMessage($"You have not the permission to use this command!");
+                client.SendServerMessage($@"You have not the permission to use this command!");
                 return;
             }
 

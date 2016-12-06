@@ -11,7 +11,7 @@ namespace PokeD.Server.Commands
     {
         public override string Name { get; protected set; } = "setperm";
         public override string Description { get; protected set; } = "Change Client permission.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "sperm", "sp" };
+        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "sperm", "sp" };
         public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.AdministratorOrHigher;
 
         public SetPermissionCommand(Server server) : base(server) { }

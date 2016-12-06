@@ -1,7 +1,6 @@
 ﻿using Aragas.Network.Packets;
 
 using PCLExt.Config;
-using PCLExt.Config.Extensions;
 
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Server.Clients;
@@ -11,7 +10,7 @@ namespace PokeD.Server
 {
     public class ModuleNPC : ServerModule
     {
-        const string FileName = "ModuleNPC";
+        protected override string ModuleFileName { get; } = "ModuleNPC";
 
         #region Settings
 
@@ -28,73 +27,66 @@ namespace PokeD.Server
 
         public override bool Start()
         {
-            var status = FileSystemExtensions.LoadConfig(Server.ConfigType, FileName, this);
-            if (!status)
-                Logger.Log(LogType.Warning, "Failed to load NPC settings!");
-
-            if (!Enabled)
-            {
-                Logger.Log(LogType.Info, $"NPC not enabled!");
+            if (!base.Stop())
                 return false;
-            }
 
-            LoadNPCs();
 
-            Logger.Log(LogType.Info, $"Starting NPC.");
+            LoadAllNPC();
+
+            Logger.Log(LogType.Info, $"Starting {ModuleFileName}.");
+
 
             return true;
         }
-        public override void Stop()
+        public override bool Stop()
         {
-            var status = FileSystemExtensions.SaveConfig(Server.ConfigType, FileName, this);
-            if (!status)
-                Logger.Log(LogType.Warning, "Failed to save NPC settings!");
-            
-            Logger.Log(LogType.Info, $"Stopping NPC.");
+            if (!base.Stop())
+                return false;
+
+
+            Logger.Log(LogType.Info, $"Stopping {ModuleFileName}.");
 
             Dispose();
 
-            Logger.Log(LogType.Info, $"Stopped NPC.");
-        }
-        
-        
-        public override void StartListen() { }
-        public override void CheckListener() { }
-        
-
-        private bool LoadNPCs()
-        {
-            Logger.Log(LogType.Info, "Loading NPC's.");
-            var npcs = NPCLuaLoader.LoadNPCs(this);
-
-            foreach (var npc in npcs)
-                AddClient(npc);
 
             return true;
         }
-        public bool ReloadNPCs()
-        {
-            for (int i = 0; i < Clients.Count; i++)
-                RemoveClient(Clients[i]);
+        
 
-            return LoadNPCs();
+        private bool LoadAllNPC()
+        {
+            Logger.Log(LogType.Info, "Loading NPC's.");
+            var npcs = NPCLuaLoader.LoadAllNPC(this);
+
+            foreach (var npc in npcs)
+                npc.Join();
+
+            return true;
+        }
+        public bool ReloadAllNPC()
+        {
+            for (int i = Clients.Count - 1; i >= 0; i--)
+                Clients[i].Kick();
+
+            return LoadAllNPC();
         }
 
 
         public override void AddClient(Client client)
         {
-            if (Server.DatabaseSetClientId(client))
-            {
-                Server.DatabasePlayerLoad(client);
+            if (!Server.DatabaseSetClientId(client))
+                return;
 
-                Clients.Add(client);
+            //Server.DatabasePlayerLoad(client);
+            ClientUpdate(client, true);
 
-                Server.NotifyClientConnected(this, client);
-            }
+            Clients.Add(client);
+
+            base.AddClient(client);
         }
         public override void RemoveClient(Client client, string reason = "")
         {
-            Server.DatabasePlayerSave(client, true);
+            ClientUpdate(client, true);
 
             Clients.Remove(client);
 
@@ -104,7 +96,7 @@ namespace PokeD.Server
 
         public override void Update()
         {
-            for (var i = 0; i < Clients.Count; i++)
+            for (var i = Clients.Count - 1; i >= 0; i--)
                 Clients[i]?.Update();
         }
 
@@ -127,7 +119,7 @@ namespace PokeD.Server
 
         public override void Dispose()
         {
-            for (int i = 0; i < Clients.Count; i++)
+            for (int i = Clients.Count - 1; i >= 0; i--)
                 Clients[i].Dispose();
             Clients.Clear();
         }

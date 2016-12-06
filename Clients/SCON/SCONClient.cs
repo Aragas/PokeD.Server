@@ -26,7 +26,7 @@ namespace PokeD.Server.Clients.SCON
     {
         #region P3D Values
 
-        public override int ID { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
+        public override int Id { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
         public override string Nickname { get { throw new NotSupportedException(); } protected set { throw new NotSupportedException(); } }
         
         public override string LevelFile { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
@@ -86,12 +86,12 @@ namespace PokeD.Server.Clients.SCON
                     else
                     {
                         Logger.Log(LogType.Error, $"Protobuf Reading Error: Packet Length size is 0. Disconnecting.");
-                        Module.RemoveClient(this, "Packet Length size is 0!");
+                        Kick("Packet Length size is 0!");
                     }
                 }
             }
             else
-                Module.RemoveClient(this);
+                Kick();
         }
 
         private void HandleData(byte[] data)
@@ -117,15 +117,15 @@ namespace PokeD.Server.Clients.SCON
 #endif
                             }
                             else
-                                Logger.Log(LogType.Error, $"SCON Reading Error: packet is null. Packet ID {id}"); // TODO: Disconnect?
+                                Logger.Log(LogType.Error, $"SCON Reading Error: packet is null. Packet Id {id}"); // TODO: Disconnect?
                         }
                         else
                             Logger.Log(LogType.Error, $"SCON Reading Error: SCONPacketResponses.Packets[{id}] is null.");
                     }
                     else
                     {
-                        Logger.Log(LogType.Error, $"SCON Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting.");
-                        Module.RemoveClient(this, $"Packet ID {id} is not correct!");
+                        Logger.Log(LogType.Error, $"SCON Reading Error: Packet Id {id} is not correct, Packet Data: {data}. Disconnecting.");
+                        Kick($"Packet Id {id} is not correct!");
                     }
                 }
             }
@@ -209,7 +209,7 @@ namespace PokeD.Server.Clients.SCON
         }
 
 
-        public override bool RegisterOrLogIn(string password) => false;
+        public override bool RegisterOrLogIn(string passwordHash) => false;
         public override bool ChangePassword(string oldPassword, string newPassword) => false;
 
         public override GameDataPacket GetDataPacket() { throw new NotSupportedException(); }

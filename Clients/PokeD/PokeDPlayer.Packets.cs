@@ -18,7 +18,7 @@ using PokeD.Server.Chat;
 
 namespace PokeD.Server.Clients.PokeD
 {
-    partial class PokeDPlayer
+    public partial class PokeDPlayer
     {
         AuthorizationStatus AuthorizationStatus => Module.EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0;
         byte[] VerificationToken { get; set; }
@@ -34,7 +34,7 @@ namespace PokeD.Server.Clients.PokeD
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                var publicKey = Module.RSAKeyPair.PublicKeyToByteArray();
+                var publicKey = Module.RsaKeyPair.PublicKeyToByteArray();
 
                 VerificationToken = new byte[4];
                 var drg = new DigestRandomGenerator(new Sha512Digest());
@@ -46,7 +46,7 @@ namespace PokeD.Server.Clients.PokeD
             {
                 if (!IsInitialized)
                 {
-                    Module.AddClient(this);
+                    Join();
                     IsInitialized = true;
                 }
             }
@@ -58,7 +58,7 @@ namespace PokeD.Server.Clients.PokeD
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                var pkcs = new PKCS1Signer(Module.RSAKeyPair);
+                var pkcs = new PKCS1Signer(Module.RsaKeyPair);
 
                 var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
                 for (int i = 0; i < VerificationToken.Length; i++)
@@ -72,7 +72,7 @@ namespace PokeD.Server.Clients.PokeD
                 var sharedKey = pkcs.DeSignData(packet.SharedSecret);
 
                 Stream.InitializeEncryption(sharedKey);
-                Module.AddClient(this);
+                Join();
                 IsInitialized = true;
             }
             else
@@ -105,7 +105,7 @@ namespace PokeD.Server.Clients.PokeD
         }
         private void HandleChatPrivateMessage(ChatPrivateMessagePacket packet)
         {
-            var destClient = Module.GetClient(packet.PlayerID);
+            var destClient = Module.GetClient(packet.PlayerId);
             if (destClient != null)
             {
                 destClient.SendPrivateMessage(new ChatMessage(this, packet.Message));
@@ -126,15 +126,15 @@ namespace PokeD.Server.Clients.PokeD
 
         private void HandleTradeOffer(TradeOfferPacket packet)
         {
-            Module.SendTradeRequest(this, new Monster(packet.MonsterData), Module.GetClient(packet.DestinationID));
+            Module.SendTradeRequest(this, new Monster(packet.MonsterData), Module.GetClient(packet.DestinationId));
         }
         private void HandleTradeAccept(TradeAcceptPacket packet)
         {
-            Module.SendTradeConfirm(this, Module.GetClient(packet.DestinationID));
+            Module.SendTradeConfirm(this, Module.GetClient(packet.DestinationId));
         }
         private void HandleTradeRefuse(TradeRefusePacket packet)
         {
-            Module.SendTradeCancel(this, Module.GetClient(packet.DestinationID));
+            Module.SendTradeCancel(this, Module.GetClient(packet.DestinationId));
         }
     }
 }

@@ -26,7 +26,7 @@ namespace PokeD.Server.Clients.NPC
 
         #region Game Values
 
-        public override int ID { get; set; }
+        public override int Id { get; set; }
 
         private char DecimalSeparator { get; set; } = '.';
         public override string Nickname { get; protected set; } = string.Empty;
@@ -98,7 +98,7 @@ namespace PokeD.Server.Clients.NPC
         }
 
 
-        public override bool RegisterOrLogIn(string password) => false;
+        public override bool RegisterOrLogIn(string passwordHash) => false;
         public override bool ChangePassword(string oldPassword, string newPassword) => false;
 
         public override void SendPacket(Packet packet) { }
@@ -108,8 +108,8 @@ namespace PokeD.Server.Clients.NPC
 
         public override void LoadFromDB(ClientTable data)
         {
-            if (ID == 0)
-                ID = data.Id;
+            if (Id == 0)
+                Id = data.Id;
 
             Prefix = data.Prefix;
         }
@@ -119,7 +119,7 @@ namespace PokeD.Server.Clients.NPC
             return new DataItems(
                 "NPC",  // Gamemode
                 "1",    // IsGameJolt
-                "0",    // GameJolt ID
+                "0",    // GameJolt Id
                 DecimalSeparator.ToString(),
                 Name,
                 LevelFile,

@@ -21,7 +21,7 @@ namespace PokeD.Server
         private static SClient ServerClient { get; } = new SClient();
         private class SClient : Client
         {
-            public override int ID { get; set; } = 0;
+            public override int Id { get; set; } = 0;
             public override string Nickname { get; protected set; } = "SERVER";
             public override Prefix Prefix { get; protected set; } = Prefix.NONE;
             public override string PasswordHash { get; set; } = string.Empty;
@@ -34,7 +34,7 @@ namespace PokeD.Server
             public override GameDataPacket GetDataPacket() => null;
 
 
-            public override bool RegisterOrLogIn(string password) => false;
+            public override bool RegisterOrLogIn(string passwordHash) => false;
             public override bool ChangePassword(string oldPassword, string newPassword) => false;
 
             public override void SendPacket(Packet packet) { }
@@ -45,6 +45,7 @@ namespace PokeD.Server
 
             public override void LoadFromDB(ClientTable data) {  }
 
+            public override void Join() { }
             public override void Kick(string reason = "") { }
             public override void Ban(string reason = "") { }
 

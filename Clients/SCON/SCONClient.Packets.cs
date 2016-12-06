@@ -38,7 +38,7 @@ namespace PokeD.Server.Clients.SCON
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                var publicKey = Module.RSAKeyPair.PublicKeyToByteArray();
+                var publicKey = Module.RsaKeyPair.PublicKeyToByteArray();
 
                 VerificationToken = new byte[4];
                 var drg = new DigestRandomGenerator(new Sha512Digest());
@@ -54,7 +54,7 @@ namespace PokeD.Server.Clients.SCON
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                var pkcs = new PKCS1Signer(Module.RSAKeyPair);
+                var pkcs = new PKCS1Signer(Module.RsaKeyPair);
 
                 var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
                 for (int i = 0; i < VerificationToken.Length; i++)
@@ -77,12 +77,12 @@ namespace PokeD.Server.Clients.SCON
             if (Authorized)
                 return;
 
-            if (Module.SCON_Password.Hash == packet.PasswordHash)
+            if (Module.SCONPassword.Hash == packet.PasswordHash)
             {
                 Authorized = true;
                 SendPacket(new AuthorizationCompletePacket());
 
-                Module.AddClient(this);
+                Join();
                 IsInitialized = true;
             }
             else

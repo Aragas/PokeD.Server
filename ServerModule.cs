@@ -1,35 +1,43 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 using Aragas.Network.Packets;
 
 using Org.BouncyCastle.Crypto;
 
 using PCLExt.Config;
+using PCLExt.Config.Extensions;
 
 using PokeD.Core;
 using PokeD.Core.Data.PokeD.Monster;
 using PokeD.Server.Chat;
 using PokeD.Server.Clients;
 using PokeD.Server.Data;
+using PokeD.Server.Database;
 
 namespace PokeD.Server
 {
     public abstract class ServerModule : IUpdatable, IDisposable
     {
+        protected abstract string ModuleFileName { get; }
         protected Server Server { get; }
-        [ConfigIgnore]
-        public World World => Server.World;
-        [ConfigIgnore]
-        public AsymmetricCipherKeyPair RSAKeyPair => Server.RSAKeyPair;
-        [ConfigIgnore]
-        public ClientList Clients { get; } = new ClientList();
-        [ConfigIgnore]
-        public virtual bool ClientsVisible { get; } = true;
 
+        #region Settings
 
         public abstract bool Enabled { get; protected set; }
         public abstract ushort Port { get; protected set; }
+
+        #endregion Settings
+
+        [ConfigIgnore]
+        public World World => Server.World;
+        [ConfigIgnore]
+        public AsymmetricCipherKeyPair RsaKeyPair => Server.RSAKeyPair;
+        [ConfigIgnore]
+        public List<Client> Clients { get; } = new List<Client>();
+        [ConfigIgnore]
+        public virtual bool ClientsVisible { get; } = true;
 
 
         public ServerModule(Server server) { Server = server; }
@@ -38,19 +46,51 @@ namespace PokeD.Server
         public IEnumerable<Client> GetAllClients() => Server.GetAllClients();
         public Client GetClient(int id) => Server.GetClient(id);
         public Client GetClient(string name) => Server.GetClient(name);
-        public int GetClientID(string name) => Server.GetClientID(name);
+        public int GetClientId(string name) => Server.GetClientId(name);
         public string GetClientName(int id) => Server.GetClientName(id);
 
         public bool ExecuteClientCommand(Client client, string command) => Server.ExecuteClientCommand(client, command);
 
-        public void SaveClient(Client client) => Server.DatabasePlayerSave(client);
+        private Stopwatch ClientSaveWatch { get; } = Stopwatch.StartNew();
+        public void ClientUpdate(Client client, bool forceUpdate = false)
+        {
+            if (client.Id == 0)
+                return;
+
+            if (ClientSaveWatch.ElapsedMilliseconds < 2000 && !forceUpdate)
+                return;
+
+            Server.DatabaseUpdate(new ClientTable(client));
+
+            ClientSaveWatch.Reset();
+            ClientSaveWatch.Start();
+        }
+        public void ClientLoad(Client client) => client.LoadFromDB(Server.DatabaseGet<ClientTable>(client.Id));
+        //public ClientTable ClientLoad(Client client) => Server.DatabaseGet<ClientTable>(client.Id);
 
 
-        public abstract bool Start();
-        public abstract void Stop();
+        public virtual bool Start()
+        {
+            var status = FileSystemExtensions.LoadConfig(Server.ConfigType, ModuleFileName, this);
+            if (!status)
+                Logger.Log(LogType.Warning, $"Failed to load {ModuleFileName} settings!");
 
-        public abstract void StartListen();
-        public abstract void CheckListener();
+            if (!Enabled)
+            {
+                Logger.Log(LogType.Info, $"{ModuleFileName} not enabled!");
+                return false;
+            }
+
+            return true;
+        }
+        public virtual bool Stop()
+        {
+            var status = FileSystemExtensions.SaveConfig(Server.ConfigType, ModuleFileName, this);
+            if (!status)
+                Logger.Log(LogType.Warning, $"Failed to save {ModuleFileName} settings!");
+
+            return true;
+        }
 
         public virtual void AddClient(Client client) { Server.NotifyClientConnected(this, client); }
         public virtual void RemoveClient(Client client, string reason = "") { Server.NotifyClientDisconnected(this, client); }
@@ -64,7 +104,7 @@ namespace PokeD.Server
 
         public void SendServerMessage(string message)
         {
-            for (var i = 0; i < Clients.Count; i++)
+            for (var i = Clients.Count - 1; i >= 0; i--)
                 Clients[i].SendServerMessage(message);
         }
         public void SendChatMessage(ChatMessage chatMessage) { Server.NotifyServerGlobalMessage(this, chatMessage); }
@@ -74,12 +114,12 @@ namespace PokeD.Server
         public abstract void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false);
         public abstract void SendTradeCancel(Client sender, Client destClient, bool fromServer = false);
 
-        //public abstract void SendBattleRequest(Client sender, Client destClient);
-        //public abstract void SendBattleAccept(Client sender);
-        //public abstract void SendBattleAttack(Client sender);
-        //public abstract void SendBattleItem(Client sender);
-        //public abstract void SendBattleSwitch(Client sender);
-        //public abstract void SendBattleFlee(Client sender);
+        //public abstract void SendBattleRequest(Client sender, Client destClient, bool fromServer = false);
+        //public abstract void SendBattleAccept(Client sender, bool fromServer = false);
+        //public abstract void SendBattleAttack(Client sender, bool fromServer = false);
+        //public abstract void SendBattleItem(Client sender, bool fromServer = false);
+        //public abstract void SendBattleSwitch(Client sender, bool fromServer = false);
+        //public abstract void SendBattleFlee(Client sender, bool fromServer = false);
 
         public abstract void SendPosition(Client sender, bool fromServer = false);
 

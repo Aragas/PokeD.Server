@@ -7,7 +7,7 @@ using SQLite;
 
 namespace PokeD.Server.Database
 {
-    public sealed class MonsterDB : IDatabaseTable
+    public sealed class MonsterDB : IdatabaseTable
     {
         private static string GetString(MonsterStats monsterStats)
         {
@@ -24,7 +24,7 @@ namespace PokeD.Server.Database
         private static string GetString(MonsterMoves monsterMoves)
         {
             return string.Empty;
-            //return string.Join(",", monsterMove.ID, monsterMove.PPUPs);
+            //return string.Join(",", monsterMove.Id, monsterMove.PPUPs);
         }
         private static MonsterMoves GetMonsterMoves(string text)
         {
@@ -40,16 +40,16 @@ namespace PokeD.Server.Database
 
 
         public short Species { get; private set; }
-        public ushort SecretID { get; private set; }
+        public ushort SecretId { get; private set; }
 
         #region CatchInfo
         public string Method { get; private set; } = string.Empty;
         public string Location { get; private set; } = string.Empty;
 
         public string TrainerName { get; private set; } = string.Empty;
-        public ushort TrainerID { get; private set; }
+        public ushort TrainerId { get; private set; }
 
-        public byte PokeballID { get; private set; }
+        public byte PokeballId { get; private set; }
 
         public string Nickname { get; private set; } = string.Empty;
         #endregion
@@ -81,13 +81,13 @@ namespace PokeD.Server.Database
         public MonsterDB(Monster monster)
         {
             Species = monster.Species;
-            SecretID = monster.InstanceData.SecretID;
+            SecretId = monster.InstanceData.SecretId;
 
             Method = monster.CatchInfo.Method;
             Location = monster.CatchInfo.Location;
             TrainerName = monster.CatchInfo.TrainerName;
-            TrainerID = monster.CatchInfo.TrainerID;
-            PokeballID = monster.CatchInfo.PokeballID;
+            TrainerId = monster.CatchInfo.TrainerId;
+            PokeballId = monster.CatchInfo.PokeballId;
             Nickname = monster.CatchInfo.Nickname;
 
             PersonalityValue = monster.InstanceData.PersonalityValue;

@@ -2,7 +2,7 @@
 
 namespace PokeD.Server.Database
 {
-    public sealed class ClientGJTable : IDatabaseTable
+    public sealed class ClientGJTable : IdatabaseTable
     {
         [PrimaryKey]
         public int ClientId { get; private set; }

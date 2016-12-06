@@ -9,8 +9,9 @@ namespace PokeD.Server.Commands
     {
         public override string Name { get; protected set; } = "changepassword";
         public override string Description { get; protected set; } = "Change Players Password.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "cp" };
+        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "cp" };
         public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.VerifiedOrHigher;
+        public override bool LogCommand { get; protected set; } = false;
 
         public ChangePasswordCommand(Server server) : base(server) { }
 

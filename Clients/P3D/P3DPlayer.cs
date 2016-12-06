@@ -32,11 +32,11 @@ namespace PokeD.Server.Clients.P3D
 
         #region P3D Values
 
-        public override int ID { get; set; }
+        public override int Id { get; set; }
 
         public string GameMode { get; private set; }
         public bool IsGameJoltPlayer { get; private set; }
-        public long GameJoltID { get; private set; }
+        public long GameJoltId { get; private set; }
         private char DecimalSeparator { get; set; }
 
 
@@ -99,7 +99,7 @@ namespace PokeD.Server.Clients.P3D
         }
         private void P3DPlayer_Disconnected(PacketStreamDisconnectedArgs args)
         {
-            Module.RemoveClient(this);
+            Kick();
         }
 
         public override void Update()
@@ -117,7 +117,7 @@ namespace PokeD.Server.Clients.P3D
                 }
             }
             else
-                Module.RemoveClient(this);
+                Kick();
         }
 
         private void HandleData(string data)
@@ -125,7 +125,7 @@ namespace PokeD.Server.Clients.P3D
             if (!string.IsNullOrEmpty(data))
             {
                 int id;
-                if (P3DPacket.TryParseID(data, out id))
+                if (P3DPacket.TryParseId(data, out id))
                 {
                     Func<P3DPacket> func;
                     if (P3DPacketResponses.TryGetPacketFunc(id, out func))
@@ -142,16 +142,16 @@ namespace PokeD.Server.Clients.P3D
 #endif
                             }
                             else
-                                Logger.Log(LogType.Error, $"P3D Reading Error: Packet TryParseData error. Packet ID {id}, Packet Data: {data}.");
+                                Logger.Log(LogType.Error, $"P3D Reading Error: Packet TryParseData error. Packet Id {id}, Packet Data: {data}.");
                         }
                         else
                             Logger.Log(LogType.Error, $"P3D Reading Error: SCONPacketResponses.Packets[{id}] is null.");
                     }
                     else
-                        Logger.Log(LogType.Error, $"P3D Reading Error: Packet ID {id} doesn't exist, Packet Data: {data}.");
+                        Logger.Log(LogType.Error, $"P3D Reading Error: Packet Id {id} doesn't exist, Packet Data: {data}.");
                 }
                 else
-                    Logger.Log(LogType.Error, $"P3D Reading Error: Packet TryParseID error. Packet Data: {data}.");
+                    Logger.Log(LogType.Error, $"P3D Reading Error: Packet TryParseId error. Packet Data: {data}.");
             }
             else
                 Logger.Log(LogType.Error, $"P3D Reading Error: Packet Data is null or empty.");
@@ -241,11 +241,9 @@ namespace PokeD.Server.Clients.P3D
         }
 
 
-        public override bool RegisterOrLogIn(string password)
+        public override bool RegisterOrLogIn(string passwordHash)
         {
-            PasswordHash = new PasswordStorage(password).Hash;
-
-            if (Module.ClientPasswordCorrect(this, PasswordHash))
+            if (Module.ClientPasswordIsCorrect(this, passwordHash))
             {
                 Initialize();
                 return true;
@@ -255,10 +253,15 @@ namespace PokeD.Server.Clients.P3D
         }
         public override bool ChangePassword(string oldPassword, string newPassword)
         {
-            var oldPasswordHash = new PasswordStorage(oldPassword).Hash;
-            var newPasswordHash = new PasswordStorage(newPassword).Hash;
+            if (PasswordHash == new PasswordStorage(oldPassword).Hash)
+            {
+                PasswordHash = new PasswordStorage(newPassword).Hash;
+                Module.ClientUpdate(this, true);
 
-            return Module.ClientPasswordChange(this, oldPasswordHash, newPasswordHash);
+                return true;
+            }
+
+            return false;
         }
 
         public override void SendPacket(Packet packet)
@@ -273,9 +276,9 @@ namespace PokeD.Server.Clients.P3D
             Sended.Add(p3dPacket);
 #endif
         }
-        public override void SendChatMessage(ChatMessage chatMessage) { SendPacket(new ChatMessageGlobalPacket { Origin = chatMessage.Sender.ID, Message = chatMessage.Message }); }
+        public override void SendChatMessage(ChatMessage chatMessage) { SendPacket(new ChatMessageGlobalPacket { Origin = chatMessage.Sender.Id, Message = chatMessage.Message }); }
         public override void SendServerMessage(string text) { SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = text }); }
-        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatMessagePrivatePacket { Origin = chatMessage.Sender.ID, Message = chatMessage.Message }); }
+        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatMessagePrivatePacket { Origin = chatMessage.Sender.Id, Message = chatMessage.Message }); }
 
         public override void Kick(string reason = "")
         {
@@ -291,8 +294,8 @@ namespace PokeD.Server.Clients.P3D
 
         public override void LoadFromDB(ClientTable data)
         {
-            if (ID == 0)
-                ID = data.Id;
+            if (Id == 0)
+                Id = data.Id;
 
             Prefix = data.Prefix;
         }
@@ -304,7 +307,7 @@ namespace PokeD.Server.Clients.P3D
             {
                 Permissions = PermissionFlags.Verified;
 
-                Module.AddClient(this);
+                Join();
                 IsInitialized = true;
             }
         }
@@ -314,7 +317,7 @@ namespace PokeD.Server.Clients.P3D
             return new DataItems(
                 GameMode,
                 IsGameJoltPlayer ? "1" : "0",
-                GameJoltID.ToString(CultureInfo),
+                GameJoltId.ToString(CultureInfo),
                 DecimalSeparator.ToString(),
                 Name,
                 LevelFile,
