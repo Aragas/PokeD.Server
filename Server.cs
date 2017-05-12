@@ -10,13 +10,14 @@ using Org.BouncyCastle.Security;
 
 using PCLExt.Config;
 using PCLExt.Config.Extensions;
-using PCLExt.FileStorage;
 
 using PokeD.Core;
 using PokeD.Core.Data.PokeApi;
 using PokeD.Server.Chat;
 using PokeD.Server.Commands;
 using PokeD.Server.Data;
+using PokeD.Server.Storage.Files;
+using PokeD.Server.Storage.Folders;
 
 using SQLite;
 
@@ -24,8 +25,9 @@ namespace PokeD.Server
 {
     public partial class Server : IUpdatable, IDisposable
     {
-        private const string ServerFileName = "Server";
         private const int RsaKeySize = 1024;
+
+        private IConfigFile ServerConfigFile => new ServerConfigFile(ConfigType);
 
         [ConfigIgnore]
         public ConfigType ConfigType { get; }
@@ -45,7 +47,7 @@ namespace PokeD.Server
             }
         }
 
-        public bool CacheData { get { return PokeApiV2.CacheData; } private set { PokeApiV2.CacheData = value; } }
+        public PokeApiV2.CacheTypeEnum CacheType { get { return PokeApiV2.CacheType; } private set { PokeApiV2.CacheType = value; } } 
         public bool PreCacheData { get; private set; } = false;
 
         //public bool AutomaticErrorReporting { get; private set; } = true;
@@ -70,9 +72,9 @@ namespace PokeD.Server
             ConfigType = configType;
 
             Modules.Add(new ModuleSCON(this));
-            Modules.Add(new ModuleNPC(this));
+            //Modules.Add(new ModuleNPC(this));
             Modules.Add(new ModuleP3D(this));
-            Modules.Add(new ModulePokeD(this));
+            //Modules.Add(new ModulePokeD(this));
 
             Modules.AddRange(LoadModules());
 
@@ -93,7 +95,7 @@ namespace PokeD.Server
 
         public bool Start()
         {
-            var status = FileSystemExtensions.LoadConfig(ConfigType, ServerFileName, this);
+            var status = FileSystemExtensions.LoadConfig(ServerConfigFile, this);
             if(!status)
                 Logger.Log(LogType.Warning, "Failed to load Server settings!");
 
@@ -109,7 +111,7 @@ namespace PokeD.Server
 
 
             Logger.Log(LogType.Info, $"Loading {DatabaseName}...");
-            Database = new SQLiteConnection(Path.Combine(Storage.DatabaseFolder.Path, $"{DatabaseName}.sqlite3"));
+            Database = new SQLiteConnection(Path.Combine(new DatabaseFolder().Path, $"{DatabaseName}.sqlite3"));
             CreateTables();
 
             Logger.Log(LogType.Info, $"Starting Server.");
@@ -121,7 +123,7 @@ namespace PokeD.Server
         }
         public bool Stop()
         {
-            var status = FileSystemExtensions.SaveConfig(ConfigType, ServerFileName, this);
+            var status = FileSystemExtensions.SaveConfig(ServerConfigFile, this);
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save Server settings!");
 

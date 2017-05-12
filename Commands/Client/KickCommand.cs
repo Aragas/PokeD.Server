@@ -7,10 +7,10 @@ namespace PokeD.Server.Commands
 {
     public class KickCommand : Command
     {
-        public override string Name { get; protected set; } = "kick";
-        public override string Description { get; protected set; } = "Kick a Player.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "k" };
-        public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.ModeratorOrHigher;
+        public override string Name => "kick";
+        public override string Description => "Kick a Player.";
+        public override IEnumerable<string> Aliases => new [] { "k" };
+        public override PermissionFlags Permissions => PermissionFlags.ModeratorOrHigher;
 
         public KickCommand(Server server) : base(server) { }
 

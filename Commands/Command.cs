@@ -17,11 +17,11 @@ namespace PokeD.Server.Commands
         protected Client GetClient(string name) => Server.GetClient(name);
 
 
-        public abstract string Name { get; protected set; }
-        public abstract string Description { get; protected set; }
-        public virtual IEnumerable<string> Aliases { get; protected set; } = new string[0];
-        public virtual PermissionFlags Permissions { get; protected set; } = PermissionFlags.None;
-        public virtual bool LogCommand { get; protected set; } = true;
+        public abstract string Name { get; }
+        public abstract string Description { get; }
+        public virtual IEnumerable<string> Aliases { get; } = new string[0];
+        public virtual PermissionFlags Permissions { get; } = PermissionFlags.None;
+        public virtual bool LogCommand { get; } = true;
 
         protected Command(Server server) { Server = server; }
 

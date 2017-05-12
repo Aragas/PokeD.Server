@@ -6,8 +6,6 @@ using System.Linq;
 using Aragas.Network.Data;
 using Aragas.Network.Packets;
 
-using PCLExt.Lua;
-
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Extensions;
 using PokeD.Core.Packets.P3D.Shared;
@@ -18,7 +16,7 @@ using PokeD.Server.Database;
 
 namespace PokeD.Server.Clients.NPC
 {
-
+    /*
     // Call Lua funcs, but put default variables first. So lua can override
     public partial class NPCPlayer : Client<ModuleNPC>, INPC
     {
@@ -26,7 +24,7 @@ namespace PokeD.Server.Clients.NPC
 
         #region Game Values
 
-        public override int Id { get; set; }
+        public override int ID { get; set; }
 
         private char DecimalSeparator { get; set; } = '.';
         public override string Nickname { get; protected set; } = string.Empty;
@@ -108,8 +106,8 @@ namespace PokeD.Server.Clients.NPC
 
         public override void LoadFromDB(ClientTable data)
         {
-            if (Id == 0)
-                Id = data.Id;
+            if (ID == 0)
+                ID = data.ID;
 
             Prefix = data.Prefix;
         }
@@ -119,7 +117,7 @@ namespace PokeD.Server.Clients.NPC
             return new DataItems(
                 "NPC",  // Gamemode
                 "1",    // IsGameJolt
-                "0",    // GameJolt Id
+                "0",    // GameJolt ID
                 DecimalSeparator.ToString(),
                 Name,
                 LevelFile,
@@ -150,4 +148,5 @@ namespace PokeD.Server.Clients.NPC
         public void SayPrivateMessage(Client client, string message) => client.SendPrivateMessage(new ChatMessage(client, message));
         public void SayGlobalMessage(string message) => Module.SendChatMessage(new ChatMessage(this, message));
     }
+    */
 }

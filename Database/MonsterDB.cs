@@ -1,34 +1,50 @@
 ﻿using System;
+using System.Collections.Generic;
+using PokeD.BattleEngine.Attack;
+using PokeD.BattleEngine.Item;
+using PokeD.BattleEngine.Monster.Data;
 
-using PokeD.Core.Data.PokeD.Monster;
-using PokeD.Core.Data.PokeD.Monster.Data;
+using PokeD.Core.Data.PokeD;
 
 using SQLite;
 
 namespace PokeD.Server.Database
 {
-    public sealed class MonsterDB : IdatabaseTable
+    public sealed class MonsterDB : IDatabaseTable
     {
-        private static string GetString(MonsterStats monsterStats)
+        private static string GetString(Stats monsterStats)
         {
             return string.Join(",",
                 monsterStats.Attack, monsterStats.Defense, monsterStats.SpecialAttack, monsterStats.SpecialDefense, monsterStats.Speed);
         }
-        private static MonsterStats GetMonsterStats(string text)
+        private static Stats GetStats(string text)
         {
             var array = text.Split(',');
-            return new MonsterStats(
+            return new Stats(
                 short.Parse(array[0]), short.Parse(array[1]), short.Parse(array[2]), short.Parse(array[3]), short.Parse(array[4]), short.Parse(array[5]));
         }
 
-        private static string GetString(MonsterMoves monsterMoves)
+        private static string GetString(IList<BaseAttackInstance> attacks)
         {
-            return string.Empty;
-            //return string.Join(",", monsterMove.Id, monsterMove.PPUPs);
+            string str = string.Empty;
+            for (int i = 0; i < 4; i++)
+            {
+                if (attacks.Count > i)
+                {
+                    var attack = attacks[i];
+                    str += $"|{attack.StaticData.ID},{attack.PPCurrent},{attack.PPUps}";
+                }
+            }
+            str += "|";
+
+            return str;
+            //return string.Join(",", monsterMove.ID, monsterMove.PPUPs);
         }
-        private static MonsterMoves GetMonsterMoves(string text)
+        private static IList<BaseAttackInstance> GetAttacks(string text)
         {
-            return MonsterMoves.Empty;
+            var list = new List<BaseAttackInstance>();
+            return list;
+            //return MonsterMoves.Empty;
             //var array = text.Split(',');
             //return new MonsterMove(int.Parse(array[0]), int.Parse(array[1]));
         }
@@ -36,20 +52,20 @@ namespace PokeD.Server.Database
 
 
         [PrimaryKey]
-        public Guid Id { get; private set; } = Guid.NewGuid();
+        public Guid ID { get; private set; } = Guid.NewGuid();
 
 
         public short Species { get; private set; }
-        public ushort SecretId { get; private set; }
+        public ushort SecretID { get; private set; }
 
         #region CatchInfo
         public string Method { get; private set; } = string.Empty;
         public string Location { get; private set; } = string.Empty;
 
         public string TrainerName { get; private set; } = string.Empty;
-        public ushort TrainerId { get; private set; }
+        public ushort TrainerID { get; private set; }
 
-        public byte PokeballId { get; private set; }
+        public byte PokeballID { get; private set; }
 
         public string Nickname { get; private set; } = string.Empty;
         #endregion
@@ -58,13 +74,12 @@ namespace PokeD.Server.Database
 
         public byte Nature { get; private set; }
 
-        public int Experience { get; private set; }
+        public long Experience { get; private set; }
 
         public int EggSteps { get; private set; }
 
         public string IV { get; private set; } = string.Empty;
         public string EV { get; private set; } = string.Empty;
-        public string HiddenEV { get; private set; } = string.Empty;
 
         public short CurrentHP { get; private set; }
         public short StatusEffect { get; private set; }
@@ -74,23 +89,23 @@ namespace PokeD.Server.Database
 
         public string Moves { get; private set; } = string.Empty;
 
-        public short HeldItem { get; private set; }
+        public BaseItemInstance HeldItem { get; private set; }
         
 
         public MonsterDB() { }
         public MonsterDB(Monster monster)
         {
-            Species = monster.Species;
-            SecretId = monster.InstanceData.SecretId;
+            Species = monster.StaticData.ID;
+            SecretID = monster.SecretID;
 
             Method = monster.CatchInfo.Method;
             Location = monster.CatchInfo.Location;
             TrainerName = monster.CatchInfo.TrainerName;
-            TrainerId = monster.CatchInfo.TrainerId;
-            PokeballId = monster.CatchInfo.PokeballId;
+            TrainerID = monster.CatchInfo.TrainerID;
+            PokeballID = monster.CatchInfo.PokeballID;
             Nickname = monster.CatchInfo.Nickname;
 
-            PersonalityValue = monster.InstanceData.PersonalityValue;
+            PersonalityValue = monster.PersonalityValue;
 
             Nature = monster.Nature;
 
@@ -98,9 +113,8 @@ namespace PokeD.Server.Database
 
             EggSteps = monster.EggSteps;
 
-            IV = GetString(monster.InstanceData.IV);
-            EV = GetString(monster.InstanceData.EV);
-            HiddenEV = GetString(monster.InstanceData.HiddenEV);
+            IV = GetString(monster.IV);
+            EV = GetString(monster.EV);
 
             CurrentHP = monster.CurrentHP;
             StatusEffect = monster.StatusEffect;

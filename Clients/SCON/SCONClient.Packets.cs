@@ -19,6 +19,7 @@ using PokeD.Core.Packets.SCON.Logs;
 using PokeD.Core.Packets.SCON.Lua;
 using PokeD.Core.Packets.SCON.Status;
 using PokeD.Server.Extensions;
+using PokeD.Server.Storage.Folders;
 
 namespace PokeD.Server.Clients.SCON
 {
@@ -140,7 +141,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            var list = Storage.LogFolder.GetFilesAsync().Result;
+            var list = new LogsFolder().GetFiles();
 
             var logs = new List<Log>();
             foreach (var file in list)
@@ -156,8 +157,8 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            if (Storage.LogFolder.CheckExistsAsync(packet.LogFilename).Result == ExistenceCheckResult.FileExists)
-                using (var reader = new StreamReader(Storage.LogFolder.GetFileAsync(packet.LogFilename).Result.OpenAsync(FileAccess.Read).Result))
+            if (new LogsFolder().CheckExists(packet.LogFilename) == ExistenceCheckResult.FileExists)
+                using (var reader = new StreamReader(new LogsFolder().GetFile(packet.LogFilename).Open(FileAccess.Read)))
                 {
                     var logText = reader.ReadToEnd();
                     SendPacket(new LogFileResponsePacket { LogFilename = packet.LogFilename, LogFile = logText });
@@ -172,7 +173,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            var list = Storage.CrashLogFolder.GetFilesAsync().Result;
+            var list = new CrashLogsFolder().GetFiles();
 
             var crashLogs = new List<Log>();
             foreach (var file in list)
@@ -188,8 +189,8 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            if (Storage.CrashLogFolder.CheckExistsAsync(packet.CrashLogFilename).Result == ExistenceCheckResult.FileExists)
-                using (var reader = new StreamReader(Storage.CrashLogFolder.GetFileAsync(packet.CrashLogFilename).Result.OpenAsync(FileAccess.Read).Result))
+            if (new CrashLogsFolder().CheckExists(packet.CrashLogFilename) == ExistenceCheckResult.FileExists)
+                using (var reader = new StreamReader(new CrashLogsFolder().GetFile(packet.CrashLogFilename).Open(FileAccess.Read)))
                 {
                     var logText = reader.ReadToEnd();
                     SendPacket(new CrashLogFileResponsePacket {CrashLogFilename = packet.CrashLogFilename, CrashLogFile = logText});

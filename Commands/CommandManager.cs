@@ -28,10 +28,10 @@ namespace PokeD.Server.Commands
                 .Where(typeInfo => !typeInfo.IsDefined(typeof(CommandDisableAutoLoadAttribute), true))
                 .Where(typeInfo => !typeInfo.IsAbstract);
 
-            foreach (var command in types.Where(type => !Equals(type, typeof(CommandLua).GetTypeInfo())).Select(type => (Command) Activator.CreateInstance(type.AsType(), Server)))
+            foreach (var command in types.Where(type => !Equals(type, typeof(ScriptCommand).GetTypeInfo())).Select(type => (Command) Activator.CreateInstance(type.AsType(), Server)))
                 Commands.Add(command);
 
-            Commands.AddRange(CommandLuaLoader.LoadCommands(Server));
+            Commands.AddRange(ScriptCommandLoader.LoadCommands(Server));
         }
 
         public void HandleCommand(Client client, string alias, string[] arguments)

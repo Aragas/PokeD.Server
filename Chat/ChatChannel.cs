@@ -13,9 +13,9 @@ namespace PokeD.Server.Chat
         public List<Client> Subscribers { get; } = new List<Client>();
         public List<ChatMessage> History { get; } = new List<ChatMessage>();
 
-        public abstract string Name { get; protected set; }
-        public abstract string Description { get; protected set; }
-        public abstract string Alias { get; protected set; }
+        public abstract string Name { get; }
+        public abstract string Description { get; }
+        public abstract string Alias { get; }
 
         public virtual bool MessageSend(ChatMessage chatMessage)
         {

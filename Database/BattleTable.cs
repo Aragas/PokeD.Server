@@ -5,21 +5,21 @@ using SQLite;
 
 namespace PokeD.Server.Database
 {
-    public sealed class BattleTable : IdatabaseTable
+    public sealed class BattleTable : IDatabaseTable
     {
         [PrimaryKey]
-        public Guid Id { get; private set; } = Guid.NewGuid();
+        public Guid ID { get; private set; } = Guid.NewGuid();
 
 
-        public string PlayerIds { get; private set; }
+        public string PlayerIDs { get; private set; }
 
 
         public BattleTable() { }
         //public BattleTable(BattleInstance battle)
         //{
-        //    Id = battle.BattleId;
+        //    ID = battle.BattleID;
         //
-        //    PlayerIds = string.Join(",", battle.Trainers.Ids);
+        //    PlayerIDs = string.Join(",", battle.Trainers.IDs);
         //}
     }
 }

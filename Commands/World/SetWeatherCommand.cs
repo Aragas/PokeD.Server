@@ -9,10 +9,10 @@ namespace PokeD.Server.Commands
 {
     public class SetWeatherCommand : Command
     {
-        public override string Name { get; protected set; } = "setweather";
-        public override string Description { get; protected set; } = "Set World Weather.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new string[] { "sw" };
-        public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.ModeratorOrHigher;
+        public override string Name => "setweather";
+        public override string Description => "Set World Weather.";
+        public override IEnumerable<string> Aliases => new string[] { "sw" };
+        public override PermissionFlags Permissions => PermissionFlags.ModeratorOrHigher;
 
         public SetWeatherCommand(Server server) : base(server) { }
 

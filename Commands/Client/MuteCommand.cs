@@ -7,10 +7,10 @@ namespace PokeD.Server.Commands
 {
     public class MuteCommand : Command
     {
-        public override string Name { get; protected set; } = "mute";
-        public override string Description { get; protected set; } = "";
-        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "mm" };
-        public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.VerifiedOrHigher;
+        public override string Name => "mute";
+        public override string Description => "";
+        public override IEnumerable<string> Aliases => new [] { "mm" };
+        public override PermissionFlags Permissions => PermissionFlags.VerifiedOrHigher;
 
         public MuteCommand(Server server) : base(server) { }
 
@@ -39,13 +39,13 @@ namespace PokeD.Server.Commands
             if (!MutedPlayers.ContainsKey(id))
                 MutedPlayers.Add(id, new List<int>());
 
-            var muteId = Server.GetClientId(muteName);
-            if (id == muteId)
+            var muteID = Server.GetClientID(muteName);
+            if (id == muteID)
                 return MuteStatus.MutedYourself;
 
-            if (muteId != -1)
+            if (muteID != -1)
             {
-                MutedPlayers[id].Add(muteId);
+                MutedPlayers[id].Add(muteID);
                 return MuteStatus.Completed;
             }
 

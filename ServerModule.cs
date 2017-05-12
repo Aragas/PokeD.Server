@@ -2,15 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-using Aragas.Network.Packets;
-
 using Org.BouncyCastle.Crypto;
 
 using PCLExt.Config;
 using PCLExt.Config.Extensions;
 
 using PokeD.Core;
-using PokeD.Core.Data.PokeD.Monster;
+using PokeD.Core.Data.PokeD;
 using PokeD.Server.Chat;
 using PokeD.Server.Clients;
 using PokeD.Server.Data;
@@ -20,7 +18,9 @@ namespace PokeD.Server
 {
     public abstract class ServerModule : IUpdatable, IDisposable
     {
-        protected abstract string ModuleFileName { get; }
+        protected abstract string ModuleName { get; }
+        protected abstract IConfigFile ModuleConfigFile { get; }
+
         protected Server Server { get; }
 
         #region Settings
@@ -46,38 +46,39 @@ namespace PokeD.Server
         public IEnumerable<Client> GetAllClients() => Server.GetAllClients();
         public Client GetClient(int id) => Server.GetClient(id);
         public Client GetClient(string name) => Server.GetClient(name);
-        public int GetClientId(string name) => Server.GetClientId(name);
+        public int GetClientID(string name) => Server.GetClientID(name);
         public string GetClientName(int id) => Server.GetClientName(id);
 
         public bool ExecuteClientCommand(Client client, string command) => Server.ExecuteClientCommand(client, command);
 
-        private Stopwatch ClientSaveWatch { get; } = Stopwatch.StartNew();
+        private Dictionary<int, Stopwatch> UpdateWatches { get; } = new Dictionary<int, Stopwatch>();
         public void ClientUpdate(Client client, bool forceUpdate = false)
         {
-            if (client.Id == 0)
+            if (client.ID == 0 || !UpdateWatches.ContainsKey(client.ID))
                 return;
 
-            if (ClientSaveWatch.ElapsedMilliseconds < 2000 && !forceUpdate)
-                return;
 
-            Server.DatabaseUpdate(new ClientTable(client));
+            if (forceUpdate || UpdateWatches[client.ID].ElapsedMilliseconds >= 2000)
+            {
+                Server.DatabaseUpdate(new ClientTable(client));
 
-            ClientSaveWatch.Reset();
-            ClientSaveWatch.Start();
+                UpdateWatches[client.ID].Reset();
+                UpdateWatches[client.ID].Start();
+            }
         }
-        public void ClientLoad(Client client) => client.LoadFromDB(Server.DatabaseGet<ClientTable>(client.Id));
-        //public ClientTable ClientLoad(Client client) => Server.DatabaseGet<ClientTable>(client.Id);
+        public void ClientLoad(Client client) => client.LoadFromDB(Server.DatabaseGet<ClientTable>(client.ID));
+        //public ClientTable ClientLoad(Client client) => Server.DatabaseGet<ClientTable>(client.ID);
 
 
         public virtual bool Start()
         {
-            var status = FileSystemExtensions.LoadConfig(Server.ConfigType, ModuleFileName, this);
+            var status = FileSystemExtensions.LoadConfig(ModuleConfigFile, this);
             if (!status)
-                Logger.Log(LogType.Warning, $"Failed to load {ModuleFileName} settings!");
+                Logger.Log(LogType.Warning, $"Failed to load {ModuleName} settings!");
 
             if (!Enabled)
             {
-                Logger.Log(LogType.Info, $"{ModuleFileName} not enabled!");
+                Logger.Log(LogType.Info, $"{ModuleName} not enabled!");
                 return false;
             }
 
@@ -85,30 +86,40 @@ namespace PokeD.Server
         }
         public virtual bool Stop()
         {
-            var status = FileSystemExtensions.SaveConfig(Server.ConfigType, ModuleFileName, this);
+            var status = FileSystemExtensions.SaveConfig(ModuleConfigFile, this);
             if (!status)
-                Logger.Log(LogType.Warning, $"Failed to save {ModuleFileName} settings!");
+                Logger.Log(LogType.Warning, $"Failed to save {ModuleName} settings!");
 
             return true;
         }
 
-        public virtual void AddClient(Client client) { Server.NotifyClientConnected(this, client); }
-        public virtual void RemoveClient(Client client, string reason = "") { Server.NotifyClientDisconnected(this, client); }
+        public virtual void AddClient(Client client)
+        {
+            if(!UpdateWatches.ContainsKey(client.ID))
+                UpdateWatches.Add(client.ID, Stopwatch.StartNew());
+
+            Server.NotifyClientConnected(this, client);
+        }
+        public virtual void RemoveClient(Client client, string reason = "")
+        {
+            if (UpdateWatches.ContainsKey(client.ID))
+                UpdateWatches.Remove(client.ID);
+
+            Server.NotifyClientDisconnected(this, client);
+        }
 
         public abstract void Update();
 
         public abstract void ClientConnected(Client client);
         public abstract void ClientDisconnected(Client client);
 
-        public abstract void SendPacketToAll(Packet packet);
-
         public void SendServerMessage(string message)
         {
             for (var i = Clients.Count - 1; i >= 0; i--)
                 Clients[i].SendServerMessage(message);
         }
-        public void SendChatMessage(ChatMessage chatMessage) { Server.NotifyServerGlobalMessage(this, chatMessage); }
-        public void SendPrivateMessage(Client destClient, ChatMessage chatMessage) { destClient.SendPrivateMessage(chatMessage); }
+        public void SendChatMessage(ChatMessage chatMessage) => Server.NotifyServerGlobalMessage(this, chatMessage);
+        public void SendPrivateMessage(Client destClient, ChatMessage chatMessage) => destClient.SendPrivateMessage(chatMessage);
 
         public abstract void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false);
         public abstract void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false);

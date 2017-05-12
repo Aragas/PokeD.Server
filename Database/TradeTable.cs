@@ -4,26 +4,26 @@ using SQLite;
 
 namespace PokeD.Server.Database
 {
-    public sealed class TradeTable : IdatabaseTable
+    public sealed class TradeTable : IDatabaseTable
     {
         [PrimaryKey]
-        public Guid Id { get; private set; } = Guid.NewGuid();
+        public Guid ID { get; private set; } = Guid.NewGuid();
 
 
-        public Guid TradeClient0Id { get; private set; }
-        public Guid TradeClient1Id { get; private set; }
+        public Guid TradeClient0ID { get; private set; }
+        public Guid TradeClient1ID { get; private set; }
 
 
         public TradeTable() { }
         public TradeTable(SQLiteConnection database, TradeInstance trade)
         {
-            var tradeClient0 = new TradeClient(database, trade.Client0Id, trade.Client0Monster);
+            var tradeClient0 = new TradeClient(database, trade.Client0ID, trade.Client0Monster);
             database.Insert(tradeClient0);
-            TradeClient0Id = tradeClient0.Id;
+            TradeClient0ID = tradeClient0.ID;
 
-            var tradeClient1 = new TradeClient(database, trade.Client1Id, trade.Client1Monster);
+            var tradeClient1 = new TradeClient(database, trade.Client1ID, trade.Client1Monster);
             database.Insert(tradeClient1);
-            TradeClient1Id = tradeClient1.Id;
+            TradeClient1ID = tradeClient1.ID;
         }
     }
 }

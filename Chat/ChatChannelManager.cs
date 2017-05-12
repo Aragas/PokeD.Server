@@ -26,10 +26,10 @@ namespace PokeD.Server.Chat
                 .Where(typeInfo => !typeInfo.IsDefined(typeof(ChatChannelDisableAutoLoadAttribute), true))
                 .Where(typeInfo => !typeInfo.IsAbstract);
                 
-            foreach (var chatChannel in types.Where(type => type != typeof(ChatChannelLua).GetTypeInfo()).Select(type => (ChatChannel) Activator.CreateInstance(type.AsType())))
+            foreach (var chatChannel in types.Where(type => type != typeof(ScriptChatChannel).GetTypeInfo()).Select(type => (ChatChannel) Activator.CreateInstance(type.AsType())))
                 ChatChannels.Add(chatChannel);
 
-            ChatChannels.AddRange(ChatChannelLuaLoader.LoadChatChannels());
+            ChatChannels.AddRange(ScriptChatChannelLoader.LoadChatChannels());
         }
 
 

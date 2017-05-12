@@ -2,19 +2,19 @@
 
 namespace PokeD.Server.Database
 {
-    public sealed class ClientChannelTable : IdatabaseTable
+    public sealed class ClientChannelTable : IDatabaseTable
     {
         [PrimaryKey]
-        public int ClientId { get; private set; }
+        public int ClientID { get; private set; }
 
         public int Channel { get; private set; }
 
 
         public ClientChannelTable() { }
-        public ClientChannelTable(int clientId, int channel)
+        public ClientChannelTable(int clientID, int channel)
         {
-            if (clientId >= 0)
-                ClientId = clientId;
+            if (clientID >= 0)
+                ClientID = clientID;
 
             Channel = channel;
         }

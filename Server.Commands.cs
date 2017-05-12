@@ -21,7 +21,7 @@ namespace PokeD.Server
         private static SClient ServerClient { get; } = new SClient();
         private class SClient : Client
         {
-            public override int Id { get; set; } = 0;
+            public override int ID { get; set; } = 0;
             public override string Nickname { get; protected set; } = "SERVER";
             public override Prefix Prefix { get; protected set; } = Prefix.NONE;
             public override string PasswordHash { get; set; } = string.Empty;

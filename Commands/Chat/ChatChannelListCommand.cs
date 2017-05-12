@@ -7,10 +7,10 @@ namespace PokeD.Server.Commands
 {
     public class ChatChannelListCommand : Command
     {
-        public override string Name { get; protected set; } = "chatchannellist";
-        public override string Description { get; protected set; } = "Get all Chat Channels.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "channellist", "chatl", "chanl", "cl" };
-        public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.VerifiedOrHigher;
+        public override string Name => "chatchannellist";
+        public override string Description => "Get all Chat Channels.";
+        public override IEnumerable<string> Aliases => new [] { "channellist", "chatl", "chanl", "cl" };
+        public override PermissionFlags Permissions => PermissionFlags.VerifiedOrHigher;
 
         public ChatChannelListCommand(Server server) : base(server) { }
 

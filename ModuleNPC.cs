@@ -1,16 +1,16 @@
-﻿using Aragas.Network.Packets;
+﻿using PCLExt.Config;
 
-using PCLExt.Config;
-
-using PokeD.Core.Data.PokeD.Monster;
+using PokeD.Core.Data.PokeD;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.NPC;
+using PokeD.Server.Storage.Files;
 
 namespace PokeD.Server
 {
     public class ModuleNPC : ServerModule
     {
-        protected override string ModuleFileName { get; } = "ModuleNPC";
+        protected override string ModuleName { get; } = "ModuleNPC";
+        protected override IConfigFile ModuleConfigFile => new ModuleNPCConfigFile(Server.ConfigType);
 
         #region Settings
 
@@ -33,7 +33,7 @@ namespace PokeD.Server
 
             LoadAllNPC();
 
-            Logger.Log(LogType.Info, $"Starting {ModuleFileName}.");
+            Logger.Log(LogType.Info, $"Starting {ModuleName}.");
 
 
             return true;
@@ -44,7 +44,7 @@ namespace PokeD.Server
                 return false;
 
 
-            Logger.Log(LogType.Info, $"Stopping {ModuleFileName}.");
+            Logger.Log(LogType.Info, $"Stopping {ModuleName}.");
 
             Dispose();
 
@@ -74,7 +74,7 @@ namespace PokeD.Server
 
         public override void AddClient(Client client)
         {
-            if (!Server.DatabaseSetClientId(client))
+            if (!Server.DatabaseSetClientID(client))
                 return;
 
             //Server.DatabasePlayerLoad(client);
@@ -103,8 +103,6 @@ namespace PokeD.Server
 
         public override void ClientConnected(Client client) { }
         public override void ClientDisconnected(Client client) { }
-
-        public override void SendPacketToAll(Packet packet) { }
 
         public override void SendTradeRequest(Client sender, Monster monster, Client destClient, bool fromServer = false) { }
         public override void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false) { }

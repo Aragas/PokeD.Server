@@ -7,10 +7,10 @@ namespace PokeD.Server.Commands
 {
     public class SetLocationCommand : Command
     {
-        public override string Name { get; protected set; } = "setlocation";
-        public override string Description { get; protected set; } = "Set World Location.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "sl" };
-        public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.ModeratorOrHigher;
+        public override string Name => "setlocation";
+        public override string Description => "Set World Location.";
+        public override IEnumerable<string> Aliases => new [] { "sl" };
+        public override PermissionFlags Permissions => PermissionFlags.ModeratorOrHigher;
 
         public SetLocationCommand(Server server) : base(server) { }
 

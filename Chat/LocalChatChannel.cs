@@ -6,9 +6,9 @@ namespace PokeD.Server.Chat
 {
     public class LocalChatChannel : ChatChannel
     {
-        public override string Name { get; protected set; } = "Local Chat";
-        public override string Description { get; protected set; } = "Local Chat System.";
-        public override string Alias { get; protected set; } = "local";
+        public override string Name => "Local Chat";
+        public override string Description => "Local Chat System.";
+        public override string Alias => "local";
 
         public Dictionary<string, List<Client>> ClientsInLocation { get; } = new Dictionary<string, List<Client>>();
         public Dictionary<Client, string> ClientInLocation { get; } = new Dictionary<Client, string>();

@@ -9,10 +9,10 @@ namespace PokeD.Server.Commands
 {
     public class SetPermissionCommand : Command
     {
-        public override string Name { get; protected set; } = "setperm";
-        public override string Description { get; protected set; } = "Change Client permission.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "sperm", "sp" };
-        public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.AdministratorOrHigher;
+        public override string Name => "setperm";
+        public override string Description => "Change Client permission.";
+        public override IEnumerable<string> Aliases => new [] { "sperm", "sp" };
+        public override PermissionFlags Permissions => PermissionFlags.AdministratorOrHigher;
 
         public SetPermissionCommand(Server server) : base(server) { }
 

@@ -6,15 +6,17 @@ using Aragas.Network.Packets;
 using PCLExt.Config;
 using PCLExt.Network;
 
-using PokeD.Core.Data.PokeD.Monster;
+using PokeD.Core.Data.PokeD;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.SCON;
+using PokeD.Server.Storage.Files;
 
 namespace PokeD.Server
 {
     public class ModuleSCON : ServerModule
     {
-        protected override string ModuleFileName { get; } = "ModuleSCON";
+        protected override string ModuleName { get; } = "ModuleSCON";
+        protected override IConfigFile ModuleConfigFile => new ModuleSCONConfigFile(Server.ConfigType);
 
         #region Settings
 
@@ -48,7 +50,7 @@ namespace PokeD.Server
                 return false;
 
 
-            Logger.Log(LogType.Info, $"Starting {ModuleFileName}.");
+            Logger.Log(LogType.Info, $"Starting {ModuleName}.");
 
             Listener = SocketServer.CreateTCP(Port);
             Listener.Start();
@@ -62,7 +64,7 @@ namespace PokeD.Server
                 return false;
 
 
-            Logger.Log(LogType.Info, $"Stopping {ModuleFileName}.");
+            Logger.Log(LogType.Info, $"Stopping {ModuleName}.");
 
             Dispose();
 
@@ -132,7 +134,7 @@ namespace PokeD.Server
         public override void ClientConnected(Client client) { }
         public override void ClientDisconnected(Client client) { }
 
-        public override void SendPacketToAll(Packet packet)
+        public void SendPacketToAll(Packet packet)
         {
             for (var i = Clients.Count - 1; i >= 0; i--)
                 Clients[i]?.SendPacket(packet);

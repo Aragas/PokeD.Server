@@ -2,21 +2,21 @@
 
 namespace PokeD.Server.Database
 {
-    public sealed class ClientGJTable : IdatabaseTable
+    public sealed class ClientGJTable : IDatabaseTable
     {
         [PrimaryKey]
-        public int ClientId { get; private set; }
+        public int ClientID { get; private set; }
 
-        public int GameJoltId { get; private set; }
+        public int GameJoltID { get; private set; }
 
 
         public ClientGJTable() { }
-        public ClientGJTable(int clientId, int gameJoltId)
+        public ClientGJTable(int clientID, int gameJoltID)
         {
-            if (clientId >= 0)
-                ClientId = clientId;
+            if (clientID >= 0)
+                ClientID = clientID;
 
-            GameJoltId = gameJoltId;
+            GameJoltID = gameJoltID;
         }
     }
 }

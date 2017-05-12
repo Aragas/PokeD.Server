@@ -7,11 +7,11 @@ namespace PokeD.Server.Commands
 {
     public class LoginCommand : Command
     {
-        public override string Name { get; protected set; } = "login";
-        public override string Description { get; protected set; } = "Log in the Server.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "l" };
-        public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.UnVerified;
-        public override bool LogCommand { get; protected set; } = false;
+        public override string Name => "login";
+        public override string Description => "Log in the Server.";
+        public override IEnumerable<string> Aliases => new [] { "l" };
+        public override PermissionFlags Permissions => PermissionFlags.UnVerified;
+        public override bool LogCommand => false;
 
         public LoginCommand(Server server) : base(server) { }
 

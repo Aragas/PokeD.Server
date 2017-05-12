@@ -5,10 +5,11 @@ using System.Linq;
 
 using Aragas.Network.Packets;
 
+using PCLExt.Config;
 using PCLExt.Network;
 using PCLExt.Thread;
 
-using PokeD.Core.Data.PokeD.Monster;
+using PokeD.Core.Data.PokeD;
 using PokeD.Core.Extensions;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Server;
@@ -16,12 +17,14 @@ using PokeD.Core.Packets.P3D.Trade;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.P3D;
 using PokeD.Server.Database;
+using PokeD.Server.Storage.Files;
 
 namespace PokeD.Server
 {
     public class ModuleP3D : ServerModule
     {
-        protected override string ModuleFileName { get; } = "ModuleP3D";
+        protected override string ModuleName { get; } = "ModuleP3D";
+        protected override IConfigFile ModuleConfigFile => new ModuleP3DConfigFile(Server.ConfigType);
 
         #region Settings
 
@@ -62,7 +65,7 @@ namespace PokeD.Server
                 return false;
 
 
-            Logger.Log(LogType.Info, $"Starting {ModuleFileName}.");
+            Logger.Log(LogType.Info, $"Starting {ModuleName}.");
 
             Listener = SocketServer.CreateTCP(Port);
             Listener.Start();
@@ -89,7 +92,7 @@ namespace PokeD.Server
                 return false;
 
 
-            Logger.Log(LogType.Info, $"Stopping {ModuleFileName}.");
+            Logger.Log(LogType.Info, $"Stopping {ModuleName}.");
 
             if (PlayerWatcherThread.IsRunning)
                 PlayerWatcherThread.Abort();
@@ -151,7 +154,7 @@ namespace PokeD.Server
                         foreach (var playerToSend in nearPlayers.Value.Where(playerToSend => player != playerToSend))
                         {
                             var packet = player.GetDataPacket();
-                            packet.Origin = player.Id;
+                            packet.Origin = player.ID;
                             playerToSend.SendPacket(packet);
                         }
 
@@ -175,7 +178,7 @@ namespace PokeD.Server
         {
             // -- We assume the Client is a GameJolt or the Client's password is correct and no one is using the Client's name.
 
-            if (IsGameJoltIdUsed(client as P3DPlayer))
+            if (IsGameJoltIDUsed(client as P3DPlayer))
             {
                 client.Kick("You are already on server!");
                 return;
@@ -186,20 +189,20 @@ namespace PokeD.Server
             ClientUpdate(client, true);
 
 
-            // Send to player his Id
-            client.SendPacket(new CreatePlayerPacket { Origin = -1, PlayerId = client.Id });
-            // Send to player all Players Id
+            // Send to player his ID
+            client.SendPacket(new CreatePlayerPacket { Origin = -1, PlayerID = client.ID });
+            // Send to player all Players ID
             foreach (var aClient in Server.GetAllClients())
             {
-                client.SendPacket(new CreatePlayerPacket { Origin = -1, PlayerId = aClient.Id });
+                client.SendPacket(new CreatePlayerPacket { Origin = -1, PlayerID = aClient.ID });
                 var packet = aClient.GetDataPacket();
-                packet.Origin = aClient.Id;
+                packet.Origin = aClient.ID;
                 client.SendPacket(packet);
             }
-            // Send to Players player Id
-            SendPacketToAll(new CreatePlayerPacket { Origin = -1, PlayerId = client.Id });
+            // Send to Players player ID
+            SendPacketToAll(new CreatePlayerPacket { Origin = -1, PlayerID = client.ID });
             var p = client.GetDataPacket();
-            p.Origin = client.Id;
+            p.Origin = client.ID;
             SendPacketToAll(p);
 
 
@@ -212,7 +215,7 @@ namespace PokeD.Server
         {
             Clients.Remove(client);
 
-            if (client.Id > 0)
+            if (client.ID > 0)
             {
                 ClientDisconnected(client);
 
@@ -243,19 +246,19 @@ namespace PokeD.Server
 
         public override void ClientConnected(Client client)
         {
-            SendPacketToAll(new CreatePlayerPacket { Origin = -1, PlayerId = client.Id });
+            SendPacketToAll(new CreatePlayerPacket { Origin = -1, PlayerID = client.ID });
             var packet = client.GetDataPacket();
-            packet.Origin = client.Id;
+            packet.Origin = client.ID;
             SendPacketToAll(packet);
             SendPacketToAll(new ChatMessageGlobalPacket { Origin = -1, Message = $"Player {client.Name} joined the game!" });
         }
         public override void ClientDisconnected(Client client)
         {
-            SendPacketToAll(new DestroyPlayerPacket { Origin = -1, PlayerId = client.Id });
+            SendPacketToAll(new DestroyPlayerPacket { Origin = -1, PlayerID = client.ID });
             SendPacketToAll(new ChatMessageGlobalPacket { Origin = -1, Message = $"Player {client.Name} disconnected!" });
         }
 
-        public override void SendPacketToAll(Packet packet)
+        public void SendPacketToAll(Packet packet)
         {
             for (var i = Clients.Count - 1; i >= 0; i--)
                 Clients[i]?.SendPacket(packet);
@@ -267,7 +270,7 @@ namespace PokeD.Server
                 Server.NotifyClientTradeOffer(this, sender, monster, destClient);
 
             if (destClient is P3DPlayer)
-                destClient.SendPacket(new TradeOfferPacket { Origin = sender.Id, DataItems = monster.ToDataItems() });
+                destClient.SendPacket(new TradeOfferPacket { Origin = sender.ID, DataItems = monster.ToDataItems() });
         }
         public override void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false)
         {
@@ -275,7 +278,7 @@ namespace PokeD.Server
                 Server.NotifyClientTradeConfirm(this, destClient, sender);
 
             if (destClient is P3DPlayer)
-                destClient.SendPacket(new TradeStartPacket { Origin = sender.Id });
+                destClient.SendPacket(new TradeStartPacket { Origin = sender.ID });
         }
         public override void SendTradeCancel(Client sender, Client destClient, bool fromServer = false)
         {
@@ -283,7 +286,7 @@ namespace PokeD.Server
                 Server.NotifyClientTradeCancel(this, sender, destClient);
 
             if (destClient is P3DPlayer)
-                destClient.SendPacket(new TradeQuitPacket { Origin = sender.Id });
+                destClient.SendPacket(new TradeQuitPacket { Origin = sender.ID });
         }
 
         public override void SendPosition(Client sender, bool fromServer = false)
@@ -292,7 +295,7 @@ namespace PokeD.Server
                 Server.NotifyClientPosition(this, sender);
 
             var packet = sender.GetDataPacket();
-            packet.Origin = sender.Id;
+            packet.Origin = sender.ID;
             SendPacketToAll(packet);
         }
 
@@ -300,10 +303,11 @@ namespace PokeD.Server
         public bool ClientPasswordIsCorrect(Client client, string passwordHash)
         {
             ClientTable table;
-            if ((table = Server.DatabaseGet<ClientTable>(client.Id)) != null)
+            if ((table = Server.DatabaseGet<ClientTable>(client.ID)) != null)
             {
                 if (table.PasswordHash == null)
                 {
+                    client.PasswordHash = passwordHash;
                     ClientUpdate(client, true);
                     return true;
                 }
@@ -313,9 +317,9 @@ namespace PokeD.Server
             return false;
         }
 
-        public bool SetClientId(Client client)
+        public bool SetClientID(Client client)
         {
-            if (!Server.DatabaseSetClientId(client))
+            if (!Server.DatabaseSetClientID(client))
             {
                 client.Kick("You are already on server!");
                 return false;
@@ -323,7 +327,7 @@ namespace PokeD.Server
             return true;
         }
 
-        private bool IsGameJoltIdUsed(P3DPlayer client)
+        private bool IsGameJoltIDUsed(P3DPlayer client)
         {
             if (!client.IsGameJoltPlayer)
                 return false;
@@ -331,7 +335,7 @@ namespace PokeD.Server
             for (var i = Clients.Count - 1; i >= 0; i--)
             {
                 var player = (P3DPlayer) Clients[i];
-                if (player != client && player.IsGameJoltPlayer && client.GameJoltId == player.GameJoltId)
+                if (player != client && player.IsGameJoltPlayer && client.GameJoltID == player.GameJoltID)
                     return true;
             }
 
@@ -341,8 +345,8 @@ namespace PokeD.Server
         {
             if (client != null)
             {
-                var obj = new ClientGJTable(client.Id, (int) client.GameJoltId);
-                if (!Server.DatabaseFind<ClientGJTable>(obj.ClientId))
+                var obj = new ClientGJTable(client.ID, (int) client.GameJoltID);
+                if (!Server.DatabaseFind<ClientGJTable>(obj.ClientID))
                     Server.DatabaseSet(obj);
                 else
                     Server.DatabaseUpdate(obj);
@@ -352,8 +356,8 @@ namespace PokeD.Server
         {
             if (client != null)
             {
-                var obj = new ClientGJTable(client.Id, (int) client.GameJoltId);
-                if (!Server.DatabaseFind<ClientGJTable>(obj.ClientId))
+                var obj = new ClientGJTable(client.ID, (int) client.GameJoltID);
+                if (!Server.DatabaseFind<ClientGJTable>(obj.ClientID))
                     Server.DatabaseSet(obj);
                 else
                     Server.DatabaseUpdate(obj);

@@ -15,7 +15,7 @@ namespace PokeD.Server.Clients
 {
     public abstract class Client : IUpdatable, IDisposable
     {
-        public abstract int Id { get; set; }
+        public abstract int ID { get; set; }
 
         public string Name => Prefix != Prefix.NONE ? $"[{Prefix}] {Nickname}" : Nickname;
         public abstract string Nickname { get; protected set; }

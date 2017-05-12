@@ -8,10 +8,10 @@ namespace PokeD.Server.Commands
 {
     public class SetTimeCommand : Command
     {
-        public override string Name { get; protected set; } = "settime";
-        public override string Description { get; protected set; } = "Set World Time.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "st" };
-        public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.ModeratorOrHigher;
+        public override string Name => "settime";
+        public override string Description => "Set World Time.";
+        public override IEnumerable<string> Aliases => new [] { "st" };
+        public override PermissionFlags Permissions => PermissionFlags.ModeratorOrHigher;
 
         public SetTimeCommand(Server server) : base(server) { }
 

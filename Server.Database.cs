@@ -18,7 +18,7 @@ namespace PokeD.Server
         private void CreateTables()
         {
             var asm = AppDomain.GetAssembly(typeof(Server));
-            var typeInfos = asm.DefinedTypes.Where(typeInfo => typeInfo.ImplementedInterfaces.Contains(typeof(IdatabaseTable)));
+            var typeInfos = asm.DefinedTypes.Where(typeInfo => typeInfo.ImplementedInterfaces.Contains(typeof(IDatabaseTable)));
             foreach(var typeInfo in typeInfos)
                 Database.CreateTable(typeInfo.AsType());
         }
@@ -29,7 +29,7 @@ namespace PokeD.Server
         public void DatabaseSet<T>(T obj) where T : class, new() => Database.Insert(obj);
         public void DatabaseUpdate<T>(T obj) where T : class, new() => Database.Update(obj);
 
-        public bool DatabaseSetClientId(Client player)
+        public bool DatabaseSetClientID(Client player)
         {
             if (GetAllClients().Any(p => p != player && p.Nickname == player.Nickname))
                 return false;
@@ -37,13 +37,13 @@ namespace PokeD.Server
             var data = Database.Table<ClientTable>().FirstOrDefault(p => p.Name == player.Nickname);
             if (data != null)
             {
-                player.Id = data.Id;
+                player.ID = data.ID;
                 return true;
             }
             else
             {
                 Database.Insert(new ClientTable(player));
-                return DatabaseSetClientId(player);
+                return DatabaseSetClientID(player);
             }
         }
     }

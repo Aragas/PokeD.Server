@@ -5,14 +5,12 @@ using Aragas.Network;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Prng;
 
-using PokeD.Core.Data.PokeD.Monster;
-using PokeD.Core.Data.PokeD.Trainer;
 using PokeD.Core.Extensions;
 using PokeD.Core.Packets.PokeD.Authorization;
 using PokeD.Core.Packets.PokeD.Battle;
 using PokeD.Core.Packets.PokeD.Chat;
-using PokeD.Core.Packets.PokeD.Overworld.Map;
 using PokeD.Core.Packets.PokeD.Overworld;
+using PokeD.Core.Packets.PokeD.Overworld.Map;
 using PokeD.Core.Packets.PokeD.Trade;
 using PokeD.Server.Chat;
 
@@ -28,7 +26,7 @@ namespace PokeD.Server.Clients.PokeD
             if (IsInitialized)
                 return;
 
-            PlayerRef = new Trainer(packet.Name);
+            //PlayerRef = new Trainer(packet.Name);
 
             SendPacket(new AuthorizationResponsePacket { AuthorizationStatus = AuthorizationStatus });
 
@@ -82,12 +80,14 @@ namespace PokeD.Server.Clients.PokeD
 
         private void HandlePosition(PositionPacket packet)
         {
+            /*
             PlayerRef.Position = packet.Position;
-
+            */
 
             Module.SendPosition(this);
         }
         private void HandleTrainerInfo(TrainerInfoPacket packet) { }
+
         private void HandleTileSetRequest(TileSetRequestPacket packet) { Module.PokeDTileSetRequest(this, packet.TileSetNames); }
 
         private void HandleChatServerMessage(ChatServerMessagePacket packet) { }
@@ -105,7 +105,7 @@ namespace PokeD.Server.Clients.PokeD
         }
         private void HandleChatPrivateMessage(ChatPrivateMessagePacket packet)
         {
-            var destClient = Module.GetClient(packet.PlayerId);
+            var destClient = Module.GetClient(packet.PlayerID);
             if (destClient != null)
             {
                 destClient.SendPrivateMessage(new ChatMessage(this, packet.Message));
@@ -114,7 +114,6 @@ namespace PokeD.Server.Clients.PokeD
             else
                 SendPacket(new ChatGlobalMessagePacket { Message = $"The player with the name \"{destClient.Name}\" doesn't exist." });
         }
-
 
         private void HandleBattleRequest(BattleRequestPacket packet){ }
         private void HandleBattleAccept(BattleAcceptPacket packet) { }
@@ -126,15 +125,15 @@ namespace PokeD.Server.Clients.PokeD
 
         private void HandleTradeOffer(TradeOfferPacket packet)
         {
-            Module.SendTradeRequest(this, new Monster(packet.MonsterData), Module.GetClient(packet.DestinationId));
+            Module.SendTradeRequest(this, packet.MonsterData, Module.GetClient(packet.DestinationID));
         }
         private void HandleTradeAccept(TradeAcceptPacket packet)
         {
-            Module.SendTradeConfirm(this, Module.GetClient(packet.DestinationId));
+            Module.SendTradeConfirm(this, Module.GetClient(packet.DestinationID));
         }
         private void HandleTradeRefuse(TradeRefusePacket packet)
         {
-            Module.SendTradeCancel(this, Module.GetClient(packet.DestinationId));
+            Module.SendTradeCancel(this, Module.GetClient(packet.DestinationID));
         }
     }
 }

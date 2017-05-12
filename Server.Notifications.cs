@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using PokeD.Core.Data.PokeD.Monster;
+using PokeD.Core.Data.PokeD;
 using PokeD.Server.Chat;
 using PokeD.Server.Clients;
 using PokeD.Server.Database;
@@ -101,27 +101,27 @@ namespace PokeD.Server
 
         private void OnClientTradeOffer(Client client, Monster monster, Client destClient)
         {
-            if (!CurrentTrades.Any(t => t.Equals(client.Id, destClient.Id)))
-                CurrentTrades.Add(new TradeInstance { Client0Id = client.Id, Client1Id = destClient.Id });
+            if (!CurrentTrades.Any(t => t.Equals(client.ID, destClient.ID)))
+                CurrentTrades.Add(new TradeInstance { Client0ID = client.ID, Client1ID = destClient.ID });
 
-            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.Id, destClient.Id));
+            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.ID, destClient.ID));
             if (trade != null)
             {
-                if(trade.Client0Id == client.Id)
+                if(trade.Client0ID == client.ID)
                     trade.Client0Monster = monster;
 
-                if (trade.Client1Id == client.Id)
+                if (trade.Client1ID == client.ID)
                     trade.Client1Monster = monster;
             }
         }
         private void OnClientTradeConfirm(Client client, Client destClient)
         {
-            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.Id, destClient.Id));
+            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.ID, destClient.ID));
             if (trade != null)
             {
-                if (trade.Client0Id == client.Id)
+                if (trade.Client0ID == client.ID)
                     trade.Client0Confirmed = true;
-                if (trade.Client1Id == client.Id)
+                if (trade.Client1ID == client.ID)
                     trade.Client1Confirmed = true;
 
                 if (trade.Client0Confirmed && trade.Client1Confirmed)
@@ -133,7 +133,7 @@ namespace PokeD.Server
         }
         private void OnClientTradeCancel(Client client, Client destClient)
         {
-            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.Id, destClient.Id));
+            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(client.ID, destClient.ID));
             if (trade != null)
                 CurrentTrades.Remove(trade);
         }

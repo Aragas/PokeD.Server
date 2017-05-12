@@ -8,28 +8,32 @@ using Aragas.Network.Data;
 using Aragas.Network.Extensions;
 using Aragas.Network.Packets;
 
+using PCLExt.Config;
 using PCLExt.Network;
 using PCLExt.Thread;
 using PCLExt.FileStorage;
-
-using PokeD.Core.Data.PokeD.Monster;
+using PokeD.Core.Data.PokeD;
 using PokeD.Core.Packets.PokeD.Authorization;
 using PokeD.Core.Packets.PokeD.Chat;
 using PokeD.Core.Packets.PokeD.Overworld.Map;
 using PokeD.Core.Packets.PokeD.Overworld;
 using PokeD.Core.Packets.PokeD.Trade;
+using PokeD.Core.Storage.Folders;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.PokeD;
+using PokeD.Server.Storage.Files;
+
 using TMXParserPCL;
 
 namespace PokeD.Server
 {
     public class ModulePokeD : ServerModule
     {
-        protected override string ModuleFileName { get; } = "ModulePokeD";
+        protected override string ModuleName { get; } = "ModulePokeD";
+        protected override IConfigFile ModuleConfigFile => new ModulePokeDConfigFile(Server.ConfigType);
 
-        static IFolder Maps => Storage.ContentFolder.CreateFolderAsync("Maps", CreationCollisionOption.OpenIfExists).Result;
-        static IFolder TileSets => Maps.CreateFolderAsync("TileSets", CreationCollisionOption.OpenIfExists).Result;
+        static IFolder Maps => new DataFolder().CreateFolder("Maps", CreationCollisionOption.OpenIfExists);
+        static IFolder TileSets => Maps.CreateFolder("TileSets", CreationCollisionOption.OpenIfExists);
 
         #region Settings
 
@@ -59,7 +63,7 @@ namespace PokeD.Server
                 return false;
 
 
-            Logger.Log(LogType.Info, $"Starting {ModuleFileName}.");
+            Logger.Log(LogType.Info, $"Starting {ModuleName}.");
 
             Listener = SocketServer.CreateTCP(Port);
             Listener.Start();
@@ -73,7 +77,7 @@ namespace PokeD.Server
                 return false;
 
 
-            Logger.Log(LogType.Info, $"Stopping {ModuleFileName}.");
+            Logger.Log(LogType.Info, $"Stopping {ModuleName}.");
 
             Dispose();
 
@@ -84,7 +88,7 @@ namespace PokeD.Server
 
         public override void AddClient(Client client)
         {
-            if (!Server.DatabaseSetClientId(client))
+            if (!Server.DatabaseSetClientID(client))
             {
                 client.Kick("You are already on server!");
                 return;
@@ -92,7 +96,7 @@ namespace PokeD.Server
 
             ClientUpdate(client, true);
 
-            client.SendPacket(new AuthorizationCompletePacket { PlayerId = new VarInt(client.Id) });
+            client.SendPacket(new AuthorizationCompletePacket { PlayerID = new VarInt(client.ID) });
 
             PlayersToAdd.Add(client);
             PlayersJoining.Remove(client);
@@ -121,7 +125,7 @@ namespace PokeD.Server
                 Clients.Add(playerToAdd);
                 PlayersToAdd.Remove(playerToAdd);
 
-                if (playerToAdd.Id != 0)
+                if (playerToAdd.ID != 0)
                 {
                     SendPacketToAll(new ChatGlobalMessagePacket { Message = $"Player {playerToAdd.Name} joined the game!" });
 
@@ -169,7 +173,7 @@ namespace PokeD.Server
                 PlayersJoining.Remove(playerToRemove);
                 PlayersToRemove.Remove(playerToRemove);
 
-                if (playerToRemove.Id != 0)
+                if (playerToRemove.ID != 0)
                 {
                     SendPacketToAll(new ChatGlobalMessagePacket { Message = $"Player {playerToRemove.Name} disconnected!" });
                     
@@ -208,17 +212,17 @@ namespace PokeD.Server
 
         public override void ClientConnected(Client client)
         {
-            //PokeDPlayerSendToAllClients(new CreatePlayerPacket { PlayerId = client.Id }, -1);
-            //PokeDPlayerSendToAllClients(client.GetDataPacket(), client.Id);
+            //PokeDPlayerSendToAllClients(new CreatePlayerPacket { PlayerID = client.ID }, -1);
+            //PokeDPlayerSendToAllClients(client.GetDataPacket(), client.ID);
             SendPacketToAll(new ChatGlobalMessagePacket { Message = $"Player {client.Name} joined the game!" });
         }
         public override void ClientDisconnected(Client client)
         {
-            //PokeDPlayerSendToAllClients(new DestroyPlayerPacket { PlayerId = client.Id });
+            //PokeDPlayerSendToAllClients(new DestroyPlayerPacket { PlayerID = client.ID });
             SendPacketToAll(new ChatGlobalMessagePacket { Message = $"Player {client.Name} disconnected!" });
         }
 
-        public override void SendPacketToAll(Packet packet)
+        public void SendPacketToAll(Packet packet)
         {
             for (var i = Clients.Count - 1; i >= 0; i--)
                 Clients[i]?.SendPacket(packet);
@@ -230,7 +234,7 @@ namespace PokeD.Server
                 Server.NotifyClientTradeOffer(this, sender, monster, destClient);
 
             if (destClient is PokeDPlayer)
-                destClient.SendPacket(new TradeOfferPacket { DestinationId = new VarInt(-1), MonsterData = monster.InstanceData });
+                destClient.SendPacket(new TradeOfferPacket { DestinationID = new VarInt(-1), MonsterData = monster });
         }
         public override void SendTradeConfirm(Client sender, Client destClient, bool fromServer = false)
         {
@@ -239,7 +243,7 @@ namespace PokeD.Server
 
             if (destClient is PokeDPlayer)
             {
-                destClient.SendPacket(new TradeAcceptPacket { DestinationId = new VarInt(-1) });
+                destClient.SendPacket(new TradeAcceptPacket { DestinationID = new VarInt(-1) });
 
                 Thread.Sleep(5000);
             }
@@ -250,7 +254,7 @@ namespace PokeD.Server
                 Server.NotifyClientTradeCancel(this, sender, destClient);
 
             if (destClient is PokeDPlayer)
-                destClient.SendPacket(new TradeRefusePacket{ DestinationId = new VarInt(-1) });
+                destClient.SendPacket(new TradeRefusePacket{ DestinationID = new VarInt(-1) });
         }
 
         public override void SendPosition(Client sender, bool fromServer = false)

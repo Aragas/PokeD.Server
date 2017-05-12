@@ -8,7 +8,7 @@ using Aragas.Network.Packets;
 
 using PCLExt.Network;
 
-using PokeD.Core.Data.PokeD.Trainer;
+using PokeD.Core.Data.PokeD;
 using PokeD.Core.Packets.PokeD;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.PokeD.Authorization;
@@ -26,26 +26,26 @@ namespace PokeD.Server.Clients.PokeD
 {
     public partial class PokeDPlayer : Client<ModulePokeD>
     {
-        Trainer PlayerRef { get; set; } = new Trainer("1112");
+        Trainer PlayerRef { get; set; } = new Trainer(1);
 
         #region Game Values
 
-        public override int Id { get { return PlayerRef.EntityId; } set { PlayerRef.EntityId = new VarInt(value); } }
+        public override int ID { get { return PlayerRef.ID; } set { throw new NotSupportedException(); /* PlayerRef.ID = new VarInt(value); */ } }
 
         public string GameMode => "PokeD Game";
         public bool IsGameJoltPlayer => true;
-        public long GameJoltId => 0;
+        public long GameJoltID => 0;
 
         private char DecimalSeparator => '.';
 
-        public override string Nickname { get { return PlayerRef.Name; } protected set { PlayerRef.Name = value; } }
+        public override string Nickname { get { return PlayerRef.Name; } protected set { throw new NotSupportedException(); /* PlayerRef.Name = value; */ } }
 
         public override string LevelFile { get; set; }
-        public override Vector3 Position { get { return PlayerRef.Position; } set { throw  new NotSupportedException(); } }
+        public override Vector3 Position { get { return Vector3.Zero; /* return PlayerRef.Position; */ } set { throw  new NotSupportedException(); } }
 
-        public int Facing => PlayerRef.Facing;
+        public int Facing => 0; //PlayerRef.Facing;
         public bool Moving => true;
-        public string Skin => PlayerRef.TrainerSprite.ToString();
+        public string Skin => string.Empty; //PlayerRef.TrainerSprite.ToString();
         public string BusyType { get; private set; }
         public bool PokemonVisible => false;
         public Vector3 PokemonPosition => Vector3.Zero;
@@ -128,13 +128,13 @@ namespace PokeD.Server.Clients.PokeD
                         else
                         {
                             Logger.Log(LogType.Error, $"PokeD Reading Error: PokeDPacketResponses.Packets[{id}] is null. Disconnecting IClient {Name}.");
-                            Kick($"Packet Id {id} is not correct!");
+                            Kick($"Packet ID {id} is not correct!");
                         }
                     }
                     else
                     {
-                        Logger.Log(LogType.Error, $"PokeD Reading Error: Packet Id {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
-                        Kick($"Packet Id {id} is not correct!");
+                        Logger.Log(LogType.Error, $"PokeD Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
+                        Kick($"Packet ID {id} is not correct!");
                     }
                 }
             }
@@ -227,7 +227,7 @@ namespace PokeD.Server.Clients.PokeD
         }
         public override void SendChatMessage(ChatMessage chatMessage) { SendPacket(new ChatGlobalMessagePacket { Message = chatMessage.Message }); }
         public override void SendServerMessage(string text) { SendPacket(new ChatServerMessagePacket { Message = text }); }
-        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatPrivateMessagePacket { PlayerId = new VarInt(chatMessage.Sender.Id), Message = chatMessage.Message }); }
+        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatPrivateMessagePacket { PlayerID = new VarInt(chatMessage.Sender.ID), Message = chatMessage.Message }); }
 
         public override void Kick(string reason = "")
         {
@@ -245,8 +245,8 @@ namespace PokeD.Server.Clients.PokeD
 
         public override void LoadFromDB(ClientTable data)
         {
-            if (Id == 0)
-                Id = data.Id;
+            if (ID == 0)
+                ID = data.ID;
 
             LevelFile = data.LevelFile;
             Prefix = data.Prefix;
@@ -258,7 +258,7 @@ namespace PokeD.Server.Clients.PokeD
             {
                 GameMode = GameMode,
                 IsGameJoltPlayer = IsGameJoltPlayer,
-                GameJoltId = GameJoltId,
+                GameJoltID = GameJoltID,
                 DecimalSeparator = DecimalSeparator,
                 Name = Name,
                 LevelFile = ToP3DLevelFile(),

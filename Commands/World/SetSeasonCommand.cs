@@ -9,10 +9,10 @@ namespace PokeD.Server.Commands
 {
     public class SetSeasonCommand : Command
     {
-        public override string Name { get; protected set; } = "setseason";
-        public override string Description { get; protected set; } = "Set World Season.";
-        public override IEnumerable<string> Aliases { get; protected set; } = new [] { "ss" };
-        public override PermissionFlags Permissions { get; protected set; } = PermissionFlags.ModeratorOrHigher;
+        public override string Name => "setseason";
+        public override string Description => "Set World Season.";
+        public override IEnumerable<string> Aliases => new [] { "ss" };
+        public override PermissionFlags Permissions => PermissionFlags.ModeratorOrHigher;
 
         public SetSeasonCommand(Server server) : base(server) { }
 
