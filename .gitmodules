@@ -2,3 +2,6 @@
 	path = PokeD.Core
 	url = https://github.com/PokeD/PokeD.Core
 	branch = master
+[submodule "PokeD.BattleEngine"]
+	path = PokeD.BattleEngine
+	url = https://github.com/PokeD/PokeD.BattleEngine.git

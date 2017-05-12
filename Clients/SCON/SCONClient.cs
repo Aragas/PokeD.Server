@@ -156,12 +156,8 @@ namespace PokeD.Server.Clients.SCON
                     break;
                    
 
-                case SCONPacketTypes.StartChatReceiving:
-                    HandleStartChatReceiving((StartChatReceivingPacket) packet);
-                    break;
-
-                case SCONPacketTypes.StopChatReceiving:
-                    HandleStopChatReceiving((StopChatReceivingPacket) packet);
+                case SCONPacketTypes.ChatReceivePacket:
+                    HandleChatReceivePacket((ChatReceivePacket) packet);
                     break;
 
 

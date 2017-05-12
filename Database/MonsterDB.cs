@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using PokeD.BattleEngine.Attack;
 using PokeD.BattleEngine.Item;
 using PokeD.BattleEngine.Monster.Data;
-
 using PokeD.Core.Data.PokeD;
 
 using SQLite;

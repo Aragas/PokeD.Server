@@ -101,7 +101,7 @@ namespace PokeD.Server.Clients.SCON
             Module.ExecuteClientCommand(this, packet.Command);
         }
 
-        private void HandleStartChatReceiving(StartChatReceivingPacket packet)
+        private void HandleChatReceivePacket(ChatReceivePacket packet)
         {
             if (!Authorized)
             {
@@ -109,17 +109,7 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            ChatEnabled = true;
-        }
-        private void HandleStopChatReceiving(StopChatReceivingPacket packet)
-        {
-            if (!Authorized)
-            {
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
-                return;
-            }
-
-            ChatEnabled = false;
+            ChatEnabled = packet.Enabled;
         }
 
         private void HandlePlayerInfoListRequest(PlayerInfoListRequestPacket packet)
