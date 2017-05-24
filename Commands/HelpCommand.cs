@@ -36,8 +36,7 @@ namespace PokeD.Server.Commands
                 return;
             }
 
-            int pageNumber;
-            if (int.TryParse(helpAlias, out pageNumber))
+            if (int.TryParse(helpAlias, out int pageNumber))
             {
                 HelpPage(client, pageNumber);
                 return;

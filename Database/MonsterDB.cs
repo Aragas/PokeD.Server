@@ -89,7 +89,7 @@ namespace PokeD.Server.Database
 
         public string Moves { get; private set; } = string.Empty;
 
-        public BaseItemInstance HeldItem { get; private set; }
+        public int HeldItem { get; private set; }
         
 
         public MonsterDB() { }
@@ -124,7 +124,7 @@ namespace PokeD.Server.Database
 
             Moves = GetString(monster.Moves);
 
-            HeldItem = monster.HeldItem;
+            HeldItem = monster.HeldItem.StaticData.ID;
         }
     }
 }

@@ -102,8 +102,7 @@ namespace PokeD.Server.Clients.SCON
                 {
                     var id = reader.Read<VarInt>();
 
-                    Func<SCONPacket> func;
-                    if (SCONPacketResponses.TryGetPacketFunc(id, out func))
+                    if (SCONPacketResponses.TryGetPacketFunc(id, out Func<SCONPacket> func))
                     {
                         if (func != null)
                         {

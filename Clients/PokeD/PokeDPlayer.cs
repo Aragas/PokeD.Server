@@ -30,7 +30,7 @@ namespace PokeD.Server.Clients.PokeD
 
         #region Game Values
 
-        public override int ID { get { return PlayerRef.ID; } set { throw new NotSupportedException(); /* PlayerRef.ID = new VarInt(value); */ } }
+        public override int ID { get { return PlayerRef.ID; } set { /* PlayerRef.ID = new VarInt(value); */ } }
 
         public string GameMode => "PokeD Game";
         public bool IsGameJoltPlayer => true;
@@ -112,8 +112,7 @@ namespace PokeD.Server.Clients.PokeD
                 {
                     var id = reader.Read<VarInt>();
 
-                    Func<PokeDPacket> func;
-                    if (PokeDPacketResponses.TryGetPacketFunc(id, out func))
+                    if (PokeDPacketResponses.TryGetPacketFunc(id, out Func<PokeDPacket> func))
                     {
                         if (func != null)
                         {

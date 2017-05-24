@@ -283,8 +283,7 @@ namespace PokeD.Server
             {
                 tileSets.Add(new TileSetResponse() { Name = tileSetName, TileSetData = TileSets.GetFileAsync($"{tileSetName}.tsx").Result.ReadAllTextAsync().Result });
 
-                var image = new ImageResponse();
-                image.Name = tileSetName;
+                var image = new ImageResponse { Name = tileSetName };
                 using (var fileStream = TileSets.GetFileAsync($"{tileSetName}.png").Result.OpenAsync(FileAccess.Read).Result)
                     image.ImageData = fileStream.ReadFully();
                 images.Add(image);

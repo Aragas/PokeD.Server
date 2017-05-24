@@ -32,8 +32,7 @@ namespace PokeD.Server.Commands
                     return;
                 }
 
-                TimeSpan time;
-                if (TimeSpan.TryParseExact(arguments[0], "HH\\:mm\\:ss", null, out time))
+                if (TimeSpan.TryParseExact(arguments[0], "HH\\:mm\\:ss", null, out TimeSpan time))
                 {
                     World.CurrentTime = time;
                     World.UseRealTime = false;

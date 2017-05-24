@@ -23,7 +23,6 @@ namespace PokeD.Server.Clients.P3D
                 {
                     command = command.Remove(0, 11).Trim();
 
-                    int updateRate;
                     if (command.StartsWith("normal"))
                     {
                         //MovingUpdateRate = 60;
@@ -34,7 +33,7 @@ namespace PokeD.Server.Clients.P3D
                         //MovingUpdateRate = 30;
                         SendServerMessage("Set moving correction updaterate to Fast!");
                     }
-                    else if (int.TryParse(command, out updateRate) && updateRate >= 0 && updateRate <= 100)
+                    else if (int.TryParse(command, out int updateRate) && updateRate >= 0 && updateRate <= 100)
                     {
                         //MovingUpdateRate = updateRate;
                         SendServerMessage($"Set moving correction updaterate to {updateRate}!");

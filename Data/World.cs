@@ -24,7 +24,7 @@ namespace PokeD.Server.Data
 
         public TimeSpan CurrentTime
         {
-            get { TimeSpan timeSpan; return TimeSpan.TryParseExact(CurrentTimeString, "HH\\,mm\\,ss", null, out timeSpan) ? timeSpan : TimeSpan.Zero; }
+            get { return TimeSpan.TryParseExact(CurrentTimeString, "HH\\,mm\\,ss", null, out TimeSpan timeSpan) ? timeSpan : TimeSpan.Zero; }
             set { CurrentTimeString = value.Hours + "," + value.Minutes + "," + value.Seconds; }
         }
         string CurrentTimeString { get; set; }

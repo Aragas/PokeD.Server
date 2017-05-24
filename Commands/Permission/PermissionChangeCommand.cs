@@ -33,8 +33,7 @@ namespace PokeD.Server.Commands
                 var flags = new List<PermissionFlags>();
                 foreach (var permission in permissions)
                 {
-                    PermissionFlags flag;
-                    if (Enum.TryParse(permission, out flag))
+                    if (Enum.TryParse(permission, out PermissionFlags flag))
                         flags.Add(flag);
                     else
                         client.SendServerMessage($"Permission {permission} not found.");

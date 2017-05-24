@@ -20,8 +20,7 @@ namespace PokeD.Server.Commands
         {
             if (arguments.Length == 1)
             {
-                Weather weather;
-                if (Enum.TryParse(arguments[0], true, out weather))
+                if (Enum.TryParse(arguments[0], true, out Weather weather))
                 {
                     World.Weather = weather;
                     client.SendServerMessage($"Set Weather to {weather}!");

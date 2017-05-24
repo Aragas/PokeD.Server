@@ -124,11 +124,9 @@ namespace PokeD.Server.Clients.P3D
         {
             if (!string.IsNullOrEmpty(data))
             {
-                int id;
-                if (P3DPacket.TryParseID(data, out id))
+                if (P3DPacket.TryParseID(data, out int id))
                 {
-                    Func<P3DPacket> func;
-                    if (P3DPacketResponses.TryGetPacketFunc(id, out func))
+                    if (P3DPacketResponses.TryGetPacketFunc(id, out Func<P3DPacket> func))
                     {
                         if (func != null)
                         {

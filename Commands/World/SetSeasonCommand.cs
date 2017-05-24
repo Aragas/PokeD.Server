@@ -20,8 +20,7 @@ namespace PokeD.Server.Commands
         {
             if (arguments.Length == 1)
             {
-                Season season;
-                if (Enum.TryParse(arguments[0], true, out season))
+                if (Enum.TryParse(arguments[0], true, out Season season))
                 {
                     World.Season = season;
                     client.SendServerMessage($"Set Season to {season}!");
