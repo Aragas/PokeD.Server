@@ -13,8 +13,7 @@ namespace PokeD.Server.Database
         public ClientChannelTable() { }
         public ClientChannelTable(int clientID, int channel)
         {
-            if (clientID >= 0)
-                ClientID = clientID;
+            ClientID = clientID;
 
             Channel = channel;
         }

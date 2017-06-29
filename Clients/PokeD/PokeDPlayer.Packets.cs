@@ -32,7 +32,7 @@ namespace PokeD.Server.Clients.PokeD
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                var publicKey = Module.RsaKeyPair.PublicKeyToByteArray();
+                var publicKey = Module.Security.RSAKeyPair.PublicKeyToByteArray();
 
                 VerificationToken = new byte[4];
                 var drg = new DigestRandomGenerator(new Sha512Digest());
@@ -56,7 +56,7 @@ namespace PokeD.Server.Clients.PokeD
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                var pkcs = new PKCS1Signer(Module.RsaKeyPair);
+                var pkcs = new PKCS1Signer(Module.Security.RSAKeyPair);
 
                 var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
                 for (int i = 0; i < VerificationToken.Length; i++)
@@ -69,7 +69,8 @@ namespace PokeD.Server.Clients.PokeD
 
                 var sharedKey = pkcs.DeSignData(packet.SharedSecret);
 
-                Stream.InitializeEncryption(sharedKey);
+                // TODO
+                //Stream.InitializeEncryption(sharedKey);
                 Join();
                 IsInitialized = true;
             }
@@ -80,11 +81,9 @@ namespace PokeD.Server.Clients.PokeD
 
         private void HandlePosition(PositionPacket packet)
         {
-            /*
-            PlayerRef.Position = packet.Position;
-            */
+            //PlayerRef.Position = packet.Position;
 
-            Module.SendPosition(this);
+            Module.OnPosition(this);
         }
         private void HandleTrainerInfo(TrainerInfoPacket packet) { }
 
@@ -101,7 +100,7 @@ namespace PokeD.Server.Clients.PokeD
                 ExecuteCommand(packet.Message);
             }
             else if (IsInitialized)
-                Module.SendChatMessage(new ChatMessage(this, packet.Message));
+                Module.OnClientChatMessage(new ChatMessage(this, packet.Message));
         }
         private void HandleChatPrivateMessage(ChatPrivateMessagePacket packet)
         {
@@ -123,17 +122,8 @@ namespace PokeD.Server.Clients.PokeD
         private void HandleBattleFlee(BattleFleePacket packet) { }
 
 
-        private void HandleTradeOffer(TradeOfferPacket packet)
-        {
-            Module.SendTradeRequest(this, packet.MonsterData, Module.GetClient(packet.DestinationID));
-        }
-        private void HandleTradeAccept(TradeAcceptPacket packet)
-        {
-            Module.SendTradeConfirm(this, Module.GetClient(packet.DestinationID));
-        }
-        private void HandleTradeRefuse(TradeRefusePacket packet)
-        {
-            Module.SendTradeCancel(this, Module.GetClient(packet.DestinationID));
-        }
+        private void HandleTradeOffer(TradeOfferPacket packet) => Module.OnTradeRequest(this, packet.MonsterData.ToDataItems(), Module.GetClient(packet.DestinationID));
+        private void HandleTradeAccept(TradeAcceptPacket packet) => Module.OnTradeConfirm(this, Module.GetClient(packet.DestinationID));
+        private void HandleTradeRefuse(TradeRefusePacket packet) => Module.OnTradeCancel(this, Module.GetClient(packet.DestinationID));
     }
 }

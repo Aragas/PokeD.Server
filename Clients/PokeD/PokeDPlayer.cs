@@ -21,6 +21,7 @@ using PokeD.Server.Chat;
 using PokeD.Server.Commands;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
+using PokeD.Server.Modules;
 
 namespace PokeD.Server.Clients.PokeD
 {
@@ -30,7 +31,14 @@ namespace PokeD.Server.Clients.PokeD
 
         #region Game Values
 
-        public override int ID { get { return PlayerRef.ID; } set { /* PlayerRef.ID = new VarInt(value); */ } }
+        public override int ID 
+        { 
+            get { return PlayerRef.ID; } 
+            set 
+            { 
+                // PlayerRef.ID = new VarInt(value);
+            } 
+        }
 
         public string GameMode => "PokeD Game";
         public bool IsGameJoltPlayer => true;
@@ -38,10 +46,27 @@ namespace PokeD.Server.Clients.PokeD
 
         private char DecimalSeparator => '.';
 
-        public override string Nickname { get { return PlayerRef.Name; } protected set { throw new NotSupportedException(); /* PlayerRef.Name = value; */ } }
+        public override string Nickname 
+        { 
+            get { return PlayerRef.Name; } 
+            protected set 
+            { 
+                throw new NotSupportedException(); 
+                // PlayerRef.Name = value;
+            }
+        }
 
         public override string LevelFile { get; set; }
-        public override Vector3 Position { get { return Vector3.Zero; /* return PlayerRef.Position; */ } set { throw  new NotSupportedException(); } }
+
+        public override Vector3 Position
+        {
+            get
+            {
+                return Vector3.Zero;
+                //return PlayerRef.Position;
+            }
+            set { throw new NotSupportedException(); }
+        }
 
         public int Facing => 0; //PlayerRef.Facing;
         public bool Moving => true;
@@ -66,81 +91,42 @@ namespace PokeD.Server.Clients.PokeD
         public override PermissionFlags Permissions { get; set; }
 
         bool IsInitialized { get; set; }
-        
+
         #endregion Other Values
 
-        ProtobufStream Stream { get; }
+        ProtobufTransmission<PokeDPacket> Stream { get; }
 
 #if DEBUG
         // -- Debug -- //
-        List<ProtobufPacket> Received { get; } = new List<ProtobufPacket>();
-        List<ProtobufPacket> Sended { get; } = new List<ProtobufPacket>();
+        List<PokeDPacket> Received { get; } = new List<PokeDPacket>();
+        List<PokeDPacket> Sended { get; } = new List<PokeDPacket>();
         // -- Debug -- //
 #endif
 
-        public PokeDPlayer(ITCPClient clientWrapper, ModulePokeD module) : base(module) { Stream = new ProtobufStream(clientWrapper); }
+        public PokeDPlayer(ITCPClient clientWrapper, ModulePokeD module) : base(module) { Stream = new ProtobufTransmission<PokeDPacket>(clientWrapper, typeof(PokeDPacketTypes)); }
 
 
         public override void Update()
         {
             if (Stream.IsConnected)
             {
-                if (Stream.DataAvailable > 0)
+                var t = Stream.ReadPacket();
+
+                PokeDPacket packet;
+                while ((packet = Stream.ReadPacket()) != null)
                 {
-                    var dataLength = Stream.ReadVarInt();
-                    if (dataLength == 0)
-                    {
-                        Logger.Log(LogType.Error, $"PokeD Reading Error: Packet Length size is 0. Disconnecting IClient {Name}.");
-                        Kick("Packet Length size is 0!");
-                        return;
-                    }
-
-                    var data = Stream.Receive(dataLength);
-
-                    HandleData(data);
-                }
-            }
-            else
-                Kick();
-        }
-
-        private void HandleData(byte[] data)
-        {
-            if (data != null)
-            {
-                using (var reader = new ProtobufDataReader(data))
-                {
-                    var id = reader.Read<VarInt>();
-
-                    if (PokeDPacketResponses.TryGetPacketFunc(id, out Func<PokeDPacket> func))
-                    {
-                        if (func != null)
-                        {
-                            var packet = func().ReadPacket(reader);
-
-                            HandlePacket(packet);
+                    HandlePacket(packet);
 
 #if DEBUG
-                            Received.Add(packet);
+                    Received.Add(packet);
 #endif
-                        }
-                        else
-                        {
-                            Logger.Log(LogType.Error, $"PokeD Reading Error: PokeDPacketResponses.Packets[{id}] is null. Disconnecting IClient {Name}.");
-                            Kick($"Packet ID {id} is not correct!");
-                        }
-                    }
-                    else
-                    {
-                        Logger.Log(LogType.Error, $"PokeD Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting IClient {Name}.");
-                        Kick($"Packet ID {id} is not correct!");
-                    }
                 }
             }
             else
-                Logger.Log(LogType.Error, $"PokeD Reading Error: Packet Data is null.");
+                Leave();
         }
-        private void HandlePacket(ProtobufPacket packet)
+
+        private void HandlePacket(PokeDPacket packet)
         {
             switch ((PokeDPacketTypes) (int) packet.ID)
             {
@@ -218,34 +204,31 @@ namespace PokeD.Server.Clients.PokeD
             if (pokeDPacket == null)
                 throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
 
-            Stream.SendPacket(packet);
+            Stream.SendPacket(pokeDPacket);
 
 #if DEBUG
             Sended.Add(pokeDPacket);
 #endif
         }
-        public override void SendChatMessage(ChatMessage chatMessage) { SendPacket(new ChatGlobalMessagePacket { Message = chatMessage.Message }); }
+        public override void SendChatMessage(ChatChannelMessage chatMessage) { SendPacket(new ChatGlobalMessagePacket { Message = chatMessage.ChatMessage.Message }); }
         public override void SendServerMessage(string text) { SendPacket(new ChatServerMessagePacket { Message = text }); }
         public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatPrivateMessagePacket { PlayerID = new VarInt(chatMessage.Sender.ID), Message = chatMessage.Message }); }
 
-        public override void Kick(string reason = "")
+        public override void SendKick(string reason = "")
         {
             SendPacket(new DisconnectPacket { Reason = reason });
-
-            base.Kick(reason);
+            base.SendKick(reason);
         }
-        public override void Ban(string reason = "")
+        public override void SendBan(BanTable banTable)
         {
-            SendPacket(new DisconnectPacket { Reason = reason });
-
-            base.Ban(reason);
+            SendPacket(new DisconnectPacket { Reason = $"You have banned from this server\r\nReason: {banTable.Reason}\r\nTime left: {(banTable.UnbanTime - DateTime.UtcNow):%m} minutes." });
+            base.SendBan(banTable);
         }
 
 
-        public override void LoadFromDB(ClientTable data)
+        public override void Load(ClientTable data)
         {
-            if (ID == 0)
-                ID = data.ID;
+            base.Load(data);
 
             LevelFile = data.LevelFile;
             Prefix = data.Prefix;

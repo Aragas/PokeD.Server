@@ -1,44 +1,27 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Digests;
-using Org.BouncyCastle.Crypto.Generators;
-using Org.BouncyCastle.Crypto.Prng;
-using Org.BouncyCastle.Security;
 
 using PCLExt.Config;
 using PCLExt.Config.Extensions;
 
 using PokeD.Core;
 using PokeD.Core.Data.PokeApi;
-using PokeD.Server.Chat;
-using PokeD.Server.Commands;
-using PokeD.Server.Data;
+using PokeD.Server.Services;
 using PokeD.Server.Storage.Files;
-using PokeD.Server.Storage.Folders;
-
-using SQLite;
 
 namespace PokeD.Server
 {
     public partial class Server : IUpdatable, IDisposable
     {
-        private const int RsaKeySize = 1024;
+        private ConfigType ConfigType { get; }
 
         private IConfigFile ServerConfigFile => new ServerConfigFile(ConfigType);
 
-        [ConfigIgnore]
-        public ConfigType ConfigType { get; }
 
         #region Settings
 
-        public string DatabaseName { get; private set; } = "Database";
-
         public string PokeApiUrl
         {
-            get { return ResourceUri.URL; }
+            get => ResourceUri.URL;
             private set
             {
                 if (!value.EndsWith("/"))
@@ -47,49 +30,29 @@ namespace PokeD.Server
             }
         }
 
-        public PokeApiV2.CacheTypeEnum CacheType { get { return PokeApiV2.CacheType; } private set { PokeApiV2.CacheType = value; } } 
+        public PokeApiV2.CacheTypeEnum CacheType { get => PokeApiV2.CacheType; private set => PokeApiV2.CacheType = value; } 
         public bool PreCacheData { get; private set; } = false;
 
         //public bool AutomaticErrorReporting { get; private set; } = true;
 
-        public World World { get; private set; } = new World();
-
         #endregion Settings
 
         [ConfigIgnore]
-        public List<ServerModule> Modules { get; } = new List<ServerModule>();
-
-
-        [ConfigIgnore]
         public bool IsDisposing { get; private set; }
-
-        [ConfigIgnore]
-        public AsymmetricCipherKeyPair RSAKeyPair { get; private set; }
 
 
         public Server(ConfigType configType)
         {
             ConfigType = configType;
 
-            Modules.Add(new ModuleSCON(this));
-            //Modules.Add(new ModuleNPC(this));
-            Modules.Add(new ModuleP3D(this));
-            //Modules.Add(new ModulePokeD(this));
-
-            Modules.AddRange(LoadModules());
-
-            CommandManager = new CommandManager(this);
-            ChatChannelManager = new ChatChannelManager(this);
-        }
-
-        private static AsymmetricCipherKeyPair GenerateKeyPair()
-        {
-            var secureRandom = new SecureRandom(new DigestRandomGenerator(new Sha512Digest()));
-            var keyGenerationParameters = new KeyGenerationParameters(secureRandom, RsaKeySize);
-
-            var keyPairGenerator = new RsaKeyPairGenerator();
-            keyPairGenerator.Init(keyGenerationParameters);
-            return keyPairGenerator.GenerateKeyPair();
+            Logger.Log(LogType.Info, $"Adding basic services to Server...");
+            Services.AddService(new SecurityService(this, ConfigType));
+            Services.AddService(new DatabaseService(this, ConfigType));
+            Services.AddService(new WorldService(this, ConfigType));
+            Services.AddService(new ChatChannelManagerService(this, ConfigType));
+            Services.AddService(new CommandManagerService(this, ConfigType));
+            Services.AddService(new ModuleManagerService(this, ConfigType));
+            Logger.Log(LogType.Info, $"Added basic services to Server.");
         }
 
 
@@ -106,18 +69,10 @@ namespace PokeD.Server
                 PreCache();
             }
 
-            Logger.Log(LogType.Info, "Generating RSA key pair.");
-            RSAKeyPair = GenerateKeyPair();
-
-
-            Logger.Log(LogType.Info, $"Loading {DatabaseName}...");
-            Database = new SQLiteConnection(Path.Combine(new DatabaseFolder().Path, $"{DatabaseName}.sqlite3"));
-            CreateTables();
-
-            Logger.Log(LogType.Info, $"Starting Server.");
-
-            Modules.RemoveAll(module => !module.Start()); // -- Removes all modules that failed to start.
-
+            Logger.Log(LogType.Info, $"Starting Services...");
+            foreach (var service in Services)
+                (service as IStartable)?.Start();
+            Logger.Log(LogType.Info, $"Started Services.");
 
             return status;
         }
@@ -129,12 +84,8 @@ namespace PokeD.Server
 
             Logger.Log(LogType.Info, $"Stopping Server.");
 
-
-            foreach (var module in Modules)
-                module.Stop();
-
-
-            Dispose();
+            foreach (var service in Services)
+                (service as IStoppable)?.Stop();
 
             Logger.Log(LogType.Info, $"Stopped Server.");
 
@@ -144,10 +95,8 @@ namespace PokeD.Server
 
         public void Update()
         {
-            World.Update();
-
-            foreach (var module in Modules)
-                module.Update();
+            foreach (var service in Services)
+                (service as IUpdatable)?.Update();
         }
 
 
@@ -158,12 +107,12 @@ namespace PokeD.Server
 
             IsDisposing = true;
 
+            Logger.Log(LogType.Info, $"Disposing Server...");
 
-            foreach (var module in Modules)
-                module.Dispose();
-            Modules.Clear();
+            foreach (var service in Services)
+                (service as IDisposable)?.Dispose();
 
-            World.Dispose();
+            Logger.Log(LogType.Info, $"Disposed Server.");
         }
     }
 }

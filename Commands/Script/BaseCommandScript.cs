@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 using PokeD.Server.Clients;
-using PokeD.Server.Data;
+using PokeD.Server.Services;
 
 namespace PokeD.Server.Commands
 {
@@ -13,7 +13,7 @@ namespace PokeD.Server.Commands
         public abstract IEnumerable<string> Aliases { get; }
         public abstract PermissionFlags Permission { get; }
 
-        public abstract World World { set; }
+        public abstract WorldService World { set; }
 
         protected static PermissionFlags ParsePermissionFlags(string permissionFlags)
         {

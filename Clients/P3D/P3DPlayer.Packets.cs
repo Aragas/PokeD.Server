@@ -123,13 +123,14 @@ namespace PokeD.Server.Clients.P3D
         private void HandleGameData(GameDataPacket packet)
         {
             ParseGameData(packet);
-            Module.SendPosition(this);
-
+            
             if(IsInitialized)
-                Module.ClientUpdate(this);
+                Save();
 
             if (!Moving)
                 Module.SendPacketToAll(packet);
+            else
+                Module.OnPosition(this);
 
             var dataPacket = GetDataPacket();
             dataPacket.Origin = ID;
@@ -141,7 +142,7 @@ namespace PokeD.Server.Clients.P3D
                 return;
             FirstGameData = true;
 
-            if (!Module.SetClientID(this))
+            if (!Module.AssignID(this))
                 return;
 
             SendPacket(new IDPacket { Origin = -1, PlayerID = ID });
@@ -167,7 +168,7 @@ namespace PokeD.Server.Clients.P3D
             {
                 // Do not show login command
                 if (!packet.Message.ToLower().StartsWith("/login"))
-                    SendChatMessage(message);
+                    SendChatMessage(new ChatChannelMessage(null, message));
 
                 if (Module.ExecuteClientCommand(this, packet.Message))
                     return;
@@ -178,13 +179,16 @@ namespace PokeD.Server.Clients.P3D
                 SendServerMessage("Invalid command!");
             }
             else if(IsInitialized)
-                Module.SendChatMessage(message);
+                Module.OnClientChatMessage(message);
         }
         private void HandlePrivateMessage(ChatMessagePrivatePacket packet)
         {
             var destClient = Module.GetClient(packet.DestinationPlayerName);
             if (destClient != null)
+            {
+                SendPacket(new ChatMessagePrivatePacket { Origin = packet.Origin, DataItems = packet.DataItems });
                 destClient.SendPrivateMessage(new ChatMessage(this, packet.Message));
+            }
             else
                 SendServerMessage($"The player with the name \"{packet.DestinationPlayerName}\" doesn't exist.");
         }
@@ -195,7 +199,7 @@ namespace PokeD.Server.Clients.P3D
             var playerName = Module.GetClientName(packet.Origin);
 
             if (!string.IsNullOrEmpty(playerName))
-                SendServerMessage($"The player {playerName} {packet.EventMessage}");
+                Module.ModuleManager.SendServerMessage($"The player {playerName} {packet.EventMessage}");
         }
 
 
@@ -212,33 +216,33 @@ namespace PokeD.Server.Clients.P3D
                     else
                     {
                         SendServerMessage($"Can not start trade with {destClient.Name}! Online-Offline trade disabled.");
-                        Module.SendTradeCancel(this, destClient);
+                        Module.OnTradeCancel(this, destClient);
                     }
                 }
                 else
                 {
                     SendServerMessage($"Can not start trade with {destClient.Name}! Different GameModes used.");
-                    Module.SendTradeCancel(this, destClient);
+                    Module.OnTradeCancel(this, destClient);
                 }
             }
             else
                 destClient.SendPacket(new TradeRequestPacket { Origin = packet.Origin });
         }
         private void HandleTradeJoin(TradeJoinPacket packet) => Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new TradeJoinPacket { Origin = packet.Origin });
-        private void HandleTradeQuit(TradeQuitPacket packet) => Module.SendTradeCancel(this, Module.GetClient(packet.DestinationPlayerID));
+        private void HandleTradeQuit(TradeQuitPacket packet) => Module.OnTradeCancel(this, Module.GetClient(packet.DestinationPlayerID));
         private void HandleTradeOffer(TradeOfferPacket packet)
         {
             var destClient = Module.GetClient(packet.DestinationPlayerID);
 
             if (PokemonValid(packet.TradeData))
-                Module.SendTradeRequest(this, new Monster(new DataItems(packet.TradeData))   /* new DataItems(packet.TradeData) */, destClient);
+                Module.OnTradeRequest(this, /* new Monster(new DataItems(packet.TradeData)) */  new DataItems(packet.TradeData), destClient);
             else
             {
                 SendServerMessage("Your Pokemon is not valid!");
-                Module.SendTradeCancel(this, destClient);
+                Module.OnTradeCancel(this, destClient);
             }
         }
-        private void HandleTradeStart(TradeStartPacket packet) => Module.SendTradeConfirm(this, Module.GetClient(packet.DestinationPlayerID));
+        private void HandleTradeStart(TradeStartPacket packet) => Module.OnTradeConfirm(this, Module.GetClient(packet.DestinationPlayerID));
 
 
         private void HandleBattleClientData(BattleClientDataPacket packet)
@@ -290,14 +294,14 @@ namespace PokeD.Server.Clients.P3D
 
                 CurrentPlayers = Module.GetAllClients().Count(),
                 MaxPlayers = Module.MaxPlayers,
-                PlayerNames = clients.Any() ? clients.ClientInfos().Select(client => client.Name).ToArray() : new string[0],
+                PlayerNames = clients.Any() ? clients.Select(client => client.Name).ToArray() : new string[0],
 
                 ServerName = Module.ServerName,
                 ServerMessage = Module.ServerMessage,
             };
             SendPacket(spacket);
 
-            Kick();
+            Leave();
         }
     }
 }

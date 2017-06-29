@@ -16,7 +16,7 @@ using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
 using PokeD.Core.Packets.SCON.Chat;
 using PokeD.Core.Packets.SCON.Logs;
-using PokeD.Core.Packets.SCON.Lua;
+using PokeD.Core.Packets.SCON.Script;
 using PokeD.Core.Packets.SCON.Status;
 using PokeD.Server.Extensions;
 using PokeD.Server.Storage.Folders;
@@ -39,7 +39,7 @@ namespace PokeD.Server.Clients.SCON
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                var publicKey = Module.RsaKeyPair.PublicKeyToByteArray();
+                var publicKey = Module.Security.RSAKeyPair.PublicKeyToByteArray();
 
                 VerificationToken = new byte[4];
                 var drg = new DigestRandomGenerator(new Sha512Digest());
@@ -55,7 +55,7 @@ namespace PokeD.Server.Clients.SCON
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                var pkcs = new PKCS1Signer(Module.RsaKeyPair);
+                var pkcs = new PKCS1Signer(Module.Security.RSAKeyPair);
 
                 var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
                 for (int i = 0; i < VerificationToken.Length; i++)
@@ -68,7 +68,8 @@ namespace PokeD.Server.Clients.SCON
 
                 var sharedKey = pkcs.DeSignData(packet.SharedSecret);
 
-                Stream.InitializeEncryption(sharedKey);
+                // TODO
+                //Stream.InitializeEncryption(sharedKey);
             }
             else
                 SendPacket(new AuthorizationDisconnectPacket { Reason = "Encryption not enabled!" });
@@ -78,7 +79,7 @@ namespace PokeD.Server.Clients.SCON
             if (Authorized)
                 return;
 
-            if (Module.SCONPassword.Hash == packet.PasswordHash)
+            if (((ModuleSCON) Module).SCONPassword.Hash == packet.PasswordHash)
             {
                 Authorized = true;
                 SendPacket(new AuthorizationCompletePacket());
@@ -148,7 +149,7 @@ namespace PokeD.Server.Clients.SCON
             }
 
             if (new LogsFolder().CheckExists(packet.LogFilename) == ExistenceCheckResult.FileExists)
-                using (var reader = new StreamReader(new LogsFolder().GetFile(packet.LogFilename).Open(FileAccess.Read)))
+                using (var reader = new StreamReader(new LogsFolder().GetFile(packet.LogFilename).Open(PCLExt.FileStorage.FileAccess.Read)))
                 {
                     var logText = reader.ReadToEnd();
                     SendPacket(new LogFileResponsePacket { LogFilename = packet.LogFilename, LogFile = logText });
@@ -180,7 +181,7 @@ namespace PokeD.Server.Clients.SCON
             }
 
             if (new CrashLogsFolder().CheckExists(packet.CrashLogFilename) == ExistenceCheckResult.FileExists)
-                using (var reader = new StreamReader(new CrashLogsFolder().GetFile(packet.CrashLogFilename).Open(FileAccess.Read)))
+                using (var reader = new StreamReader(new CrashLogsFolder().GetFile(packet.CrashLogFilename).Open(PCLExt.FileStorage.FileAccess.Read)))
                 {
                     var logText = reader.ReadToEnd();
                     SendPacket(new CrashLogFileResponsePacket {CrashLogFilename = packet.CrashLogFilename, CrashLogFile = logText});
@@ -209,11 +210,11 @@ namespace PokeD.Server.Clients.SCON
             SendPacket(new BanListResponsePacket { Bans = new Ban[0] });
         }
 
-        private void HandleUploadLuaToServer(UploadLuaToServerPacket packet)
+        private void HandleUploadLuaToServer(UploadScriptToServerPacket packet)
         {
             
         }
-        private void HandleReloadNPCs(ReloadNPCsPacket packet)
+        private void HandleReloadNPCs(ReloadScriptPacket packet)
         {
             //Module.Server.ReloadNPCs();
         }

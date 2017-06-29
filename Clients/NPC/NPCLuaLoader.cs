@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿/*
+using System.Collections.Generic;
 
 namespace PokeD.Server.Clients.NPC
 {
@@ -6,13 +7,11 @@ namespace PokeD.Server.Clients.NPC
     {
         static NPCLuaLoader()
         {
-            /*
-            Lua.RegisterCustomFunc("Vector3", (Func<float, float, float, Vector3>) ((x, y, z) => new Vector3(x, y, z)));
-            Lua.RegisterCustomFunc("Vector2", (Func<float, float, Vector2>) ((x, y) => new Vector2(x, y)));
-
-            Lua.RegisterModule(new LuaModulesFolder().HookFile);
-            Lua.RegisterModule(new LuaModulesFolder().TranslatorFile);
-            */
+            //Lua.RegisterCustomFunc("Vector3", (Func<float, float, float, Vector3>) ((x, y, z) => new Vector3(x, y, z)));
+            //Lua.RegisterCustomFunc("Vector2", (Func<float, float, Vector2>) ((x, y) => new Vector2(x, y)));
+            //
+            //Lua.RegisterModule(new LuaModulesFolder().HookFile);
+            //Lua.RegisterModule(new LuaModulesFolder().TranslatorFile);
         }
 
         private const string Identifier = "npc_";
@@ -27,3 +26,4 @@ namespace PokeD.Server.Clients.NPC
         }
     }
 }
+*/

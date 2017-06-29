@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 
+using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
 // ReSharper disable once CheckNamespace
@@ -14,7 +15,7 @@ namespace PokeD.Server.Commands
         public override IEnumerable<string> Aliases => Script.Aliases;
         public override PermissionFlags Permissions => Script.Permission;
 
-        public ScriptCommand(Server server, BaseCommandScript script) : base(server)
+        public ScriptCommand(IServiceContainer componentManager, BaseCommandScript script) : base(componentManager)
         {
             Script = script;
             Script.World = World;

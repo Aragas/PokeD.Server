@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
+using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
 // ReSharper disable once CheckNamespace
@@ -12,11 +14,11 @@ namespace PokeD.Server.Commands
         public override IEnumerable<string> Aliases => new [] { "k" };
         public override PermissionFlags Permissions => PermissionFlags.ModeratorOrHigher;
 
-        public KickCommand(Server server) : base(server) { }
+        public KickCommand(IServiceContainer componentManager) : base(componentManager) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {
-            if (arguments.Length >= 1)
+            if (arguments.Length == 1)
             {
                 var clientName = arguments[0];
                 var cClient = GetClient(clientName);
@@ -26,13 +28,25 @@ namespace PokeD.Server.Commands
                     return;
                 }
 
-                var reason = arguments.Length > 1 ? arguments[1] : "";
-                cClient.Kick(reason);
+                ModuleManager.Kick(cClient, "Kicked by a Moderator or Admin.");
+            }
+            else if (arguments.Length > 1)
+            {
+                var clientName = arguments[0];
+                var cClient = GetClient(clientName);
+                if (cClient == null)
+                {
+                    client.SendServerMessage($"Player {clientName} not found!");
+                    return;
+                }
+
+                var reason = string.Join(" ", arguments.Skip(1).ToArray());
+                ModuleManager.Kick(cClient, reason);
             }
             else
                 client.SendServerMessage($"Invalid arguments given.");
         }
 
-        public override void Help(Client client, string alias){ client.SendServerMessage($"Correct usage is /{alias} <PlayerName> [Reason]"); }
+        public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <PlayerName> [Reason]");
     }
 }

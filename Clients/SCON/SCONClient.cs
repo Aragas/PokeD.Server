@@ -13,7 +13,7 @@ using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
 using PokeD.Core.Packets.SCON.Chat;
 using PokeD.Core.Packets.SCON.Logs;
-using PokeD.Core.Packets.SCON.Lua;
+using PokeD.Core.Packets.SCON.Script;
 using PokeD.Core.Packets.SCON.Status;
 using PokeD.Server.Chat;
 using PokeD.Server.Commands;
@@ -46,7 +46,7 @@ namespace PokeD.Server.Clients.SCON
         public override CultureInfo Language { get; }
         public override PermissionFlags Permissions { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
 
-        bool EncryptionEnabled => Module.EncryptionEnabled;
+        bool EncryptionEnabled => ((ModuleSCON) Module).EncryptionEnabled;
 
         bool IsInitialized { get; set; }
 
@@ -54,18 +54,18 @@ namespace PokeD.Server.Clients.SCON
 
         #endregion Values
 
-        ProtobufStream Stream { get; }
+        ProtobufTransmission<SCONPacket> Stream { get; }
 
 #if DEBUG
         // -- Debug -- //
-        List<ProtobufPacket> Received { get; } = new List<ProtobufPacket>();
-        List<ProtobufPacket> Sended { get; } = new List<ProtobufPacket>();
+        List<SCONPacket> Received { get; } = new List<SCONPacket>();
+        List<SCONPacket> Sended { get; } = new List<SCONPacket>();
         // -- Debug -- //
 #endif
 
         public SCONClient(ITCPClient clientWrapper, ModuleSCON module) : base(module)
         {
-            Stream = new ProtobufStream(clientWrapper);
+            Stream = new ProtobufTransmission<SCONPacket>(clientWrapper, typeof(SCONPacketTypes));
 
             AuthorizationStatus = (EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0);
         }
@@ -74,64 +74,21 @@ namespace PokeD.Server.Clients.SCON
         {
             if (Stream.IsConnected)
             {
-                if (Stream.DataAvailable > 0)
+                SCONPacket packet;
+                while ((packet = Stream.ReadPacket()) != null)
                 {
-                    var dataLength = Stream.ReadVarInt();
-                    if (dataLength != 0)
-                    {
-                        var data = Stream.Receive(dataLength);
-
-                        HandleData(data);
-                    }
-                    else
-                    {
-                        Logger.Log(LogType.Error, $"Protobuf Reading Error: Packet Length size is 0. Disconnecting.");
-                        Kick("Packet Length size is 0!");
-                    }
-                }
-            }
-            else
-                Kick();
-        }
-
-        private void HandleData(byte[] data)
-        {
-            if (data != null)
-            {
-                using (var reader = new ProtobufDataReader(data))
-                {
-                    var id = reader.Read<VarInt>();
-
-                    if (SCONPacketResponses.TryGetPacketFunc(id, out Func<SCONPacket> func))
-                    {
-                        if (func != null)
-                        {
-                            var packet = func().ReadPacket(reader);
-                            if (packet != null)
-                            {
-                                HandlePacket(packet);
+                    HandlePacket(packet);
 
 #if DEBUG
-                                Received.Add(packet);
+                    Received.Add(packet);
 #endif
-                            }
-                            else
-                                Logger.Log(LogType.Error, $"SCON Reading Error: packet is null. Packet ID {id}"); // TODO: Disconnect?
-                        }
-                        else
-                            Logger.Log(LogType.Error, $"SCON Reading Error: SCONPacketResponses.Packets[{id}] is null.");
-                    }
-                    else
-                    {
-                        Logger.Log(LogType.Error, $"SCON Reading Error: Packet ID {id} is not correct, Packet Data: {data}. Disconnecting.");
-                        Kick($"Packet ID {id} is not correct!");
-                    }
                 }
             }
             else
-                Logger.Log(LogType.Error, $"SCON Reading Error: Packet Data is null.");
+                Leave();
         }
-        private void HandlePacket(ProtobufPacket packet)
+
+        private void HandlePacket(SCONPacket packet)
         {
             switch ((SCONPacketTypes) (int) packet.ID)
             {
@@ -194,11 +151,11 @@ namespace PokeD.Server.Clients.SCON
 
 
                 case SCONPacketTypes.UploadLuaToServer:
-                    HandleUploadLuaToServer((UploadLuaToServerPacket) packet);
+                    HandleUploadLuaToServer((UploadScriptToServerPacket) packet);
                     break;
 
                 case SCONPacketTypes.ReloadNPCs:
-                    HandleReloadNPCs((ReloadNPCsPacket) packet);
+                    HandleReloadNPCs((ReloadScriptPacket) packet);
                     break;
             }
         }
@@ -219,31 +176,28 @@ namespace PokeD.Server.Clients.SCON
                 if(!ChatEnabled)
                     return;
             
-            Stream.SendPacket(packet);
+            Stream.SendPacket(sconPacket);
      
 #if DEBUG
             Sended.Add(sconPacket);
 #endif
         }
-        public override void SendChatMessage(ChatMessage chatMessage) { }
+        public override void SendChatMessage(ChatChannelMessage chatMessage) { }
         public override void SendServerMessage(string text) { }
         public override void SendPrivateMessage(ChatMessage chatMessage) { }
 
-        public override void Kick(string reason = "")
+        public override void SendKick(string reason = "")
         {
             SendPacket(new AuthorizationDisconnectPacket { Reason = reason });
-
-            base.Kick(reason);
+            base.SendKick(reason);
         }
-        public override void Ban(string reason = "")
+        public override void SendBan(BanTable banTable)
         {
-            SendPacket(new AuthorizationDisconnectPacket { Reason = reason });
-
-            base.Ban(reason);
+            SendPacket(new AuthorizationDisconnectPacket { Reason = $"This SCON Client was banned from the Server.\r\nTime left: {DateTime.UtcNow - banTable.UnbanTime:%m}\r\nReason: {banTable.Reason}" });
+            base.SendBan(banTable);
         }
 
-
-        public override void LoadFromDB(ClientTable data) { }
+        public override void Load(ClientTable data) { }
 
 
         public override void Dispose()

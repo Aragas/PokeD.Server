@@ -8,17 +8,17 @@ namespace PokeD.Server.Commands
     {
         None            = 0,
         UnVerified      = 1,
-        Verified        = 2,
+        User            = 2,
         Moderator       = 4,
         Administrator   = 8,
         Server          = 16,
 
 
-        UnVerifiedOrHigher      = UnVerified | Verified | Moderator | Administrator | Server,
-        VerifiedOrHigher        = Verified | Moderator | Administrator | Server,
+        UnVerifiedOrHigher      = UnVerified | User | Moderator | Administrator | Server,
+        UserOrHigher            = User | Moderator | Administrator | Server,
         ModeratorOrHigher       = Moderator | Administrator | Server,
         AdministratorOrHigher   = Administrator | Server,
 
-        Any                     = UnVerified | Verified | Moderator | Administrator | Server,
+        //Any                     = UnVerified | User | Moderator | Administrator | Server,
     }
 }

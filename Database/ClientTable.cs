@@ -16,7 +16,7 @@ namespace PokeD.Server.Database
     public sealed class ClientTable : IDatabaseTable
     {
         [PrimaryKey, AutoIncrement]
-        public int ID { get; private set; }
+        public int? ClientID { get; private set; }
 
 
         public Prefix Prefix { get; private set; }
@@ -35,7 +35,7 @@ namespace PokeD.Server.Database
         public ClientTable(Client client)
         {
             if (client.ID >= 0)
-                ID = client.ID;
+                ClientID = null;
 
             Prefix = client.Prefix;
             Permissions = client.Permissions;

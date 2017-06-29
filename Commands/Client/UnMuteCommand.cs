@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 
+using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
 // ReSharper disable once CheckNamespace
@@ -8,11 +9,11 @@ namespace PokeD.Server.Commands
     public class UnMuteCommand : Command
     {
         public override string Name => "unmute";
-        public override string Description => "";
+        public override string Description => "Command is disabled";
         public override IEnumerable<string> Aliases => new [] { "um" };
-        public override PermissionFlags Permissions => PermissionFlags.VerifiedOrHigher;
+        public override PermissionFlags Permissions => PermissionFlags.UserOrHigher;
 
-        public UnMuteCommand(Server server) : base(server) { }
+        public UnMuteCommand(IServiceContainer componentManager) : base(componentManager) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {
@@ -51,6 +52,6 @@ namespace PokeD.Server.Commands
             */
         }
 
-        public override void Help(Client client, string alias){ client.SendServerMessage($"Correct usage is /{alias} <PlayerName>"); }
+        public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <PlayerName>");
     }
 }

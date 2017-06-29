@@ -4,6 +4,7 @@ using PokeD.Server.Clients;
 
 namespace PokeD.Server.Chat
 {
+    // TODO: Clients locations are not updated
     public class LocalChatChannel : ChatChannel
     {
         public override string Name => "Local Chat";
@@ -24,7 +25,7 @@ namespace PokeD.Server.Chat
             CheckLocation(sender);
 
             foreach (var client in ClientsInLocation[location])
-                client.SendChatMessage(chatMessage);
+                client.SendChatMessage(new ChatChannelMessage(this, chatMessage));
 
             return true;
         }

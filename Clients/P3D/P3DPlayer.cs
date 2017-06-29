@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
 
 using Aragas.Network.Data;
-using Aragas.Network.IO;
 using Aragas.Network.Packets;
 
 using PCLExt.Network;
@@ -23,6 +21,7 @@ using PokeD.Server.Chat;
 using PokeD.Server.Commands;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
+using PokeD.Server.Modules;
 
 namespace PokeD.Server.Clients.P3D
 {
@@ -73,7 +72,7 @@ namespace PokeD.Server.Clients.P3D
 
         #endregion Values
 
-        P3DStream Stream { get; }
+        P3DTransmission Stream { get; }
 
 
 #if DEBUG
@@ -84,23 +83,7 @@ namespace PokeD.Server.Clients.P3D
 #endif
         private bool _event;
 
-        public P3DPlayer(ISocketClient socket, ModuleP3D module) : base(module) { Stream = new P3DStream(socket); }
-        public P3DPlayer(ISocketClientEvent socketEvent, ModuleP3D module) : base(module)
-        {
-            _event = true;
-
-            Stream = new P3DStreamEvent(socketEvent);
-            ((P3DStreamEvent) Stream).DataReceived += P3DPlayer_DataReceived;
-            ((P3DStreamEvent) Stream).Disconnected += P3DPlayer_Disconnected;
-        }
-        private void P3DPlayer_DataReceived(PacketStreamDataReceivedArgs args)
-        {
-            HandleData(Encoding.UTF8.GetString(args.Data, 0, args.Data.Length));
-        }
-        private void P3DPlayer_Disconnected(PacketStreamDisconnectedArgs args)
-        {
-            Kick();
-        }
+        public P3DPlayer(ISocketClient socket, ModuleP3D module) : base(module) { Stream = new P3DTransmission(socket, typeof(P3DPacketTypes)); }
 
         public override void Update()
         {
@@ -109,54 +92,23 @@ namespace PokeD.Server.Clients.P3D
 
             if (Stream.IsConnected)
             {
-                if (Stream.DataAvailable > 0)
+                P3DPacket packet;
+                while ((packet = Stream.ReadPacket()) != null)
                 {
-                    var data = Stream.ReadLine();
-
-                    HandleData(data);
-                }
-            }
-            else
-                Kick();
-        }
-
-        private void HandleData(string data)
-        {
-            if (!string.IsNullOrEmpty(data))
-            {
-                if (P3DPacket.TryParseID(data, out int id))
-                {
-                    if (P3DPacketResponses.TryGetPacketFunc(id, out Func<P3DPacket> func))
-                    {
-                        if (func != null)
-                        {
-                            var packet = func();
-                            if (packet.TryParseData(data))
-                            {
-                                HandlePacket(packet);
+                    HandlePacket(packet);
 
 #if DEBUG
-                                Received.Add(packet);
+                    Received.Add(packet);
 #endif
-                            }
-                            else
-                                Logger.Log(LogType.Error, $"P3D Reading Error: Packet TryParseData error. Packet ID {id}, Packet Data: {data}.");
-                        }
-                        else
-                            Logger.Log(LogType.Error, $"P3D Reading Error: SCONPacketResponses.Packets[{id}] is null.");
-                    }
-                    else
-                        Logger.Log(LogType.Error, $"P3D Reading Error: Packet ID {id} doesn't exist, Packet Data: {data}.");
                 }
-                else
-                    Logger.Log(LogType.Error, $"P3D Reading Error: Packet TryParseID error. Packet Data: {data}.");
             }
             else
-                Logger.Log(LogType.Error, $"P3D Reading Error: Packet Data is null or empty.");
+                Leave();
         }
+
         private void HandlePacket(P3DPacket packet)
         {
-            switch ((P3DPacketTypes) packet.ID)
+            switch ((P3DPacketTypes) (int) packet.ID)
             {
                 case P3DPacketTypes.GameData:
                     HandleGameData((GameDataPacket) packet);
@@ -241,21 +193,9 @@ namespace PokeD.Server.Clients.P3D
 
         public override bool RegisterOrLogIn(string passwordHash)
         {
-            if (Module.ClientPasswordIsCorrect(this, passwordHash))
+            if (base.RegisterOrLogIn(passwordHash))
             {
                 Initialize();
-                return true;
-            }
-
-            return false;
-        }
-        public override bool ChangePassword(string oldPassword, string newPassword)
-        {
-            if (PasswordHash == new PasswordStorage(oldPassword).Hash)
-            {
-                PasswordHash = new PasswordStorage(newPassword).Hash;
-                Module.ClientUpdate(this, true);
-
                 return true;
             }
 
@@ -268,34 +208,35 @@ namespace PokeD.Server.Clients.P3D
             if(p3dPacket == null)
                 throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
 
-            Stream.SendPacket(packet);
+            Stream.SendPacket(p3dPacket);
 
 #if DEBUG
             Sended.Add(p3dPacket);
 #endif
         }
-        public override void SendChatMessage(ChatMessage chatMessage) { SendPacket(new ChatMessageGlobalPacket { Origin = chatMessage.Sender.ID, Message = chatMessage.Message }); }
+        public override void SendChatMessage(ChatChannelMessage chatMessage) { SendPacket(new ChatMessageGlobalPacket { Origin = chatMessage.ChatMessage.Sender.ID, Message = chatMessage.ChatMessage.Message }); }
         public override void SendServerMessage(string text) { SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = text }); }
-        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatMessagePrivatePacket { Origin = chatMessage.Sender.ID, Message = chatMessage.Message }); }
+        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatMessagePrivatePacket { Origin = chatMessage.Sender.ID, DataItems = new DataItems(chatMessage.Message) }); }
 
-        public override void Kick(string reason = "")
+        public override void SendKick(string reason = "")
         {
             SendPacket(new KickedPacket { Origin = -1, Reason = reason });
-            base.Kick(reason);
+            base.SendKick(reason);
         }
-        public override void Ban(string reason = "")
+        public override void SendBan(BanTable banTable)
         {
-            SendPacket(new KickedPacket { Origin = -1, Reason = reason });
-            base.Ban(reason);
+            SendKick($"You have banned from this server; Reason: {banTable.Reason} Time left: {(banTable.UnbanTime - DateTime.UtcNow):%m} minutes; If you want to appeal your ban, please contact a staff member on the official forums (http://pokemon3d.net/forum/news/) or on the official Discord server (https://discord.me/p3d).");
+            base.SendBan(banTable);
         }
 
 
-        public override void LoadFromDB(ClientTable data)
+        public override void Load(ClientTable data)
         {
-            if (ID == 0)
-                ID = data.ID;
+            base.Load(data);
 
             Prefix = data.Prefix;
+            Permissions = Permissions == PermissionFlags.UnVerified ? data.Permissions | PermissionFlags.UnVerified : data.Permissions;
+            PasswordHash = data.PasswordHash;
         }
 
 
@@ -303,7 +244,11 @@ namespace PokeD.Server.Clients.P3D
         {
             if (!IsInitialized)
             {
-                Permissions = PermissionFlags.Verified;
+                if ((Permissions & PermissionFlags.UnVerified) != PermissionFlags.None)
+                    Permissions ^= PermissionFlags.UnVerified;
+
+                if ((Permissions & PermissionFlags.User) == PermissionFlags.None)
+                    Permissions |= PermissionFlags.User;
 
                 Join();
                 IsInitialized = true;

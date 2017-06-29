@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 
+using PokeD.Core.Services;
+
 namespace PokeD.Server.Commands
 {
     public static class ScriptCommandLoader
@@ -15,7 +17,7 @@ namespace PokeD.Server.Commands
             */
         }
 
-        public static IEnumerable<ScriptCommand> LoadCommands(Server server)
+        public static IEnumerable<ScriptCommand> LoadCommands(IServiceContainer componentManager)
         {
             return new List<ScriptCommand>();
             //return new LuaFolder().GetFiles()

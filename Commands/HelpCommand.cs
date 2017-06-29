@@ -46,8 +46,9 @@ namespace PokeD.Server.Commands
         private void HelpPage(Client client, int page)
         {
             const int perPage = 5;
-            var numPages = (int) Math.Floor((double) CommandManager.Commands.Count / perPage);
-            if ((CommandManager.Commands.Count % perPage) > 0)
+            var commands = CommandManager.GetCommands();
+            var numPages = (int) Math.Floor((double) commands.Count / perPage);
+            if ((commands.Count % perPage) > 0)
                 numPages++;
 
             if (page < 1 || page > numPages)
@@ -58,10 +59,10 @@ namespace PokeD.Server.Commands
             for (var i = 0; i < perPage; i++)
             {
                 var index = startingIndex + i;
-                if (index > CommandManager.Commands.Count - 1)
+                if (index > commands.Count - 1)
                     break;
                 
-                var command = CommandManager.Commands[index];
+                var command = commands[index];
                 client.SendServerMessage($"/{command.Name} - {command.Description}");
             }
         }

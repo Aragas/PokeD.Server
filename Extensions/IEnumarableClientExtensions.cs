@@ -15,7 +15,7 @@ namespace PokeD.Server.Extensions
         /// </summary>
         /// <returns>Returns null if there are no Client connected.</returns>
         public static IEnumerable<PlayerInfo> ClientInfos(this IEnumerable<Client> clients) =>
-            clients.Select(client => new PlayerInfo
+            clients.Where(client => !string.IsNullOrEmpty(client.IP)).Select(client => new PlayerInfo
             {
                 Name = client.Name,
                 IP = client.IP,

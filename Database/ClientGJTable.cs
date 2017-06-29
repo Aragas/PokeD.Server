@@ -7,14 +7,13 @@ namespace PokeD.Server.Database
         [PrimaryKey]
         public int ClientID { get; private set; }
 
-        public int GameJoltID { get; private set; }
+        public long GameJoltID { get; private set; }
 
 
         public ClientGJTable() { }
-        public ClientGJTable(int clientID, int gameJoltID)
+        public ClientGJTable(int clientID, long gameJoltID)
         {
-            if (clientID >= 0)
-                ClientID = clientID;
+            ClientID = clientID;
 
             GameJoltID = gameJoltID;
         }

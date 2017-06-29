@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Data;
 
@@ -14,7 +15,7 @@ namespace PokeD.Server.Commands
         public override IEnumerable<string> Aliases => new [] { "ss" };
         public override PermissionFlags Permissions => PermissionFlags.ModeratorOrHigher;
 
-        public SetSeasonCommand(Server server) : base(server) { }
+        public SetSeasonCommand(IServiceContainer componentManager) : base(componentManager) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {
@@ -32,6 +33,6 @@ namespace PokeD.Server.Commands
                 client.SendServerMessage($"Invalid arguments given.");
         }
 
-        public override void Help(Client client, string alias) { client.SendServerMessage($"Correct usage is /{alias} <Season>"); }
+        public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <Season>");
     }
 }
