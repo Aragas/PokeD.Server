@@ -42,24 +42,24 @@ namespace PokeD.Server.Services
 
         public override bool Start()
         {
-            Logger.Log(LogType.Info, $"Loading {DatabaseName}...");
+            Logger.Log(LogType.Debug, $"Loading {DatabaseName}...");
             if (!base.Start())
                 return false;
 
             Database = new SQLiteConnection(Path.Combine(new DatabaseFolder().Path, $"{DatabaseName}.sqlite3"));
             CreateTables();
-            Logger.Log(LogType.Info, $"Loaded {DatabaseName}.");
+            Logger.Log(LogType.Debug, $"Loaded {DatabaseName}.");
 
             return true;
         }
         public override bool Stop()
         {
-            Logger.Log(LogType.Info, $"Unloading {DatabaseName}...");
+            Logger.Log(LogType.Debug, $"Unloading {DatabaseName}...");
             if (!base.Stop())
                 return false;
 
             Database?.Dispose();
-            Logger.Log(LogType.Info, $"Unloaded {DatabaseName}.");
+            Logger.Log(LogType.Debug, $"Unloaded {DatabaseName}.");
 
             return true;
         }

@@ -136,7 +136,7 @@ namespace PokeD.Server
 
             if (!Enabled)
             {
-                Logger.Log(LogType.Info, $"{ComponentName} not enabled!");
+                Logger.Log(LogType.Debug, $"{ComponentName} not enabled!");
                 return false;
             }
 

@@ -120,15 +120,15 @@ namespace PokeD.Server.Services
 
         public override bool Start()
         {
-            Logger.Log(LogType.Info, $"Loading Commands...");
+            Logger.Log(LogType.Debug, $"Loading Commands...");
             LoadCommands();
-            Logger.Log(LogType.Info, $"Loaded Commands.");
+            Logger.Log(LogType.Debug, $"Loaded Commands.");
             return true;
         }
         public override bool Stop()
         {
-            Logger.Log(LogType.Info, $"Unloading Commands...");
-            Logger.Log(LogType.Info, $"unloaded Commands.");
+            Logger.Log(LogType.Debug, $"Unloading Commands...");
+            Logger.Log(LogType.Debug, $"Unloaded Commands.");
             return true;
         }
         private void LoadCommands()

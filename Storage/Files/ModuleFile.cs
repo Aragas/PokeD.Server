@@ -17,7 +17,6 @@ namespace PokeD.Server.Storage.Folders
     {
         private Assembly ModuleAssembly { get; }
         private Dictionary<string, Assembly> DependencyAssemblyNames { get; } = new Dictionary<string, Assembly>();
-        //private IList<string> DependencyAssemblyNames { get; } = new List<string>();
 
         public ModuleFile(IFile file) : base(file)
         {
@@ -33,10 +32,8 @@ namespace PokeD.Server.Storage.Folders
                     using (var zipStream = zipEntry.Open())
                     {
                         var data = zipStream.ReadFully();
-                        //LoadAssembly(this, data);
                         DependencyAssemblyNames.Add(name, AppDomain.CurrentDomain.Load(data));
                     }
-                    //DependencyAssemblyNames.Add(name);
 
                     if (name.StartsWith("m_"))
                         using (var zipStream = zipEntry.Open())
@@ -76,6 +73,7 @@ namespace PokeD.Server.Storage.Folders
             if (DependencyAssemblyNames.ContainsKey(assnName))
             {
                 return DependencyAssemblyNames[assnName];
+                /*
                 using (var stream = await OpenAsync(FileAccess.Read))
                 using (var zipFile = new ZipArchive(stream))
                 {
@@ -89,6 +87,7 @@ namespace PokeD.Server.Storage.Folders
                                 return AppDomain.CurrentDomain.Load(zipStream.ReadFully());
                     }
                 }
+                */
             }
 
             return null;

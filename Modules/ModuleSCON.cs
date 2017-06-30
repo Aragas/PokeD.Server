@@ -52,7 +52,7 @@ namespace PokeD.Server
                 return false;
 
 
-            Logger.Log(LogType.Info, $"Starting {ComponentName}.");
+            Logger.Log(LogType.Debug, $"Starting {ComponentName}.");
 
             Listener = SocketServer.CreateTCP(Port);
             Listener.Start();
@@ -66,7 +66,7 @@ namespace PokeD.Server
                 return false;
 
 
-            Logger.Log(LogType.Info, $"Stopping {ComponentName}.");
+            Logger.Log(LogType.Debug, $"Stopping {ComponentName}.");
 
             Dispose();
 

@@ -22,21 +22,21 @@ namespace PokeD.Server.Services
 
         public override bool Start()
         {
-            Logger.Log(LogType.Info, "Loading Security...");
+            Logger.Log(LogType.Debug, "Loading Security...");
 
-            Logger.Log(LogType.Info, "Generating RSA key pair...");
+            Logger.Log(LogType.Debug, "Generating RSA key pair...");
             RSAKeyPair = GenerateKeyPair();
-            Logger.Log(LogType.Info, "Generated RSA key pair.");
+            Logger.Log(LogType.Debug, "Generated RSA key pair.");
 
-            Logger.Log(LogType.Info, "Loaded Security.");
+            Logger.Log(LogType.Debug, "Loaded Security.");
 
             return true;
         }
         public override bool Stop()
         {
-            Logger.Log(LogType.Info, "Loading Security...");
+            Logger.Log(LogType.Debug, "Loading Security...");
             RSAKeyPair = null;
-            Logger.Log(LogType.Info, "Loaded Security.");
+            Logger.Log(LogType.Debug, "Loaded Security.");
 
             return true;
         }

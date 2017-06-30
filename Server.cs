@@ -33,6 +33,9 @@ namespace PokeD.Server
         public PokeApiV2.CacheTypeEnum CacheType { get => PokeApiV2.CacheType; private set => PokeApiV2.CacheType = value; } 
         public bool PreCacheData { get; private set; } = false;
 
+        public bool EnableDebug { get => Logger.EnableDebug; private set => Logger.EnableDebug = value; }
+
+
         //public bool AutomaticErrorReporting { get; private set; } = true;
 
         #endregion Settings
@@ -45,14 +48,14 @@ namespace PokeD.Server
         {
             ConfigType = configType;
 
-            Logger.Log(LogType.Info, $"Adding basic services to Server...");
+            Logger.Log(LogType.Debug, $"Adding basic services to Server...");
             Services.AddService(new SecurityService(this, ConfigType));
             Services.AddService(new DatabaseService(this, ConfigType));
             Services.AddService(new WorldService(this, ConfigType));
             Services.AddService(new ChatChannelManagerService(this, ConfigType));
             Services.AddService(new CommandManagerService(this, ConfigType));
             Services.AddService(new ModuleManagerService(this, ConfigType));
-            Logger.Log(LogType.Info, $"Added basic services to Server.");
+            Logger.Log(LogType.Debug, $"Added basic services to Server.");
         }
 
 
@@ -65,14 +68,15 @@ namespace PokeD.Server
 
             if (PreCacheData)
             {
-                Logger.Log(LogType.Info, "Pre Cache enabled, caching data.");
+                Logger.Log(LogType.Info, "Pre Cache enabled, caching data...");
                 PreCache();
+                Logger.Log(LogType.Info, "Caching data done.");
             }
 
-            Logger.Log(LogType.Info, $"Starting Services...");
+            Logger.Log(LogType.Debug, $"Starting Services...");
             foreach (var service in Services)
                 (service as IStartable)?.Start();
-            Logger.Log(LogType.Info, $"Started Services.");
+            Logger.Log(LogType.Debug, $"Started Services.");
 
             return status;
         }
@@ -82,12 +86,12 @@ namespace PokeD.Server
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save Server settings!");
 
-            Logger.Log(LogType.Info, $"Stopping Server.");
+            Logger.Log(LogType.Debug, $"Stopping Server.");
 
             foreach (var service in Services)
                 (service as IStoppable)?.Stop();
 
-            Logger.Log(LogType.Info, $"Stopped Server.");
+            Logger.Log(LogType.Debug, $"Stopped Server.");
 
             return status;
         }
@@ -107,12 +111,12 @@ namespace PokeD.Server
 
             IsDisposing = true;
 
-            Logger.Log(LogType.Info, $"Disposing Server...");
+            Logger.Log(LogType.Debug, $"Disposing Server...");
 
             foreach (var service in Services)
                 (service as IDisposable)?.Dispose();
 
-            Logger.Log(LogType.Info, $"Disposed Server.");
+            Logger.Log(LogType.Debug, $"Disposed Server.");
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
 
@@ -200,24 +199,37 @@ namespace PokeD.Server.Services
         }    
         private IEnumerable<ServerModule> LoadModules()
         {
+            Logger.Log(LogType.Debug, $"Loading external modules");
             AppDomain.CurrentDomain.AssemblyResolve += AppDomain_AssemblyResolve;
 
             foreach (var moduleFile in new ModulesFolder().GetModuleFiles())
             {
+                Logger.Log(LogType.Debug, $"Loading module {moduleFile.Name}");
                 var assembly = moduleFile.GetModule();
 
                 var serverModule = assembly?.ExportedTypes.SingleOrDefault(type => type.GetTypeInfo().IsSubclassOf(typeof(ServerModule)) && !type.GetTypeInfo().IsAbstract);
                 if (serverModule != null)
-                    yield return (ServerModule) Activator.CreateInstance(serverModule, new object[] { Services, ConfigType });
+                {
+                    Logger.Log(LogType.Debug, $"Created module {serverModule.FullName}");
+                    yield return (ServerModule) Activator.CreateInstance(serverModule, new object[] {Services, ConfigType});
+                }
             }
         }
         private Assembly AppDomain_AssemblyResolve(object sender, ResolveEventArgs args)
         {
+            Logger.Log(LogType.Debug, $"Resolving assembly {args.Name}");
             foreach (var moduleFile in new ModulesFolder().GetModuleFiles())
             {
+                Logger.Log(LogType.Debug, $"Searching assembly in module {moduleFile.Name}");
                 var assembly = moduleFile.GetAssembly(args.Name);
-                if (assembly != null) return assembly;
+                if (assembly != null)
+                {
+                    Logger.Log(LogType.Debug, $"Found assembly!");
+                    return assembly;
+                }
             }
+            
+            Logger.Log(LogType.Debug, $"Assembly {args.Name} not found!");
             return null;
         }
 
@@ -303,26 +315,26 @@ namespace PokeD.Server.Services
         public void Kick(Client client, string reason = "")
         {
             client.SendKick(reason);
-            Logger.Log(LogType.Info, $"Player {client.Name} was kicked!");
+            Logger.Log(LogType.Event, $"Player {client.Name} was kicked!");
         }
         public void Ban(Client client, int minutes = 0, string reason = "")
         {
             var previousBan = Services.GetService<DatabaseService>().DatabaseGet<BanTable>(client.ID);
             if (previousBan != null)
             {
-                Logger.Log(LogType.Info, $"Player {client.Name} was already banned! Reason - \"{previousBan.Reason}\". Unban time - {previousBan.UnbanTime:G}!");
+                Logger.Log(LogType.Event, $"Player {client.Name} was already banned! Reason - \"{previousBan.Reason}\". Unban time - {previousBan.UnbanTime:G}!");
                 return;
             }
 
             var banTable = new BanTable(client, DateTime.UtcNow + TimeSpan.FromMinutes(minutes <= 0 ? int.MaxValue : minutes), reason);
             Services.GetService<DatabaseService>().DatabaseSet(banTable);
             client.SendBan(banTable);
-            Logger.Log(LogType.Info, $"Player {client.Name} was banned. Reason - \"{banTable.Reason}\". Unban time - {banTable.UnbanTime:G}!");
+            Logger.Log(LogType.Event, $"Player {client.Name} was banned. Reason - \"{banTable.Reason}\". Unban time - {banTable.UnbanTime:G}!");
         }
         public void Unban(Client client)
         {
             Services.GetService<DatabaseService>().DatabaseRemove<BanTable>(client.ID);
-            Logger.Log(LogType.Info, $"Player {client.Name} was unbanned!");
+            Logger.Log(LogType.Event, $"Player {client.Name} was unbanned!");
         }
 
         public (bool IsBanned, BanTable BanTable) BanStatus(Client client)
@@ -344,17 +356,17 @@ namespace PokeD.Server.Services
 
         public override bool Start()
         {
-            Logger.Log(LogType.Info, "Starting Modules...");
+            Logger.Log(LogType.Debug, "Starting Modules...");
             Modules.RemoveAll(module => !module.Start());
-            Logger.Log(LogType.Info, "Started Modules.");
+            Logger.Log(LogType.Debug, "Started Modules.");
             return true;
         }
         public override bool Stop()
         {
-            Logger.Log(LogType.Info, "Stopping Modules...");
+            Logger.Log(LogType.Debug, "Stopping Modules...");
             foreach (var module in Modules)
                 module.Stop();
-            Logger.Log(LogType.Info, "Stopped Modules.");
+            Logger.Log(LogType.Debug, "Stopped Modules.");
 
             return true;
         }

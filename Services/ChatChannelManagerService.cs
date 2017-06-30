@@ -23,16 +23,16 @@ namespace PokeD.Server.Services
 
         public override bool Start()
         {
-            Logger.Log(LogType.Info, $"Loading ChatChannels...");
+            Logger.Log(LogType.Debug, $"Loading ChatChannels...");
             LoadChatChannels();
-            Logger.Log(LogType.Info, $"Loaded ChatChannels.");
+            Logger.Log(LogType.Debug, $"Loaded ChatChannels.");
 
             return true;
         }
         public override bool Stop()
         {
-            Logger.Log(LogType.Info, $"Unloading ChatChannels...");
-            Logger.Log(LogType.Info, $"Unloaded ChatChannels.");
+            Logger.Log(LogType.Debug, $"Unloading ChatChannels...");
+            Logger.Log(LogType.Debug, $"Unloaded ChatChannels.");
             return true;
         }
         private void LoadChatChannels()
