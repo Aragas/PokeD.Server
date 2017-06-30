@@ -7,25 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="PokeD.BattleEngine\**" />
-    <Compile Remove="PokeD.Core\**" />
-    <EmbeddedResource Remove="PokeD.BattleEngine\**" />
-    <EmbeddedResource Remove="PokeD.Core\**" />
-    <None Remove="PokeD.BattleEngine\**" />
-    <None Remove="PokeD.Core\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove=".git" />
-    <None Remove=".gitignore" />
-    <None Remove=".gitmodules" />
-    <None Remove=".travis.yml" />
-    <None Remove="appveyor.yml" />
-    <None Remove="LICENSE" />
-    <None Remove="README.md" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Aragas.Network-2" Version="1.1.1.1" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
     <PackageReference Include="PCLExt.Config" Version="1.2.1.3" />
@@ -35,7 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)\PokeD.BattleEngine\PokeD.BattleEngine.csproj" />
-    <ProjectReference Include="$(SolutionDir)\PokeD.Core\PokeD.Core.csproj" />
+    <ProjectReference Include="$(SolutionDir)\PokeD.Core\PokeD.Core\PokeD.Core.csproj" />
   </ItemGroup>
 
 </Project>

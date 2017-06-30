@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26430.4
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PokeD.Server", "PokeD.Server.csproj", "{32FDE5FC-8692-414A-A0A5-921CE83C709C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PokeD.Server", "PokeD.Server\PokeD.Server.csproj", "{32FDE5FC-8692-414A-A0A5-921CE83C709C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PokeD.Core", "PokeD.Core\PokeD.Core.csproj", "{1CF84E56-3BBE-4A3A-9234-5951BF2558C3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PokeD.Core", "PokeD.Core\PokeD.Core\PokeD.Core.csproj", "{1CF84E56-3BBE-4A3A-9234-5951BF2558C3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PokeD.BattleEngine", "PokeD.BattleEngine\PokeD.BattleEngine.csproj", "{A90F84DF-CCFA-4722-9490-A3DF98DAEC95}"
 EndProject
