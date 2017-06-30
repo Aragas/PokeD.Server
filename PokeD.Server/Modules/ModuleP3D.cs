@@ -51,8 +51,8 @@ namespace PokeD.Server.Modules
 
         private ITCPListener Listener { get; set; }
 
-        private Thread PlayerWatcherThread { get; set; }
-        private Thread PlayerCorrectionThread { get; set; }
+        private CancellationTokenSource PlayerWatcherToken { get; set; }
+        private CancellationTokenSource PlayerCorrectionToken { get; set; }
 
         private ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; } = new ConcurrentDictionary<string, P3DPlayer[]>();
 
@@ -76,19 +76,19 @@ namespace PokeD.Server.Modules
 
             if (MoveCorrectionEnabled)
             {
-                PlayerWatcherThread = new Thread(PlayerWatcherCycle)
+                PlayerWatcherToken = new CancellationTokenSource();
+                new Thread(PlayerWatcherCycle)
                 {
                     Name = "PlayerWatcherThread",
                     IsBackground = true
-                };
-                PlayerWatcherThread.Start();
+                }.Start();
 
-                PlayerCorrectionThread = new Thread(PlayerCorrectionCycle)
+                PlayerCorrectionToken = new CancellationTokenSource();
+                new Thread(PlayerCorrectionCycle)
                 {
                     Name = "PlayerCorrectionThread",
                     IsBackground = true
-                };
-                PlayerCorrectionThread.Start();
+                }.Start();
             }
 
 
@@ -106,11 +106,8 @@ namespace PokeD.Server.Modules
 
             Logger.Log(LogType.Debug, $"Stopping {ComponentName}.");
 
-            if (PlayerWatcherThread?.ThreadState != System.Threading.ThreadState.Stopped)
-                PlayerWatcherThread?.Abort();
-
-            if (PlayerCorrectionThread?.ThreadState != System.Threading.ThreadState.Stopped)
-                PlayerCorrectionThread?.Abort();
+            PlayerWatcherToken.Cancel();
+            PlayerCorrectionToken.Cancel();
 
             ModuleManager.ClientJoined -= ModuleManager_ClientJoined;
             ModuleManager.ClientLeaved -= ModuleManager_ClientLeaved;
@@ -140,7 +137,7 @@ namespace PokeD.Server.Modules
         private void PlayerWatcherCycle()
         {
             var watch = Stopwatch.StartNew();
-            while (!IsDisposing)
+            while (!IsDisposing && !PlayerWatcherToken.IsCancellationRequested)
             {
                 var players = new List<P3DPlayer>(Clients);
 
@@ -177,7 +174,7 @@ namespace PokeD.Server.Modules
         private void PlayerCorrectionCycle()
         {
             var watch = Stopwatch.StartNew();
-            while (!IsDisposing)
+            while (!IsDisposing && !PlayerCorrectionToken.IsCancellationRequested)
             {
                 foreach (var nearPlayers in NearPlayers.Where(nearPlayers => nearPlayers.Value != null))
                     foreach (var player in nearPlayers.Value.Where(player => player.Moving))
