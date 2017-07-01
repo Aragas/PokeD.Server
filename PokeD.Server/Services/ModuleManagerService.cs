@@ -113,6 +113,7 @@ namespace PokeD.Server.Services
         {
             if (Subscribers.Any())
             {
+                Logger.Log(LogType.Debug, $"Leaking events! {string.Join(",", Subscribers.Select(sub => sub.Component.ToString()))}");
 #if DEBUG
                 throw new Exception("Leaked events!");
 #endif
@@ -155,6 +156,7 @@ namespace PokeD.Server.Services
         {
             if (EventHandler.GetInvocationList().Any())
             {
+                Logger.Log(LogType.Debug, $"Leaking events!");
 #if DEBUG
                 throw new Exception("Leaked events!");
 #endif
@@ -273,6 +275,7 @@ namespace PokeD.Server.Services
                     trade.Client1Monster = new Monster(monster);
             }
             */
+            Logger.Log(LogType.Trade, $"{sender.Name} sent a trade request to {destClient.Name}. Module {callerModule.GetType().Name}");
         }
         public void TradeConfirm(Client sender, Client destClient, ServerModule callerModule)
         {
@@ -296,6 +299,7 @@ namespace PokeD.Server.Services
                 }
             }
             */
+            Logger.Log(LogType.Trade, $"{sender.Name} confirmed a trade request with {destClient.Name}. Module {callerModule.GetType().Name}");
         }
         public void TradeCancel(Client sender, Client destClient, ServerModule callerModule)
         {
@@ -308,6 +312,7 @@ namespace PokeD.Server.Services
             if (trade != null)
                 CurrentTrades.Remove(trade);
             */
+            Logger.Log(LogType.Trade, $"{sender.Name} cancelled a trade request with {destClient.Name}. Module {callerModule.GetType().Name}");
         }
 
         #endregion
