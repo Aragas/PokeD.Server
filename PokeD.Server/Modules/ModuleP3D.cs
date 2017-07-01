@@ -106,8 +106,8 @@ namespace PokeD.Server.Modules
 
             Logger.Log(LogType.Debug, $"Stopping {ComponentName}.");
 
-            PlayerWatcherToken.Cancel();
-            PlayerCorrectionToken.Cancel();
+            PlayerWatcherToken?.Cancel();
+            PlayerCorrectionToken?.Cancel();
 
             ModuleManager.ClientJoined -= ModuleManager_ClientJoined;
             ModuleManager.ClientLeaved -= ModuleManager_ClientLeaved;
