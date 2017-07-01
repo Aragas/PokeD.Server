@@ -8,7 +8,6 @@ using PokeD.Core.Data.P3D;
 using PokeD.Core.Services;
 using PokeD.Server.Chat;
 using PokeD.Server.Clients;
-using PokeD.Server.Clients.P3D;
 using PokeD.Server.Components;
 using PokeD.Server.Database;
 using PokeD.Server.Services;
@@ -121,10 +120,7 @@ namespace PokeD.Server
         public virtual void OnBattleFlee(Client sender) { }
         */
 
-        public virtual void OnPosition(Client sender)
-        {
-            
-        }
+        public virtual void OnPosition(Client sender) { }
 
         public bool ExecuteClientCommand(Client client, string command) => Services.GetService<CommandManagerService>().ExecuteClientCommand(client, command);
         
@@ -152,7 +148,7 @@ namespace PokeD.Server
 
         public override int GetHashCode()
         {
-            return this.ComponentName.GetHashCode();
+            return ComponentName.GetHashCode();
         }
 
         private bool Equals(ServerModule a, ServerModule b) => string.Equals(a.ComponentName, b.ComponentName, StringComparison.Ordinal);
