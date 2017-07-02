@@ -311,8 +311,6 @@ namespace PokeD.Server.Clients.P3D
         {
             Stream.Disconnect();
             Stream.Dispose();
-
-            UpdateToken.Cancel();
         }
     }
 }
