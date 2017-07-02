@@ -273,6 +273,7 @@ namespace PokeD.Server.Modules
                     var client = new P3DPlayer(Listener.AcceptTCPClient(), this);
                     client.Ready += OnClientReady;
                     client.Disconnected += OnClientLeave;
+                    client.StartListening();
                     Clients.Add(client);
                 });
             }

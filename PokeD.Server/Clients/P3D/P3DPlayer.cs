@@ -83,12 +83,7 @@ namespace PokeD.Server.Clients.P3D
 #endif
         private bool _event;
 
-        public P3DPlayer(ISocketClient socket, ModuleP3D module) : base(module)
-        {
-            Stream = new P3DTransmission(socket, typeof(P3DPacketTypes));
-
-            new Thread(Update).Start();
-        }
+        public P3DPlayer(ISocketClient socket, ModuleP3D module) : base(module) { Stream = new P3DTransmission(socket, typeof(P3DPacketTypes)); }
 
         public override void Update()
         {
@@ -100,7 +95,7 @@ namespace PokeD.Server.Clients.P3D
                 if (Stream.IsConnected)
                 {
                     P3DPacket packet;
-                    if ((packet = Stream.ReadPacketBlocking()) != null)
+                    if ((packet = Stream.ReadPacket()) != null)
                     {
                         HandlePacket(packet);
 

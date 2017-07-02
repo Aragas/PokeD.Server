@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Globalization;
-
+using System.Threading;
 using Aragas.Network.Data;
 using Aragas.Network.Packets;
 
@@ -39,6 +39,8 @@ namespace PokeD.Server.Clients
         protected Client(ServerModule serverModule) { Module = serverModule; }
 
 
+        public void StartListening() => new Thread(Update).Start();
+        
         protected void Join() => Ready?.Invoke(this, EventArgs.Empty);
         protected void Leave() => Disconnected?.Invoke(this, EventArgs.Empty);
 
@@ -66,6 +68,7 @@ namespace PokeD.Server.Clients
                 Save(true);
 
                 return true;
+
             }
 
             return false;
