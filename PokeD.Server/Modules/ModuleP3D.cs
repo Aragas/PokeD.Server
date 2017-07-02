@@ -116,6 +116,13 @@ namespace PokeD.Server.Modules
 
             Listener?.Stop();
 
+            List<P3DPlayer> clientsToKick = Clients.ToList();
+            for (var i = 0; i < clientsToKick.Count; i++)
+                clientsToKick[i]?.SendKick("Server is closing!");
+
+            Clients.Clear();
+            NearPlayers.Clear();
+
 
             return true;
         }
@@ -267,8 +274,8 @@ namespace PokeD.Server.Modules
                 Clients.Add(client);
             }
 
-            for (var i = Clients.Count - 1; i >= 0; i--)
-                Clients[i]?.Update();
+            //for (var i = Clients.Count - 1; i >= 0; i--)
+            //    Clients[i]?.Update();
 
 
             if (UpdateWatch.ElapsedMilliseconds > 1000)
@@ -395,14 +402,7 @@ namespace PokeD.Server.Modules
 
             IsDisposing = true;
 
-
-            List<P3DPlayer> clientsToKick = Clients.ToList();
-            for (var i = 0; i < clientsToKick.Count; i++)
-                clientsToKick[i]?.SendKick("Server is closing!");
-
-            Clients.Clear();
-
-            NearPlayers.Clear();
+            Listener?.Dispose();
         }
     }
 }

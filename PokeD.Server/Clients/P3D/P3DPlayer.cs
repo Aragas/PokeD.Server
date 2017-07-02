@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-
+using System.Threading;
 using Aragas.Network.Data;
 using Aragas.Network.Packets;
 
@@ -83,10 +83,39 @@ namespace PokeD.Server.Clients.P3D
 #endif
         private bool _event;
 
-        public P3DPlayer(ISocketClient socket, ModuleP3D module) : base(module) { Stream = new P3DTransmission(socket, typeof(P3DPacketTypes)); }
+        public P3DPlayer(ISocketClient socket, ModuleP3D module) : base(module)
+        {
+            Stream = new P3DTransmission(socket, typeof(P3DPacketTypes));
+
+            new Thread(Update).Start();
+        }
 
         public override void Update()
         {
+            while (true)
+            {
+                if (_event)
+                    return;
+
+                if (Stream.IsConnected)
+                {
+                    P3DPacket packet;
+                    if ((packet = Stream.ReadPacketBlocking()) != null)
+                    {
+                        HandlePacket(packet);
+
+#if DEBUG
+                        Received.Add(packet);
+#endif
+                    }
+                }
+                else
+                    break;
+            }
+
+            Leave();
+
+            /*
             if (_event)
                 return;
 
@@ -104,6 +133,7 @@ namespace PokeD.Server.Clients.P3D
             }
             else
                 Leave();
+            */
         }
 
         private void HandlePacket(P3DPacket packet)
@@ -281,6 +311,8 @@ namespace PokeD.Server.Clients.P3D
         {
             Stream.Disconnect();
             Stream.Dispose();
+
+            UpdateToken.Cancel();
         }
     }
 }
