@@ -87,15 +87,15 @@ namespace PokeD.Server.Clients.P3D
 
         public override void Update()
         {
+            if (_event)
+                return;
+            
             while (true)
             {
-                if (_event)
-                    return;
-
                 if (Stream.IsConnected)
                 {
                     P3DPacket packet;
-                    if ((packet = Stream.ReadPacket()) != null)
+                    while ((packet = Stream.ReadPacket()) != null)
                     {
                         HandlePacket(packet);
 
@@ -109,26 +109,6 @@ namespace PokeD.Server.Clients.P3D
             }
 
             Leave();
-
-            /*
-            if (_event)
-                return;
-
-            if (Stream.IsConnected)
-            {
-                P3DPacket packet;
-                while ((packet = Stream.ReadPacket()) != null)
-                {
-                    HandlePacket(packet);
-
-#if DEBUG
-                    Received.Add(packet);
-#endif
-                }
-            }
-            else
-                Leave();
-            */
         }
 
         private void HandlePacket(P3DPacket packet)

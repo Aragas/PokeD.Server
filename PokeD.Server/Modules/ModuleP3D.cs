@@ -268,7 +268,7 @@ namespace PokeD.Server.Modules
         {
             if (Listener?.AvailableClients == true)
             {
-                ThreadPool.QueueUserWorkItem((obj) =>
+                ThreadPool.QueueUserWorkItem(obj =>
                 {
                     var client = new P3DPlayer(Listener.AcceptTCPClient(), this);
                     client.Ready += OnClientReady;
