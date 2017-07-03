@@ -54,6 +54,7 @@ namespace PokeD.Server.Modules
 
         private TcpListener Listener { get; set; }
 
+        private CancellationTokenSource ListenerToken { get; set; }
         private CancellationTokenSource PlayerWatcherToken { get; set; }
         private CancellationTokenSource PlayerCorrectionToken { get; set; }
 
@@ -75,21 +76,31 @@ namespace PokeD.Server.Modules
             Logger.Log(LogType.Debug, $"Starting {ComponentName}.");
 
             Listener = new TcpListener(new IPEndPoint(IPAddress.Any, Port));
+            Listener.Server.ReceiveTimeout = 5000;
+            Listener.Server.SendTimeout = 5000;
             Listener.Start();
+
+            ListenerToken = new CancellationTokenSource();
+            new Thread(ListenerCycle)
+            {
+                Name = "ModuleP3DListenerThred",
+                IsBackground = true
+            }.Start();
+
 
             if (MoveCorrectionEnabled)
             {
                 PlayerWatcherToken = new CancellationTokenSource();
                 new Thread(PlayerWatcherCycle)
                 {
-                    Name = "PlayerWatcherThread",
+                    Name = "ModuleP3DWatcherThread",
                     IsBackground = true
                 }.Start();
 
                 PlayerCorrectionToken = new CancellationTokenSource();
                 new Thread(PlayerCorrectionCycle)
                 {
-                    Name = "PlayerCorrectionThread",
+                    Name = "ModuleP3DCorrectionThread",
                     IsBackground = true
                 }.Start();
             }
@@ -109,6 +120,8 @@ namespace PokeD.Server.Modules
 
             Logger.Log(LogType.Debug, $"Stopping {ComponentName}.");
 
+            ListenerToken?.Cancel();
+            
             PlayerWatcherToken?.Cancel();
             PlayerCorrectionToken?.Cancel();
 
@@ -127,7 +140,7 @@ namespace PokeD.Server.Modules
 
             return true;
         }
-
+       
         private void ModuleManager_ClientJoined(object sender, ClientJoinedEventArgs eventArgs)
         {
             SendPacketToAll(new CreatePlayerPacket { Origin = -1, PlayerID = eventArgs.Client.ID });
@@ -142,6 +155,19 @@ namespace PokeD.Server.Modules
             SendPacketToAll(new ChatMessageGlobalPacket { Origin = -1, Message = $"Player {eventArgs.Client.Name} disconnected!" });
         }
 
+
+        private void ListenerCycle()
+        {
+            while (!IsDisposing && !ListenerToken.IsCancellationRequested)
+            {
+                var client = new P3DPlayer(Listener.AcceptSocket(), this);
+                client.Ready += OnClientReady;
+                client.Disconnected += OnClientLeave;
+                client.StartListening();
+                Clients.Add(client);
+            }
+        }
+        
         [ConfigIgnore]
         public static long PlayerWatcherThreadTime { get; private set; }
         private void PlayerWatcherCycle()
@@ -267,18 +293,6 @@ namespace PokeD.Server.Modules
         Stopwatch UpdateWatch = Stopwatch.StartNew();
         public override void Update()
         {
-            if (Listener?.Pending() == true)
-            {
-                ThreadPool.QueueUserWorkItem(obj =>
-                {
-                    var client = new P3DPlayer(Listener.AcceptSocket(), this);
-                    client.Ready += OnClientReady;
-                    client.Disconnected += OnClientLeave;
-                    client.StartListening();
-                    Clients.Add(client);
-                });
-            }
-
             //for (var i = Clients.Count - 1; i >= 0; i--)
             //    Clients[i]?.Update();
 
