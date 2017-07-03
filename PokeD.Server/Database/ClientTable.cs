@@ -42,7 +42,7 @@ namespace PokeD.Server.Database
             Name = client.Nickname;
             PasswordHash = client.PasswordHash;
 
-            Position = client.Position.ToPokeString(',', CultureInfo.InvariantCulture);
+            Position = client.Position.ToP3DString(',', CultureInfo.InvariantCulture);
             LevelFile = client.LevelFile;
 
             LastIP = client.IP;

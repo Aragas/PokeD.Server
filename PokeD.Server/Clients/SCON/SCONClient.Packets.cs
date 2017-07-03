@@ -3,15 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-using Aragas.Network;
-
-using Org.BouncyCastle.Crypto.Digests;
-using Org.BouncyCastle.Crypto.Prng;
-
 using PCLExt.FileStorage;
 
 using PokeD.Core.Data.SCON;
-using PokeD.Core.Extensions;
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
 using PokeD.Core.Packets.SCON.Chat;
@@ -39,6 +33,7 @@ namespace PokeD.Server.Clients.SCON
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
+                /*
                 var publicKey = Module.Security.RSAKeyPair.PublicKeyToByteArray();
 
                 VerificationToken = new byte[4];
@@ -46,6 +41,7 @@ namespace PokeD.Server.Clients.SCON
                 drg.NextBytes(VerificationToken);
 
                 SendPacket(new EncryptionRequestPacket { PublicKey = publicKey, VerificationToken = VerificationToken });
+                */
             }
         }
         private void HandleEncryptionResponse(EncryptionResponsePacket packet)
@@ -55,6 +51,7 @@ namespace PokeD.Server.Clients.SCON
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
+                /*
                 var pkcs = new PKCS1Signer(Module.Security.RSAKeyPair);
 
                 var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
@@ -70,6 +67,7 @@ namespace PokeD.Server.Clients.SCON
 
                 // TODO
                 //Stream.InitializeEncryption(sharedKey);
+                */
             }
             else
                 SendPacket(new AuthorizationDisconnectPacket { Reason = "Encryption not enabled!" });

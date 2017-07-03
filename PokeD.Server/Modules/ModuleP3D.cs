@@ -3,12 +3,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 
 using Aragas.Network.Packets;
 
 using PCLExt.Config;
-using PCLExt.Network;
 
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Packets.P3D.Chat;
@@ -51,7 +52,7 @@ namespace PokeD.Server.Modules
 
         #endregion Settings
 
-        private ITCPListener Listener { get; set; }
+        private TcpListener Listener { get; set; }
 
         private CancellationTokenSource PlayerWatcherToken { get; set; }
         private CancellationTokenSource PlayerCorrectionToken { get; set; }
@@ -73,7 +74,7 @@ namespace PokeD.Server.Modules
 
             Logger.Log(LogType.Debug, $"Starting {ComponentName}.");
 
-            Listener = SocketServer.CreateTCP(Port);
+            Listener = new TcpListener(new IPEndPoint(IPAddress.Any, Port));
             Listener.Start();
 
             if (MoveCorrectionEnabled)
@@ -266,11 +267,11 @@ namespace PokeD.Server.Modules
         Stopwatch UpdateWatch = Stopwatch.StartNew();
         public override void Update()
         {
-            if (Listener?.AvailableClients == true)
+            if (Listener?.Pending() == true)
             {
                 ThreadPool.QueueUserWorkItem(obj =>
                 {
-                    var client = new P3DPlayer(Listener.AcceptTCPClient(), this);
+                    var client = new P3DPlayer(Listener.AcceptSocket(), this);
                     client.Ready += OnClientReady;
                     client.Disconnected += OnClientLeave;
                     client.StartListening();
@@ -405,8 +406,6 @@ namespace PokeD.Server.Modules
                 return;
 
             IsDisposing = true;
-
-            Listener?.Dispose();
         }
     }
 }

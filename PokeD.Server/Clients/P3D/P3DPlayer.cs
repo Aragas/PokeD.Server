@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Threading;
+using System.Net.Sockets;
+
 using Aragas.Network.Data;
 using Aragas.Network.Packets;
-
-using PCLExt.Network;
 
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Extensions;
@@ -81,21 +80,15 @@ namespace PokeD.Server.Clients.P3D
         List<P3DPacket> Sended { get; } = new List<P3DPacket>();
         // -- Debug -- //
 #endif
-        private bool _event;
-
-        public P3DPlayer(ISocketClient socket, ModuleP3D module) : base(module) { Stream = new P3DTransmission(socket, typeof(P3DPacketTypes)); }
+        public P3DPlayer(Socket socket, ModuleP3D module) : base(module) { Stream = new P3DTransmission(socket, typeof(P3DPacketTypes)); }
 
         public override void Update()
         {
-            if (_event)
-                return;
-            
-            while (true)
+            while (!UpdateToken.IsCancellationRequested)
             {
                 if (Stream.IsConnected)
                 {
-                    P3DPacket packet;
-                    while ((packet = Stream.ReadPacket()) != null)
+                    if (Stream.TryReadPacket(out var packet))
                     {
                         HandlePacket(packet);
 
@@ -269,13 +262,13 @@ namespace PokeD.Server.Clients.P3D
                 DecimalSeparator.ToString(),
                 Name,
                 LevelFile,
-                Position.ToPokeString(DecimalSeparator, CultureInfo),
+                Position.ToP3DString(DecimalSeparator, CultureInfo),
                 Facing.ToString(CultureInfo),
                 Moving ? "1" : "0",
                 Skin,
                 BusyType,
                 PokemonVisible ? "1" : "0",
-                PokemonPosition.ToPokeString(DecimalSeparator, CultureInfo),
+                PokemonPosition.ToP3DString(DecimalSeparator, CultureInfo),
                 PokemonSkin,
                 PokemonFacing.ToString(CultureInfo));
         }

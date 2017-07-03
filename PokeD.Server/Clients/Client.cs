@@ -32,6 +32,8 @@ namespace PokeD.Server.Clients
         public abstract string IP { get; }
         public abstract DateTime ConnectionTime { get; }
         public abstract CultureInfo Language { get; }
+        
+        protected CancellationTokenSource UpdateToken { get; set; }
 
         private ServerModule Module { get; }
 
@@ -39,8 +41,12 @@ namespace PokeD.Server.Clients
         protected Client(ServerModule serverModule) { Module = serverModule; }
 
 
-        public void StartListening() => new Thread(Update).Start();
-        
+        public void StartListening()
+        {
+            UpdateToken = new CancellationTokenSource();
+            new Thread(Update).Start();
+        }
+
         protected void Join() => Ready?.Invoke(this, EventArgs.Empty);
         protected void Leave() => Disconnected?.Invoke(this, EventArgs.Empty);
 

@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Net.Sockets;
 
 using Aragas.Network.Data;
 using Aragas.Network.IO;
 using Aragas.Network.Packets;
 
-using PCLExt.Network;
 
 using PokeD.Core.Data.PokeD;
 using PokeD.Core.Packets.PokeD;
@@ -103,7 +103,7 @@ namespace PokeD.Server.Clients.PokeD
         // -- Debug -- //
 #endif
 
-        public PokeDPlayer(ITCPClient clientWrapper, ModulePokeD module) : base(module) { Stream = new ProtobufTransmission<PokeDPacket>(clientWrapper, typeof(PokeDPacketTypes)); }
+        public PokeDPlayer(Socket socket, ModulePokeD module) : base(module) { Stream = new ProtobufTransmission<PokeDPacket>(socket, typeof(PokeDPacketTypes)); }
 
 
         public override void Update()

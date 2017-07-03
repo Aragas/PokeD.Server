@@ -49,7 +49,7 @@ namespace PokeD.Server
             ConfigType = configType;
 
             Logger.Log(LogType.Debug, $"Adding basic services to Server...");
-            Services.AddService(new SecurityService(this, ConfigType));
+            //Services.AddService(new SecurityService(this, ConfigType));
             Services.AddService(new DatabaseService(this, ConfigType));
             Services.AddService(new WorldService(this, ConfigType));
             Services.AddService(new ChatChannelManagerService(this, ConfigType));

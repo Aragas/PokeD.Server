@@ -1,20 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Text;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
+
 using Aragas.Network.Data;
 using Aragas.Network.Extensions;
 using Aragas.Network.Packets;
 
 using PCLExt.Config;
-using PCLExt.Network;
 using PCLExt.FileStorage;
 using PCLExt.FileStorage.Extensions;
+
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Data.PokeD;
-using PokeD.Core.Extensions;
 using PokeD.Core.Packets.PokeD.Authorization;
 using PokeD.Core.Packets.PokeD.Chat;
 using PokeD.Core.Packets.PokeD.Overworld.Map;
@@ -53,7 +53,7 @@ namespace PokeD.Server.Modules
 
         bool IsDisposing { get; set; }
 
-        ITCPListener Listener { get; set; }
+        TcpListener Listener { get; set; }
 
         List<PokeDPlayer> Clients { get; } = new List<PokeDPlayer>();
         List<PokeDPlayer> PlayersJoining { get; } = new List<PokeDPlayer>();
@@ -72,7 +72,7 @@ namespace PokeD.Server.Modules
 
             Logger.Log(LogType.Debug, $"Starting {ComponentName}.");
 
-            Listener = SocketServer.CreateTCP(Port);
+            Listener = new TcpListener(new IPEndPoint(IPAddress.Any, Port));
             Listener.Start();
 
 
@@ -150,9 +150,8 @@ namespace PokeD.Server.Modules
         Stopwatch UpdateWatch = Stopwatch.StartNew();
         public override void Update()
         {
-            if (Listener != null && Listener.AvailableClients)
-                if (Listener.AvailableClients)
-                    PlayersJoining.Add(new PokeDPlayer(Listener.AcceptTCPClient(), this));
+            if (Listener?.Pending() == true)
+                PlayersJoining.Add(new PokeDPlayer(Listener.AcceptSocket(), this));
 
             #region Player Filtration
 

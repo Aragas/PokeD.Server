@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 
 using Aragas.Network.Data;
 
 using PCLExt.Config;
-using PCLExt.Network;
 
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Services;
@@ -33,7 +34,7 @@ namespace PokeD.Server
 
         bool IsDisposing { get; set; }
 
-        ITCPListener Listener { get; set; }
+        TcpListener Listener { get; set; }
 
         [ConfigIgnore]
         public override bool ClientsVisible { get; } = false;
@@ -54,7 +55,7 @@ namespace PokeD.Server
 
             Logger.Log(LogType.Debug, $"Starting {ComponentName}.");
 
-            Listener = SocketServer.CreateTCP(Port);
+            Listener = new TcpListener(new IPEndPoint(IPAddress.Any, Port));
             Listener.Start();
 
 
@@ -98,9 +99,8 @@ namespace PokeD.Server
 
         public override void Update()
         {
-            if (Listener != null && Listener.AvailableClients)
-                if (Listener.AvailableClients)
-                    PlayersJoining.Add(new SCONClient(Listener.AcceptTCPClient(), this));
+            if (Listener?.Pending() == true)
+                PlayersJoining.Add(new SCONClient(Listener.AcceptSocket(), this));
 
             #region Player Filtration
 

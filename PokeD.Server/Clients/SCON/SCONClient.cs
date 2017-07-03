@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Net.Sockets;
 
 using Aragas.Network.Data;
 using Aragas.Network.IO;
 using Aragas.Network.Packets;
-
-using PCLExt.Network;
 
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.SCON;
@@ -63,9 +62,9 @@ namespace PokeD.Server.Clients.SCON
         // -- Debug -- //
 #endif
 
-        public SCONClient(ITCPClient clientWrapper, ModuleSCON module) : base(module)
+        public SCONClient(Socket socket, ModuleSCON module) : base(module)
         {
-            Stream = new ProtobufTransmission<SCONPacket>(clientWrapper, typeof(SCONPacketTypes));
+            Stream = new ProtobufTransmission<SCONPacket>(socket, typeof(SCONPacketTypes));
 
             AuthorizationStatus = (EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0);
         }
