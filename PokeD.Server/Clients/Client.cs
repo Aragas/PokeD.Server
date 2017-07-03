@@ -48,7 +48,11 @@ namespace PokeD.Server.Clients
         }
 
         protected void Join() => Ready?.Invoke(this, EventArgs.Empty);
-        protected void Leave() => Disconnected?.Invoke(this, EventArgs.Empty);
+        protected void Leave()
+        {
+            try { UpdateToken.Cancel(); } catch { }
+            Disconnected?.Invoke(this, EventArgs.Empty);
+        }
 
         public virtual bool RegisterOrLogIn(string passwordHash)
         {
