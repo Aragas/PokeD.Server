@@ -50,13 +50,13 @@ namespace PokeD.Server.Data
         /// <summary>
         /// Initializes a new instance of the <see cref="ReaderWriterLockList{T}"/> class.
         /// </summary>
-        public ReaderWriterLockList() { list = new List<T>(); }
+        public ReaderWriterLockList() => list = new List<T>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ReaderWriterLockList{T}"/> class.
         /// </summary>
         /// <param name="collection">The collection.</param>
-        public ReaderWriterLockList(IEnumerable<T> collection) { list = new List<T>(collection); }
+        public ReaderWriterLockList(IEnumerable<T> collection) => list = new List<T>(collection);
 
         /// <summary>
         /// Returns an enumerator that iterates through the collection.

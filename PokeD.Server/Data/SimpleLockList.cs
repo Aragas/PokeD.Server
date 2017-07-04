@@ -39,24 +39,18 @@ namespace PokeD.Server.Data
         /// </summary>
         /// <value><c>true</c> if this instance is read only; otherwise, <c>false</c>.</value>
         /// <remarks>This collection is always read-only.</remarks>
-        public bool IsReadOnly { get { return true; } }
+        public bool IsReadOnly => true;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SimpleLockList{T}" /> class.
         /// </summary>
-        public SimpleLockList()
-        {
-            list = new List<T>();
-        }
+        public SimpleLockList() => list = new List<T>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SimpleLockList{T}" /> class.
         /// </summary>
         /// <param name="collection">The collection.</param>
-        public SimpleLockList(IEnumerable<T> collection)
-        {
-            list = new List<T>(collection);
-        }
+        public SimpleLockList(IEnumerable<T> collection) => list = new List<T>(collection);
 
         /// <summary>
         /// Returns an enumerator that iterates through the collection.

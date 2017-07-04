@@ -71,13 +71,13 @@ namespace PokeD.Server.Clients.P3D
 
         #endregion Values
 
-        P3DTransmission Stream { get; }
+        private P3DTransmission Stream { get; }
 
 
 #if DEBUG
         // -- Debug -- //
-        List<P3DPacket> Received { get; } =  new List<P3DPacket>();
-        List<P3DPacket> Sended { get; } = new List<P3DPacket>();
+        private List<P3DPacket> Received { get; } =  new List<P3DPacket>();
+        private List<P3DPacket> Sended { get; } = new List<P3DPacket>();
         // -- Debug -- //
 #endif
         public P3DPlayer(Socket socket, ModuleP3D module) : base(module) { Stream = new P3DTransmission(socket, typeof(P3DPacketTypes)); }
@@ -106,7 +106,7 @@ namespace PokeD.Server.Clients.P3D
 
         private void HandlePacket(P3DPacket packet)
         {
-            switch ((P3DPacketTypes) (int) packet.ID)
+            switch ((P3DPacketTypes) packet.ID)
             {
                 case P3DPacketTypes.GameData:
                     HandleGameData((GameDataPacket) packet);
