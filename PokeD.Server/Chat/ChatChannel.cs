@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 
 using PokeD.Server.Clients;
+using PokeD.Server.Data;
 
 namespace PokeD.Server.Chat
 {
@@ -10,7 +11,7 @@ namespace PokeD.Server.Chat
         private static readonly Dictionary<Client, ChatChannel> _subscription = new Dictionary<Client, ChatChannel>();
         public static Dictionary<Client, ChatChannel> Subscription { get { lock(_dictionaryLock) { return _subscription; } } }
 
-        public List<Client> Subscribers { get; } = new List<Client>();
+        public ReaderWriterLockList<Client> Subscribers { get; } = new ReaderWriterLockList<Client>();
         public List<ChatMessage> History { get; } = new List<ChatMessage>();
 
         public abstract string Name { get; }
@@ -24,8 +25,8 @@ namespace PokeD.Server.Chat
 
             History.Add(chatMessage);
 
-            foreach (var subscriber in Subscribers)
-                subscriber.SendChatMessage(new ChatChannelMessage(this, chatMessage));
+            for (var i = Subscribers.Count - 1; i >= 0; i--)
+                Subscribers[i].SendChatMessage(new ChatChannelMessage(this, chatMessage));
 
             return true;
         }
