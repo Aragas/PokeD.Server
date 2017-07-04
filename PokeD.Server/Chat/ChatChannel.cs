@@ -25,7 +25,7 @@ namespace PokeD.Server.Chat
             History.Add(chatMessage);
 
             for (var i = Subscribers.Count - 1; i >= 0; i--)
-                Subscribers[i].SendChatMessage(new ChatChannelMessage(this, chatMessage));
+                Subscribers[i]?.SendChatMessage(new ChatChannelMessage(this, chatMessage));
 
             return true;
         }
