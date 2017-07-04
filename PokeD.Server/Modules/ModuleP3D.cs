@@ -62,6 +62,7 @@ namespace PokeD.Server.Modules
 
         private bool IsDisposing { get; set; }
 
+        private ReaderWriterLockList<P3DPlayer> JoiningClients { get; } = new ReaderWriterLockList<P3DPlayer>();
         private ReaderWriterLockList<P3DPlayer> Clients { get; } = new ReaderWriterLockList<P3DPlayer>();
 
 
@@ -130,11 +131,14 @@ namespace PokeD.Server.Modules
 
             Listener?.Stop();
 
-            List<P3DPlayer> clientsToKick = Clients.ToList();
-            for (var i = 0; i < clientsToKick.Count; i++)
-                clientsToKick[i]?.SendKick("Server is closing!");
-
+            for (var i = 0; i < Clients.Count; i++)
+                Clients[i]?.SendKick("Server is closing!");
             Clients.Clear();
+
+            for (var i = 0; i < JoiningClients.Count; i++)
+                JoiningClients[i]?.SendKick("Server is closing!");
+            JoiningClients.Clear();
+
             NearPlayers.Clear();
 
 
@@ -143,6 +147,11 @@ namespace PokeD.Server.Modules
        
         private void ModuleManager_ClientJoined(object sender, ClientJoinedEventArgs eventArgs)
         {
+            var player = eventArgs.Client as P3DPlayer;
+            JoiningClients.Remove(player);
+            Clients.Add(player);
+
+
             SendPacketToAll(new CreatePlayerPacket { Origin = -1, PlayerID = eventArgs.Client.ID });
             var packet = eventArgs.Client.GetDataPacket();
             packet.Origin = eventArgs.Client.ID;
@@ -164,7 +173,7 @@ namespace PokeD.Server.Modules
                 client.Ready += OnClientReady;
                 client.Disconnected += OnClientLeave;
                 client.StartListening();
-                Clients.Add(client);
+                JoiningClients.Add(client);
             }
         }
         
