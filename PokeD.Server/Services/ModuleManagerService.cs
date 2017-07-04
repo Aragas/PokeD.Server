@@ -237,7 +237,7 @@ namespace PokeD.Server.Services
 
         public IReadOnlyList<IServerModuleBaseSettings> GetModuleSettings() => Modules;
 
-        public IEnumerable<Client> GetAllClients() => Modules.Where(module => module.ClientsVisible).SelectMany(module => module.GetClients().Where(client => !client.Permissions.HasFlag(PermissionFlags.UnVerified)));
+        public IReadOnlyList<Client> GetAllClients() => Modules.Where(module => module.ClientsVisible).SelectMany(module => module.GetClients().Where(client => !client.Permissions.HasFlag(PermissionFlags.UnVerified))).ToList();
         public Client GetClient(int id) => GetAllClients().FirstOrDefault(client => client.ID == id);
         public Client GetClient(string name) => GetAllClients().FirstOrDefault(client => client.Name == name || client.Nickname == name);
         public int GetClientID(string name) => GetClient(name)?.ID ?? -1;
