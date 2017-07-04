@@ -20,6 +20,7 @@ namespace PokeD.Server.Services
     {
         protected override IConfigFile ServiceConfigFile => new DatabaseComponentConfigFile(ConfigType);
 
+        private readonly object _lock = new object();
         private SQLiteConnection Database { get; set; }
 
         #region Settings
@@ -30,14 +31,53 @@ namespace PokeD.Server.Services
 
         public DatabaseService(IServiceContainer services, ConfigType configType) : base(services, configType) { }
 
-        public T DatabaseFind<T>(Expression<Func<T, bool>> exp) where T : IDatabaseTable, new() => Database.Find(exp);
-        public bool DatabaseFind<T>(object primaryKey) where T : IDatabaseTable, new() => Database.Find<T>(primaryKey) != null;
-        public T DatabaseGet<T>(object primaryKey) where T : IDatabaseTable, new() => Database.Find<T>(primaryKey); // -- Find can return null, Get will throw exception if not found
-        public void DatabaseSet<T>(T obj) where T : IDatabaseTable, new() => Database.Insert(obj); // -- If using Auto Incremental ID, it will be updated.
-        public void DatabaseUpdate<T>(T obj) where T : IDatabaseTable, new() => Database.Update(obj);
-        public void DatabaseRemove<T>(T obj) where T : IDatabaseTable, new() => Database.Delete(obj);
-        public void DatabaseRemove<T>(object primaryKey) where T : IDatabaseTable, new() => Database.Delete<T>(primaryKey);
-        public IEnumerable<T> DatabaseGetAll<T>() where T : IDatabaseTable, new() => Database.Table<T>();
+        public T DatabaseFind<T>(Expression<Func<T, bool>> exp) where T : IDatabaseTable, new()
+        {
+            lock (_lock)
+                return Database.Find(exp);
+        }
+
+        public bool DatabaseFind<T>(object primaryKey) where T : IDatabaseTable, new()
+        {
+            lock (_lock)
+                return Database.Find<T>(primaryKey) != null;
+        }
+
+        public T DatabaseGet<T>(object primaryKey) where T : IDatabaseTable, new()
+        {
+            lock (_lock)
+                return Database.Find<T>(primaryKey);
+        }
+
+        public void DatabaseSet<T>(T obj) where T : IDatabaseTable, new()
+        {
+            lock (_lock)
+                Database.Insert(obj);
+        }
+
+        public void DatabaseUpdate<T>(T obj) where T : IDatabaseTable, new()
+        {
+            lock (_lock)
+                Database.Update(obj);
+        }
+
+        public void DatabaseRemove<T>(T obj) where T : IDatabaseTable, new()
+        {
+            lock (_lock)
+                Database.Delete(obj);
+        }
+
+        public void DatabaseRemove<T>(object primaryKey) where T : IDatabaseTable, new()
+        {
+            lock (_lock)
+                Database.Delete<T>(primaryKey);
+        }
+
+        public IEnumerable<T> DatabaseGetAll<T>() where T : IDatabaseTable, new()
+        {
+            lock (_lock)
+                return Database.Table<T>();
+        }
 
 
         public override bool Start()

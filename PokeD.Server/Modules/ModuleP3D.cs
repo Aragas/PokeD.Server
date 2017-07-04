@@ -401,7 +401,7 @@ namespace PokeD.Server.Modules
             for (var i = Clients.Count - 1; i >= 0; i--)
             {
                 var client = Clients[i];
-                if (client != player && client.IsGameJoltPlayer && player.GameJoltID == client.GameJoltID)
+                if (client != null && client != player && client.IsGameJoltPlayer && player.GameJoltID == client.GameJoltID)
                     return true;
             }
 

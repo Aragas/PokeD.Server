@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 using PokeD.Server.Clients;
 using PokeD.Server.Data;
@@ -7,9 +8,7 @@ namespace PokeD.Server.Chat
 {
     public abstract class ChatChannel
     {
-        private static readonly object _dictionaryLock = new object();
-        private static readonly Dictionary<Client, ChatChannel> _subscription = new Dictionary<Client, ChatChannel>();
-        public static Dictionary<Client, ChatChannel> Subscription { get { lock(_dictionaryLock) { return _subscription; } } }
+        protected static ConcurrentDictionary<Client, ChatChannel> Subscription { get; } = new ConcurrentDictionary<Client, ChatChannel>();
 
         public ReaderWriterLockList<Client> Subscribers { get; } = new ReaderWriterLockList<Client>();
         public List<ChatMessage> History { get; } = new List<ChatMessage>();
@@ -20,7 +19,7 @@ namespace PokeD.Server.Chat
 
         public virtual bool MessageSend(ChatMessage chatMessage)
         {
-            if (!Subscription.ContainsKey(chatMessage.Sender) || Subscription[chatMessage.Sender] != this)
+            if (!Subscription.TryGetValue(chatMessage.Sender, out _))
                 return false;
 
             History.Add(chatMessage);
@@ -33,8 +32,8 @@ namespace PokeD.Server.Chat
 
         public virtual bool Subscribe(Client client)
         {
-            if (Subscription.ContainsKey(client) && Subscription[client] != null)
-                Subscription[client].UnSubscribe(client);
+            if (Subscription.TryGetValue(client, out var chatChannel))
+                chatChannel.UnSubscribe(client);
             
             if (!Subscribers.Contains(client))
             {
@@ -47,7 +46,7 @@ namespace PokeD.Server.Chat
         }
         public virtual bool UnSubscribe(Client client)
         {
-            if (!Subscription.ContainsKey(client) ||  Subscription[client] != this)
+            if (!Subscription.TryGetValue(client, out _))
                 return false;
 
             if (Subscribers.Contains(client))
@@ -56,8 +55,7 @@ namespace PokeD.Server.Chat
                 Subscription[client] = null;
                 return true;
             }
-
-
+            
             return false;
         }
     }

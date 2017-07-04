@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -236,6 +237,10 @@ namespace PokeD.Server.Data
                 {
                     return list[index];
                 }
+                catch (ArgumentOutOfRangeException)
+                {
+                    return default(T);
+                }
                 finally
                 {
                     locker.ExitReadLock();
@@ -247,6 +252,10 @@ namespace PokeD.Server.Data
                 try
                 {
                     list[index] = value;
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    return;
                 }
                 finally
                 {
