@@ -145,45 +145,4 @@ namespace PokeD.Server.Clients
 
         protected Client(TServerModule serverModule) : base(serverModule) { Module = serverModule; }
     }
-
-    /*
-    public abstract class Client<TServerModule> : Client where TServerModule : ServerModule
-    {
-        protected TServerModule Module { get; }
-
-        protected Client(TServerModule serverModule) {  Module = serverModule; }
-
-        public override bool RegisterOrLogIn(string passwordHash)
-        {
-            ClientTable table;
-            if ((table = Module.ComponentManager.GetComponent<DatabaseComponent>().DatabaseGet<ClientTable>(ID)) != null)
-            {
-                if (table.PasswordHash == null)
-                {
-                    PasswordHash = passwordHash;
-                    Save(true);
-                    return true;
-                }
-
-                return table.PasswordHash == passwordHash;
-            }
-            return false;
-        }
-
-        private Stopwatch UpdateWatches { get; } = Stopwatch.StartNew();
-        public sealed override void Save(bool force = false)
-        {
-            if (ID == 0)
-                return;
-            
-            if (force || UpdateWatches.ElapsedMilliseconds >= 2000)
-            {
-                Module.ComponentManager.GetComponent<DatabaseComponent>().DatabaseUpdate(new ClientTable(this));
-
-                UpdateWatches.Reset();
-                UpdateWatches.Start();
-            }
-        }
-    }
-    */
 }
