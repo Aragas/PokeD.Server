@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
+
 using Aragas.Network.Data;
 using Aragas.Network.Packets;
 
@@ -32,10 +33,11 @@ namespace PokeD.Server.Clients
         public abstract string IP { get; }
         public abstract DateTime ConnectionTime { get; }
         public abstract CultureInfo Language { get; }
-        
-        protected CancellationTokenSource UpdateToken { get; set; }
-        protected ManualResetEventSlim ConnectionLock { get; } = new ManualResetEventSlim(false);
 
+        protected CancellationTokenSource UpdateToken { get; set; }
+        protected ManualResetEventSlim UpdateLock { get; } = new ManualResetEventSlim(false);
+        
+        protected ManualResetEventSlim ConnectionLock { get; } = new ManualResetEventSlim(true); // Will cause deadlock if false. See Leave();
 
         private ServerModule Module { get; }
 
@@ -45,16 +47,26 @@ namespace PokeD.Server.Clients
 
         public void StartListening()
         {
-            UpdateToken = new CancellationTokenSource();
-            new Thread(Update).Start();
+            if (!UpdateLock.IsSet)
+            {
+                UpdateToken = new CancellationTokenSource();
+                new Thread(Update).Start();
+            }
+            else
+                throw new Exception("UpdateThread is already running!");
         }
 
         protected void Join() => Ready?.Invoke(this, EventArgs.Empty);
         protected void Leave()
         {
-            ConnectionLock?.Wait(); // this should ensure we will send every packet enqueued at the moment of calling Leave()
+            ConnectionLock.Wait(); // this should ensure we will send every packet enqueued at the moment of calling Leave()
 
-            try { UpdateToken.Cancel(); } catch { }
+            if (UpdateToken?.IsCancellationRequested == false)
+            {
+                UpdateToken.Cancel();
+                UpdateLock.Wait();
+            }
+
             Disconnected?.Invoke(this, EventArgs.Empty);
         }
 
@@ -131,10 +143,13 @@ namespace PokeD.Server.Clients
 
         public virtual void Dispose()
         {
-            if(UpdateToken?.IsCancellationRequested == false)
-                UpdateToken?.Cancel();
-            // replace with ManualResetEventSlim with timeout to wait until thread is finished
+            if (UpdateToken?.IsCancellationRequested == false)
+            {
+                UpdateToken.Cancel();
+                UpdateLock.Wait();
+            }
 
+            UpdateLock.Dispose();
             ConnectionLock.Dispose();
         }
     }

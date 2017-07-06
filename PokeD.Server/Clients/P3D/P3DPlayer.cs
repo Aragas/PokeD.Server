@@ -87,35 +87,43 @@ namespace PokeD.Server.Clients.P3D
 
         public override void Update()
         {
-            while (!UpdateToken.IsCancellationRequested && Stream.IsConnected)
+            UpdateLock.Reset(); // Signal that the UpdateThread is alive
+            try
             {
-                ConnectionLock?.Reset(); // Do not allow disconnecting while processing
-                try
+                while (!UpdateToken.IsCancellationRequested && Stream.IsConnected)
                 {
-                    while (Stream.TryReadPacket(out var packetToReceive))
+                    ConnectionLock.Reset(); // Do not allow disconnecting while processing
+                    try
                     {
-                        HandlePacket(packetToReceive);
+                        while (Stream.TryReadPacket(out var packetToReceive))
+                        {
+                            HandlePacket(packetToReceive);
 
 #if DEBUG
-                        Received.Add(packetToReceive);
+                            Received.Add(packetToReceive);
 #endif
-                    }
+                        }
 
-                    while (PacketsToSend.TryDequeue(out var packetToSend))
-                    {
-                        Stream.SendPacket(packetToSend);
+                        while (PacketsToSend.TryDequeue(out var packetToSend))
+                        {
+                            Stream.SendPacket(packetToSend);
 
 #if DEBUG
-                        Sended.Add(packetToSend);
+                            Sended.Add(packetToSend);
 #endif
+                        }
                     }
+                    finally
+                    {
+                        ConnectionLock.Set(); // Disconnecting is now allowed
+                    }
+
+                    Thread.Sleep(100); // 100 calls per second should not be too often?
                 }
-                finally
-                {
-                    ConnectionLock?.Set(); // Disconnecting is now allowed
-                }
-                
-                Thread.Sleep(100); // 100 calls per second should not be too often?
+            }
+            finally
+            {
+                UpdateLock.Set(); // Signal that the UpdateThread have finished it's work
             }
         }
 
