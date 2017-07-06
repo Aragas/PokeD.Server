@@ -131,13 +131,13 @@ namespace PokeD.Server.Modules
 
             Listener?.Stop();
 
-            for (var i = 0; i < Clients.Count; i++)
-                Clients[i]?.SendKick("Server is closing!");
-            Clients.Clear();
-
             for (var i = 0; i < JoiningClients.Count; i++)
                 JoiningClients[i]?.SendKick("Server is closing!");
             JoiningClients.Clear();
+
+            for (var i = 0; i < Clients.Count; i++)
+                Clients[i]?.SendKick("Server is closing!");
+            Clients.Clear();
 
             NearPlayers.Clear();
 
@@ -169,11 +169,15 @@ namespace PokeD.Server.Modules
         {
             while (!IsDisposing && !ListenerToken.IsCancellationRequested)
             {
-                var client = new P3DPlayer(Listener.AcceptSocket(), this);
-                client.Ready += OnClientReady;
-                client.Disconnected += OnClientLeave;
-                client.StartListening();
-                JoiningClients.Add(client);
+                try
+                {
+                    var client = new P3DPlayer(Listener.AcceptSocket(), this);
+                    client.Ready += OnClientReady;
+                    client.Disconnected += OnClientLeave;
+                    client.StartListening();
+                    JoiningClients.Add(client);
+                }
+                catch (SocketException) { }
             }
         }
         
