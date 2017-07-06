@@ -146,6 +146,7 @@ namespace PokeD.Server.Data
             {
                 list.CopyTo(array, arrayIndex);
             }
+            catch(ArgumentException) { }
             finally
             {
                 locker.ExitReadLock();
@@ -217,6 +218,7 @@ namespace PokeD.Server.Data
             {
                 list.RemoveAt(index);
             }
+            catch (ArgumentOutOfRangeException) { }
             finally
             {
                 locker.ExitWriteLock();
