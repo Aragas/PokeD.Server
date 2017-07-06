@@ -89,25 +89,31 @@ namespace PokeD.Server.Clients.P3D
         {
             while (!UpdateToken.IsCancellationRequested && Stream.IsConnected)
             {
-                ConnectionLock.Reset();
-                while (Stream.TryReadPacket(out var packetToReceive))
+                ConnectionLock.Reset(); // Do not allow disconnecting while processing
+                try
                 {
-                    HandlePacket(packetToReceive);
+                    while (Stream.TryReadPacket(out var packetToReceive))
+                    {
+                        HandlePacket(packetToReceive);
 
 #if DEBUG
-                    Received.Add(packetToReceive);
+                        Received.Add(packetToReceive);
 #endif
-                }
+                    }
 
-                while (PacketsToSend.TryDequeue(out var packetToSend))
-                {
-                    Stream.SendPacket(packetToSend);
+                    while (PacketsToSend.TryDequeue(out var packetToSend))
+                    {
+                        Stream.SendPacket(packetToSend);
 
 #if DEBUG
-                    Sended.Add(packetToSend);
+                        Sended.Add(packetToSend);
 #endif
+                    }
                 }
-                ConnectionLock.Set();
+                finally
+                {
+                    ConnectionLock.Set(); // Disconnecting is now allowed
+                }
                 
                 Thread.Sleep(100); // 100 calls per second should not be too often?
             }
