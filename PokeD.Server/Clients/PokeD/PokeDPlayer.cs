@@ -273,6 +273,8 @@ namespace PokeD.Server.Clients.PokeD
         {
             Stream.Disconnect();
             Stream.Dispose();
+
+            base.Dispose();
         }
 
 

@@ -232,7 +232,7 @@ namespace PokeD.Server.Modules
 
 
 
-                if (watch.ElapsedMilliseconds < 5)
+                if (watch.ElapsedMilliseconds < 10)
                 {
                     PlayerCorrectionThreadTime = watch.ElapsedMilliseconds;
 

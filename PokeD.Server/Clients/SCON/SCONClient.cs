@@ -203,6 +203,8 @@ namespace PokeD.Server.Clients.SCON
         {
             Stream.Disconnect();
             Stream.Dispose();
+
+            base.Dispose();
         }
     }
 }

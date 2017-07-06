@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net.Sockets;
+using System.Threading;
 
 using Aragas.Network.Data;
 using Aragas.Network.Packets;
@@ -73,6 +75,7 @@ namespace PokeD.Server.Clients.P3D
 
         private P3DTransmission Stream { get; }
 
+        private ConcurrentQueue<P3DPacket> PacketsToSend { get; } = new ConcurrentQueue<P3DPacket>();
 
 #if DEBUG
         // -- Debug -- //
@@ -84,24 +87,30 @@ namespace PokeD.Server.Clients.P3D
 
         public override void Update()
         {
-            while (!UpdateToken.IsCancellationRequested)
+            while (!UpdateToken.IsCancellationRequested && Stream.IsConnected)
             {
-                if (Stream.IsConnected)
+                ConnectionLock.Reset();
+                while (Stream.TryReadPacket(out var packetToReceive))
                 {
-                    if (Stream.TryReadPacket(out var packet))
-                    {
-                        HandlePacket(packet);
+                    HandlePacket(packetToReceive);
 
 #if DEBUG
-                        Received.Add(packet);
+                    Received.Add(packetToReceive);
 #endif
-                    }
                 }
-                else
-                    break;
-            }
 
-            Leave();
+                while (PacketsToSend.TryDequeue(out var packetToSend))
+                {
+                    Stream.SendPacket(packetToSend);
+
+#if DEBUG
+                    Sended.Add(packetToSend);
+#endif
+                }
+                ConnectionLock.Set();
+                
+                Thread.Sleep(100); // 100 calls per second should not be too often?
+            }
         }
 
         private void HandlePacket(P3DPacket packet)
@@ -206,11 +215,7 @@ namespace PokeD.Server.Clients.P3D
             if(p3dPacket == null)
                 throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
 
-            Stream.SendPacket(p3dPacket);
-
-#if DEBUG
-            Sended.Add(p3dPacket);
-#endif
+            PacketsToSend.Enqueue(p3dPacket);
         }
         public override void SendChatMessage(ChatChannelMessage chatMessage) { SendPacket(new ChatMessageGlobalPacket { Origin = chatMessage.ChatMessage.Sender.ID, Message = chatMessage.ChatMessage.Message }); }
         public override void SendServerMessage(string text) { SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = text }); }
@@ -237,7 +242,7 @@ namespace PokeD.Server.Clients.P3D
             PasswordHash = data.PasswordHash;
         }
 
-
+        
         private void Initialize()
         {
             if (!IsInitialized)
@@ -279,6 +284,8 @@ namespace PokeD.Server.Clients.P3D
         {
             Stream.Disconnect();
             Stream.Dispose();
+            
+            base.Dispose();
         }
     }
 }

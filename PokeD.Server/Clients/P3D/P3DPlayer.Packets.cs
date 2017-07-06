@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-
+using System.Threading;
 using Aragas.Network.Data;
 
 using PokeD.Core.Data.P3D;
@@ -301,7 +301,7 @@ namespace PokeD.Server.Clients.P3D
             };
             SendPacket(spacket);
 
-            Leave();
+            ThreadPool.QueueUserWorkItem(obj => Leave()); // We can't leave
         }
     }
 }

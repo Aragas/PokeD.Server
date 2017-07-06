@@ -34,6 +34,8 @@ namespace PokeD.Server.Clients
         public abstract CultureInfo Language { get; }
         
         protected CancellationTokenSource UpdateToken { get; set; }
+        protected ManualResetEventSlim ConnectionLock { get; } = new ManualResetEventSlim(false);
+
 
         private ServerModule Module { get; }
 
@@ -50,6 +52,8 @@ namespace PokeD.Server.Clients
         protected void Join() => Ready?.Invoke(this, EventArgs.Empty);
         protected void Leave()
         {
+            ConnectionLock.Wait(); // this should ensure we will send every packet enqueued at the moment of calling Leave()
+
             try { UpdateToken.Cancel(); } catch { }
             Disconnected?.Invoke(this, EventArgs.Empty);
         }
@@ -124,7 +128,14 @@ namespace PokeD.Server.Clients
         }
 
         public abstract void Update();
-        public abstract void Dispose();
+
+        public virtual void Dispose()
+        {
+            ConnectionLock.Dispose();
+
+            if(UpdateToken?.IsCancellationRequested == false)
+                UpdateToken?.Cancel();
+        }
     }
 
     public abstract class Client<TServerModule> : Client where TServerModule : ServerModule
