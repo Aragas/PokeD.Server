@@ -18,7 +18,6 @@ using PokeD.Core.Packets.P3D.Trade;
 using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.P3D;
-using PokeD.Server.Data;
 using PokeD.Server.Database;
 using PokeD.Server.Services;
 using PokeD.Server.Storage.Files;
@@ -62,10 +61,9 @@ namespace PokeD.Server.Modules
 
         private bool IsDisposing { get; set; }
 
-        private ReaderWriterLockList<P3DPlayer> JoiningClients { get; } = new ReaderWriterLockList<P3DPlayer>();
-        private ReaderWriterLockList<P3DPlayer> Clients { get; } = new ReaderWriterLockList<P3DPlayer>();
-
-
+        private List<P3DPlayer> JoiningClients { get; } = new List<P3DPlayer>();
+        private List<P3DPlayer> Clients { get; } = new List<P3DPlayer>();
+        
         public ModuleP3D(IServiceContainer services, ConfigType configType) : base(services, configType) { }
 
         public override bool Start()
@@ -131,13 +129,19 @@ namespace PokeD.Server.Modules
 
             Listener?.Stop();
 
-            for (var i = 0; i < JoiningClients.Count; i++)
-                JoiningClients[i]?.SendKick("Server is closing!");
-            JoiningClients.Clear();
+            lock (JoiningClients)
+            {
+                for (var i = 0; i < JoiningClients.Count; i++)
+                    JoiningClients[i]?.SendKick("Server is closing!");
+                JoiningClients.Clear();
+            }
 
-            for (var i = 0; i < Clients.Count; i++)
-                Clients[i]?.SendKick("Server is closing!");
-            Clients.Clear();
+            lock (Clients)
+            {
+                for (var i = 0; i < Clients.Count; i++)
+                    Clients[i]?.SendKick("Server is closing!");
+                Clients.Clear();
+            }
 
             NearPlayers.Clear();
 
@@ -148,8 +152,12 @@ namespace PokeD.Server.Modules
         private void ModuleManager_ClientJoined(object sender, ClientJoinedEventArgs eventArgs)
         {
             var player = eventArgs.Client as P3DPlayer;
-            JoiningClients.Remove(player);
-            Clients.Add(player);
+
+            lock (JoiningClients)
+                JoiningClients.Remove(player);
+
+            lock (Clients)
+                Clients.Add(player);
 
 
             SendPacketToAll(new CreatePlayerPacket { Origin = -1, PlayerID = eventArgs.Client.ID });
@@ -175,7 +183,9 @@ namespace PokeD.Server.Modules
                     client.Ready += OnClientReady;
                     client.Disconnected += OnClientLeave;
                     client.StartListening();
-                    JoiningClients.Add(client);
+                    
+                    lock (JoiningClients)
+                        JoiningClients.Add(client);
                 }
                 catch (SocketException) { }
             }
@@ -188,7 +198,9 @@ namespace PokeD.Server.Modules
             var watch = Stopwatch.StartNew();
             while (!IsDisposing && !PlayerWatcherToken.IsCancellationRequested)
             {
-                var players = new List<P3DPlayer>(Clients);
+                List<P3DPlayer> players;
+                lock (Clients)
+                    players = new List<P3DPlayer>(Clients);
 
                 foreach (var player in players.Where(player => player.LevelFile != null && !NearPlayers.ContainsKey(player.LevelFile)))
                     NearPlayers.TryAdd(player.LevelFile, null);
@@ -250,7 +262,11 @@ namespace PokeD.Server.Modules
         }
 
 
-        public override IReadOnlyList<Client> GetClients() => Clients.ToList();
+        public override IReadOnlyList<Client> GetClients()
+        {
+            lock (Clients)
+                return new List<Client>(Clients);
+        }
 
         protected override void OnClientReady(object sender, EventArgs eventArgs)
         {
@@ -294,7 +310,8 @@ namespace PokeD.Server.Modules
         {
             var client = sender as P3DPlayer;
 
-            Clients.Remove(client);
+            lock (Clients)
+                Clients.Remove(client);
 
             if (client.ID > 0)
                 base.OnClientLeave(sender, eventArgs);
@@ -321,8 +338,11 @@ namespace PokeD.Server.Modules
 
         public void SendPacketToAll(Packet packet)
         {
-            for (var i = Clients.Count - 1; i >= 0; i--)
-                Clients[i]?.SendPacket(packet);
+            lock (Clients)
+            {
+                for (var i = Clients.Count - 1; i >= 0; i--)
+                    Clients[i]?.SendPacket(packet);
+            }
         }
 
         public override void OnTradeRequest(Client sender, DataItems monster, Client destClient)
@@ -402,15 +422,15 @@ namespace PokeD.Server.Modules
             if (!player.IsGameJoltPlayer)
                 return false;
 
-            for (var i = Clients.Count - 1; i >= 0; i--)
+            lock (Clients)
             {
-                var client = Clients[i];
-                if (client != null && client != player && client.IsGameJoltPlayer && player.GameJoltID == client.GameJoltID)
-                    return true;
+                for (var i = Clients.Count - 1; i >= 0; i--)
+                {
+                    var client = Clients[i];
+                    if (client != null && client != player && client.IsGameJoltPlayer && player.GameJoltID == client.GameJoltID)
+                        return true;
+                }
             }
-
-            //var t0 = Server.DatabaseGetAll<BanTable>().ToList();
-            //var t1 = Server.DatabaseGetAll<ClientTable>().FirstOrDefault(ct => ct.);
 
             return false;
         }

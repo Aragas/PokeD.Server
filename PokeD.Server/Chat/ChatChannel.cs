@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 
 using PokeD.Server.Clients;
-using PokeD.Server.Data;
 
 namespace PokeD.Server.Chat
 {
@@ -10,7 +9,7 @@ namespace PokeD.Server.Chat
     {
         protected static ConcurrentDictionary<Client, ChatChannel> Subscription { get; } = new ConcurrentDictionary<Client, ChatChannel>();
 
-        public ReaderWriterLockList<Client> Subscribers { get; } = new ReaderWriterLockList<Client>();
+        public List<Client> Subscribers { get; } = new List<Client>();
         public List<ChatMessage> History { get; } = new List<ChatMessage>();
 
         public abstract string Name { get; }
@@ -24,8 +23,11 @@ namespace PokeD.Server.Chat
 
             History.Add(chatMessage);
 
-            for (var i = Subscribers.Count - 1; i >= 0; i--)
-                Subscribers[i]?.SendChatMessage(new ChatChannelMessage(this, chatMessage));
+            lock (Subscribers)
+            {
+                for (var i = Subscribers.Count - 1; i >= 0; i--)
+                    Subscribers[i]?.SendChatMessage(new ChatChannelMessage(this, chatMessage));
+            }
 
             return true;
         }
@@ -34,12 +36,15 @@ namespace PokeD.Server.Chat
         {
             if (Subscription.TryGetValue(client, out var chatChannel))
                 chatChannel.UnSubscribe(client);
-            
-            if (!Subscribers.Contains(client))
+
+            lock (Subscribers)
             {
-                Subscribers.Add(client);
-                Subscription[client] = this;
-                return true;
+                if (!Subscribers.Contains(client))
+                {
+                    Subscribers.Add(client);
+                    Subscription[client] = this;
+                    return true;
+                }
             }
 
             return false;
@@ -49,13 +54,16 @@ namespace PokeD.Server.Chat
             if (!Subscription.TryGetValue(client, out _))
                 return false;
 
-            if (Subscribers.Contains(client))
+            lock (Subscribers)
             {
-                Subscribers.Remove(client);
-                Subscription[client] = null;
-                return true;
+                if (Subscribers.Contains(client))
+                {
+                    Subscribers.Remove(client);
+                    Subscription[client] = null;
+                    return true;
+                }
             }
-            
+
             return false;
         }
     }
