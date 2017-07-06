@@ -89,7 +89,7 @@ namespace PokeD.Server.Clients.P3D
         {
             while (!UpdateToken.IsCancellationRequested && Stream.IsConnected)
             {
-                ConnectionLock.Reset(); // Do not allow disconnecting while processing
+                ConnectionLock?.Reset(); // Do not allow disconnecting while processing
                 try
                 {
                     while (Stream.TryReadPacket(out var packetToReceive))
@@ -112,7 +112,7 @@ namespace PokeD.Server.Clients.P3D
                 }
                 finally
                 {
-                    ConnectionLock.Set(); // Disconnecting is now allowed
+                    ConnectionLock?.Set(); // Disconnecting is now allowed
                 }
                 
                 Thread.Sleep(100); // 100 calls per second should not be too often?

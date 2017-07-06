@@ -52,7 +52,7 @@ namespace PokeD.Server.Clients
         protected void Join() => Ready?.Invoke(this, EventArgs.Empty);
         protected void Leave()
         {
-            ConnectionLock.Wait(); // this should ensure we will send every packet enqueued at the moment of calling Leave()
+            ConnectionLock?.Wait(); // this should ensure we will send every packet enqueued at the moment of calling Leave()
 
             try { UpdateToken.Cancel(); } catch { }
             Disconnected?.Invoke(this, EventArgs.Empty);
@@ -131,10 +131,11 @@ namespace PokeD.Server.Clients
 
         public virtual void Dispose()
         {
-            ConnectionLock.Dispose();
-
             if(UpdateToken?.IsCancellationRequested == false)
                 UpdateToken?.Cancel();
+            // replace with ManualResetEventSlim with timeout to wait until thread is finished
+
+            ConnectionLock.Dispose();
         }
     }
 
