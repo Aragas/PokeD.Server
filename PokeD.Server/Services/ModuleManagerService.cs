@@ -9,7 +9,6 @@ using PokeD.Core;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Services;
 using PokeD.Server.Clients;
-using PokeD.Server.Commands;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
 using PokeD.Server.Modules;
@@ -196,8 +195,8 @@ namespace PokeD.Server.Services
             Modules.Add(new ModuleP3D(Services, ConfigType));
             //Modules.Add(new ModulePokeD(this, ConfigType));
 
-            foreach (var module in LoadModules())
-                Modules.Add(module);
+            //foreach (var module in LoadModules())
+            //    Modules.Add(module);
         }    
         private IEnumerable<ServerModule> LoadModules()
         {
@@ -237,11 +236,22 @@ namespace PokeD.Server.Services
 
         public IReadOnlyList<IServerModuleBaseSettings> GetModuleSettings() => Modules;
 
+        public TResult AllClientsSelect<TResult>(Func<IReadOnlyList<Client>, TResult> func) => Modules.Where(module => module.ClientsVisible).Select(module => module.ClientsSelect(func)).FirstOrDefault();
+        public IReadOnlyList<TResult> AllClientsSelect<TResult>(Func<IReadOnlyList<Client>, IReadOnlyList<TResult>> func) => Modules.Where(module => module.ClientsVisible).SelectMany(module => module.ClientsSelect(func)).ToList();
+
+        public Client GetClient(int id) => AllClientsSelect(list => list.Where(client => client.ID == id).ToList()).FirstOrDefault();
+        public Client GetClient(string name) => AllClientsSelect(list => list.Where(client => client.Name == name || client.Nickname == name).ToList()).FirstOrDefault();
+        public int GetClientID(string name) => GetClient(name)?.ID ?? -1;
+        public string GetClientName(int id) => GetClient(id)?.Nickname ?? string.Empty;
+
+        /*
         public IReadOnlyList<Client> GetAllClients() => Modules.Where(module => module.ClientsVisible).SelectMany(module => module.GetClients().Where(client => !client.Permissions.HasFlag(PermissionFlags.UnVerified))).ToList();
+
         public Client GetClient(int id) => GetAllClients().FirstOrDefault(client => client.ID == id);
         public Client GetClient(string name) => GetAllClients().FirstOrDefault(client => client.Name == name || client.Nickname == name);
         public int GetClientID(string name) => GetClient(name)?.ID ?? -1;
         public string GetClientName(int id) => GetClient(id)?.Nickname ?? string.Empty;
+        */
 
         public void SendServerMessage(string message)
         {

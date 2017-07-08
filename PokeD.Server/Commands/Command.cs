@@ -32,7 +32,13 @@ namespace PokeD.Server.Commands
 
             public override void Update() { }
 
+            /*
             public override IReadOnlyList<Client> GetClients() => new List<Client>();
+            */
+            
+            public override void ClientsForeach(Action<IReadOnlyList<Client>> func) { }
+            public override TResult ClientsSelect<TResult>(Func<IReadOnlyList<Client>, TResult> func) => default(TResult);
+            public override IReadOnlyList<TResult> ClientsSelect<TResult>(Func<IReadOnlyList<Client>, IReadOnlyList<TResult>> func) => new List<TResult>();
 
             public override void OnTradeRequest(Client sender, DataItems monster, Client destClient) { }
             public override void OnTradeConfirm(Client sender, Client destClient) { }
@@ -128,7 +134,9 @@ namespace PokeD.Server.Commands
         private IServiceContainer ComponentManager { get; }
         protected WorldService World => ComponentManager.GetService<WorldService>();
 
+        /*
         protected IEnumerable<Client> GetAllClients() => ModuleManager.GetAllClients();
+        */
 
         protected Client GetClient(string name)
         {

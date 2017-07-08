@@ -76,7 +76,25 @@ namespace PokeD.Server
         }
 
         
+        /*
         public override IReadOnlyList<Client> GetClients() => Clients;
+        */
+        
+        public override void ClientsForeach(Action<IReadOnlyList<Client>> action)
+        {
+            lock (Clients)
+                action(Clients);
+        }
+        public override TResult ClientsSelect<TResult>(Func<IReadOnlyList<Client>, TResult> func)
+        {
+            lock (Clients)
+                return func(Clients);
+        }
+        public override IReadOnlyList<TResult> ClientsSelect<TResult>(Func<IReadOnlyList<Client>, IReadOnlyList<TResult>> func)
+        {
+            lock (Clients)
+                return func(Clients);
+        }
 
         protected override void OnClientReady(object sender, EventArgs eventArgs)
         {

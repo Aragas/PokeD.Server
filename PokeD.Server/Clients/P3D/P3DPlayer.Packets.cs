@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
+
 using Aragas.Network.Data;
 
 using PokeD.Core.Data.P3D;
@@ -286,6 +287,7 @@ namespace PokeD.Server.Clients.P3D
 
         private void HandleServerDataRequest(ServerDataRequestPacket packet)
         {
+            /*
             var clients = Module.GetAllClients().ToList();
             var spacket = new ServerInfoDataPacket
             {
@@ -294,6 +296,19 @@ namespace PokeD.Server.Clients.P3D
                 CurrentPlayers = clients.Count(),
                 MaxPlayers = Module.MaxPlayers,
                 PlayerNames = clients.Any() ? clients.Select(client => client.Name).ToArray() : new string[0],
+
+                ServerName = Module.ServerName,
+                ServerMessage = Module.ServerMessage,
+            };
+            */
+            var clientNames = Module.AllClientsSelect(clients => clients.Select(client => client.Name).ToList());
+            var spacket = new ServerInfoDataPacket
+            {
+                Origin = ID,
+
+                CurrentPlayers = clientNames.Count,
+                MaxPlayers = Module.MaxPlayers,
+                PlayerNames = clientNames.Any() ? clientNames.ToArray() : new string[0],
 
                 ServerName = Module.ServerName,
                 ServerMessage = Module.ServerMessage,

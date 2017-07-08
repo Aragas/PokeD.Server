@@ -131,15 +131,15 @@ namespace PokeD.Server.Modules
 
             lock (JoiningClients)
             {
-                for (var i = 0; i < JoiningClients.Count; i++)
-                    JoiningClients[i]?.SendKick("Server is closing!");
+                foreach (var client in JoiningClients)
+                    client?.SendKick("Server is closing!");
                 JoiningClients.Clear();
             }
 
             lock (Clients)
             {
-                for (var i = 0; i < Clients.Count; i++)
-                    Clients[i]?.SendKick("Server is closing!");
+                foreach (var client in Clients)
+                    client?.SendKick("Server is closing!");
                 Clients.Clear();
             }
 
@@ -261,12 +261,29 @@ namespace PokeD.Server.Modules
             }
         }
 
+        public override void ClientsForeach(Action<IReadOnlyList<Client>> action)
+        {
+            lock (Clients)
+                action(Clients);
+        }
+        public override TResult ClientsSelect<TResult>(Func<IReadOnlyList<Client>, TResult> func)
+        {
+            lock (Clients)
+                return func(Clients);
+        }
+        public override IReadOnlyList<TResult> ClientsSelect<TResult>(Func<IReadOnlyList<Client>, IReadOnlyList<TResult>> func)
+        {
+            lock (Clients)
+                return func(Clients);
+        }
 
+        /*
         public override IReadOnlyList<Client> GetClients()
         {
             lock (Clients)
                 return new List<Client>(Clients);
         }
+        */
 
         protected override void OnClientReady(object sender, EventArgs eventArgs)
         {
@@ -324,10 +341,6 @@ namespace PokeD.Server.Modules
         Stopwatch UpdateWatch = Stopwatch.StartNew();
         public override void Update()
         {
-            //for (var i = Clients.Count - 1; i >= 0; i--)
-            //    Clients[i]?.Update();
-
-
             if (UpdateWatch.ElapsedMilliseconds > 1000)
             {
                 SendPacketToAll(new WorldDataPacket { Origin = -1, DataItems = World.GenerateDataItems() });
@@ -341,8 +354,8 @@ namespace PokeD.Server.Modules
         {
             lock (Clients)
             {
-                for (var i = Clients.Count - 1; i >= 0; i--)
-                    Clients[i]?.SendPacket(packet);
+                foreach (var client in Clients)
+                    client?.SendPacket(packet);
             }
         }
 
@@ -389,11 +402,19 @@ namespace PokeD.Server.Modules
                 return false;
             }
 
+            if (ModuleManager.AllClientsSelect(clients => clients.Any(c => c != client && c.Nickname == client.Nickname)) || IsGameJoltIDUsed(p3dClient))
+            {
+                client.SendKick("You are already on server!");
+                return false;
+            }
+
+            /*
             if (ModuleManager.GetAllClients().Any(c => c != client && c.Nickname == client.Nickname) || IsGameJoltIDUsed(p3dClient))
             {
                 client.SendKick("You are already on server!");
                 return false;
             }
+            */
 
             if (p3dClient.IsGameJoltPlayer)
             {
@@ -425,9 +446,8 @@ namespace PokeD.Server.Modules
 
             lock (Clients)
             {
-                for (var i = Clients.Count - 1; i >= 0; i--)
+                foreach (var client in Clients)
                 {
-                    var client = Clients[i];
                     if (client != null && client != player && client.IsGameJoltPlayer && player.GameJoltID == client.GameJoltID)
                         return true;
                 }
