@@ -13,7 +13,6 @@ using PokeD.Core.Packets.P3D.Server;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.P3D.Trade;
 using PokeD.Server.Chat;
-using PokeD.Server.Extensions;
 
 namespace PokeD.Server.Clients.P3D
 {
@@ -292,7 +291,7 @@ namespace PokeD.Server.Clients.P3D
             {
                 Origin = ID,
 
-                CurrentPlayers = Module.GetAllClients().Count(),
+                CurrentPlayers = clients.Count(),
                 MaxPlayers = Module.MaxPlayers,
                 PlayerNames = clients.Any() ? clients.Select(client => client.Name).ToArray() : new string[0],
 
@@ -301,7 +300,7 @@ namespace PokeD.Server.Clients.P3D
             };
             SendPacket(spacket);
 
-            ThreadPool.QueueUserWorkItem(obj => Leave()); // We can't leave
+            ThreadPool.QueueUserWorkItem(obj => Leave()); // We can't call Leave() from Update() cycle.
         }
     }
 }

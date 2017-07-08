@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Linq;
 using PokeD.Server.Clients;
 
 namespace PokeD.Server.Commands
@@ -46,7 +46,7 @@ namespace PokeD.Server.Commands
         private void HelpPage(Client client, int page)
         {
             const int perPage = 5;
-            var commands = CommandManager.GetCommands();
+            var commands = CommandManager.GetCommands().Where(command => (client.Permissions & command.Permissions) != PermissionFlags.None).ToList();
             var numPages = (int) Math.Floor((double) commands.Count / perPage);
             if ((commands.Count % perPage) > 0)
                 numPages++;

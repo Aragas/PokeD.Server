@@ -75,7 +75,7 @@ namespace PokeD.Server
             return true;
         }
 
-
+        
         public override IReadOnlyList<Client> GetClients() => Clients;
 
         protected override void OnClientReady(object sender, EventArgs eventArgs)

@@ -25,8 +25,8 @@ namespace PokeD.Server.Chat
 
             lock (Subscribers)
             {
-                for (var i = Subscribers.Count - 1; i >= 0; i--)
-                    Subscribers[i]?.SendChatMessage(new ChatChannelMessage(this, chatMessage));
+                foreach (var client in Subscribers)
+                    client?.SendChatMessage(new ChatChannelMessage(this, chatMessage));
             }
 
             return true;

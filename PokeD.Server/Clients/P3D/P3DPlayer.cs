@@ -87,12 +87,12 @@ namespace PokeD.Server.Clients.P3D
 
         public override void Update()
         {
-            UpdateLock.Reset(); // Signal that the UpdateThread is alive
+            UpdateLock.Reset(); // Signal that the UpdateThread is alive.
             try
             {
                 while (!UpdateToken.IsCancellationRequested && Stream.IsConnected)
                 {
-                    ConnectionLock.Reset(); // Do not allow disconnecting while processing
+                    ConnectionLock.Reset(); // Signal that we are handling pending client data.
                     try
                     {
                         while (Stream.TryReadPacket(out var packetToReceive))
@@ -115,15 +115,18 @@ namespace PokeD.Server.Clients.P3D
                     }
                     finally
                     {
-                        ConnectionLock.Set(); // Disconnecting is now allowed
+                        ConnectionLock.Set(); // Signal that we are not handling anymore pending client data.
                     }
 
                     Thread.Sleep(100); // 100 calls per second should not be too often?
                 }
             }
             finally
-            {
-                UpdateLock.Set(); // Signal that the UpdateThread have finished it's work
+            {               
+                UpdateLock.Set(); // Signal that the UpdateThread is finished
+
+                if (!UpdateToken.IsCancellationRequested &&!Stream.IsConnected) // Leave() if the update cycle stopped unexpectedly
+                    Leave();
             }
         }
 
@@ -296,7 +299,6 @@ namespace PokeD.Server.Clients.P3D
 
         public override void Dispose()
         {
-            Stream.Disconnect();
             Stream.Dispose();
             
             base.Dispose();

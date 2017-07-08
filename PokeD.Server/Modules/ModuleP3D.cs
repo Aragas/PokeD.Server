@@ -287,15 +287,16 @@ namespace PokeD.Server.Modules
                 return;
             }
 
-
             // Send to player all Players ID
-            foreach (var aClient in ModuleManager.GetAllClients())
-            {
-                client.SendPacket(new CreatePlayerPacket { Origin = -1, PlayerID = aClient.ID });
-                var packet = aClient.GetDataPacket();
-                packet.Origin = aClient.ID;
-                client.SendPacket(packet);
-            }
+            lock (Clients)
+                foreach (var aClient in Clients)
+                {
+                    client.SendPacket(new CreatePlayerPacket { Origin = -1, PlayerID = aClient.ID });
+                    var packet = aClient.GetDataPacket();
+                    packet.Origin = aClient.ID;
+                    client.SendPacket(packet);
+                }
+
             // Send to Players player ID
             SendPacketToAll(new CreatePlayerPacket { Origin = -1, PlayerID = client.ID });
             // Send to player his ID

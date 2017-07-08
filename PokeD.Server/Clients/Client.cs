@@ -64,7 +64,7 @@ namespace PokeD.Server.Clients
             if (UpdateToken?.IsCancellationRequested == false)
             {
                 UpdateToken.Cancel();
-                UpdateLock.Wait();
+                UpdateLock.Wait(); // Wait for the Update cycle to finish
             }
 
             Disconnected?.Invoke(this, EventArgs.Empty);
