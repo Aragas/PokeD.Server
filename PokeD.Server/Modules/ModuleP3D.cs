@@ -52,14 +52,14 @@ namespace PokeD.Server.Modules
         #endregion Settings
 
         private TcpListener Listener { get; set; }
-
-        private CancellationTokenSource ListenerToken { get; set; }
+        
         private CancellationTokenSource PlayerWatcherToken { get; set; }
+        private ManualResetEventSlim PlayerWatcherLock { get; } = new ManualResetEventSlim();
+
         private CancellationTokenSource PlayerCorrectionToken { get; set; }
+        private ManualResetEventSlim PlayerCorrectionLock { get; } = new ManualResetEventSlim();
 
         private ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; } = new ConcurrentDictionary<string, P3DPlayer[]>();
-
-        private bool IsDisposing { get; set; }
 
         private List<P3DPlayer> JoiningClients { get; } = new List<P3DPlayer>();
         private List<P3DPlayer> Clients { get; } = new List<P3DPlayer>();
@@ -79,7 +79,6 @@ namespace PokeD.Server.Modules
             Listener.Server.SendTimeout = 5000;
             Listener.Start();
 
-            ListenerToken = new CancellationTokenSource();
             new Thread(ListenerCycle)
             {
                 Name = "ModuleP3DListenerThred",
@@ -119,10 +118,16 @@ namespace PokeD.Server.Modules
 
             Logger.Log(LogType.Debug, $"Stopping {ComponentName}.");
 
-            ListenerToken?.Cancel();
-            
-            PlayerWatcherToken?.Cancel();
-            PlayerCorrectionToken?.Cancel();
+            if (PlayerWatcherToken?.IsCancellationRequested == false)
+            {
+                PlayerWatcherToken.Cancel();
+                PlayerWatcherLock.Wait();
+            }
+            if (PlayerCorrectionToken?.IsCancellationRequested == false)
+            {
+                PlayerCorrectionToken.Cancel();
+                PlayerCorrectionLock.Wait();
+            }
 
             ModuleManager.ClientJoined -= ModuleManager_ClientJoined;
             ModuleManager.ClientLeaved -= ModuleManager_ClientLeaved;
@@ -175,28 +180,32 @@ namespace PokeD.Server.Modules
 
         private void ListenerCycle()
         {
-            while (!IsDisposing && !ListenerToken.IsCancellationRequested)
+            try
             {
-                try
+                while (true) // Listener.Stop() will stop it.
                 {
+
                     var client = new P3DPlayer(Listener.AcceptSocket(), this);
                     client.Ready += OnClientReady;
                     client.Disconnected += OnClientLeave;
                     client.StartListening();
-                    
+
                     lock (JoiningClients)
                         JoiningClients.Add(client);
                 }
-                catch (SocketException) { }
+
             }
+            catch (SocketException) { }
         }
-        
+
         [ConfigIgnore]
         public static long PlayerWatcherThreadTime { get; private set; }
         private void PlayerWatcherCycle()
         {
+            PlayerWatcherLock.Reset();
+            
             var watch = Stopwatch.StartNew();
-            while (!IsDisposing && !PlayerWatcherToken.IsCancellationRequested)
+            while (!PlayerWatcherToken.IsCancellationRequested)
             {
                 List<P3DPlayer> players;
                 lock (Clients)
@@ -221,21 +230,25 @@ namespace PokeD.Server.Modules
                 {
                     PlayerWatcherThreadTime = watch.ElapsedMilliseconds;
 
-                    var time = (int)(400 - watch.ElapsedMilliseconds);
+                    var time = (int) (400 - watch.ElapsedMilliseconds);
                     if (time < 0) time = 0;
                     Thread.Sleep(time);
                 }
                 watch.Reset();
                 watch.Start();
             }
+
+            PlayerWatcherLock.Set();
         }
 
         [ConfigIgnore]
         public static long PlayerCorrectionThreadTime { get; private set; }
         private void PlayerCorrectionCycle()
         {
+            PlayerCorrectionLock.Reset();
+
             var watch = Stopwatch.StartNew();
-            while (!IsDisposing && !PlayerCorrectionToken.IsCancellationRequested)
+            while (!PlayerCorrectionToken.IsCancellationRequested)
             {
                 foreach (var nearPlayers in NearPlayers.Where(nearPlayers => nearPlayers.Value != null))
                     foreach (var player in nearPlayers.Value.Where(player => player.Moving))
@@ -252,13 +265,15 @@ namespace PokeD.Server.Modules
                 {
                     PlayerCorrectionThreadTime = watch.ElapsedMilliseconds;
 
-                    var time = (int)(5 - watch.ElapsedMilliseconds);
+                    var time = (int) (5 - watch.ElapsedMilliseconds);
                     if (time < 0) time = 0;
                     Thread.Sleep(time);
                 }
                 watch.Reset();
                 watch.Start();
             }
+
+            PlayerCorrectionLock.Set();
         }
 
         public override void ClientsForeach(Action<IReadOnlyList<Client>> action)
@@ -454,10 +469,18 @@ namespace PokeD.Server.Modules
 
         public override void Dispose()
         {
-            if (IsDisposing)
-                return;
-
-            IsDisposing = true;
+            // TODO
+            
+            if (PlayerWatcherToken?.IsCancellationRequested == false)
+            {
+                PlayerWatcherToken.Cancel();
+                PlayerWatcherLock.Wait();
+            }
+            if (PlayerCorrectionToken?.IsCancellationRequested == false)
+            {
+                PlayerCorrectionToken.Cancel();
+                PlayerCorrectionLock.Wait();
+            }
         }
     }
 }
