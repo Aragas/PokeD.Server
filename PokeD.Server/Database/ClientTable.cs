@@ -34,8 +34,8 @@ namespace PokeD.Server.Database
         public ClientTable(){ }
         public ClientTable(Client client)
         {
-            if (client.ID >= 0)
-                ClientID = null;
+            if (client.ID > 0)
+                ClientID = client.ID;
 
             Prefix = client.Prefix;
             Permissions = client.Permissions;

@@ -45,6 +45,7 @@ namespace PokeD.Server.Commands
                     cClient.Permissions |= flag;
 
                 cClient.SendServerMessage($"Your permissions are now '{cClient.Permissions}'!");
+                cClient.Save(true);
 
                 client.SendServerMessage($"Changed {clientName} permissions!");
             }
