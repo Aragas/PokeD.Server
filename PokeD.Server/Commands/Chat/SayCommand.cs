@@ -1,6 +1,4 @@
-﻿using System.Linq;
-
-using PokeD.Core.Services;
+﻿using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
 namespace PokeD.Server.Commands.Chat

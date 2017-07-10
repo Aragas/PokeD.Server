@@ -14,8 +14,27 @@ namespace PokeD.Server.Commands
 
         public ShowPermissionsCommand(IServiceContainer componentManager) : base(componentManager) { }
 
-        public override void Handle(Client client, string alias, string[] arguments) => client.SendServerMessage(string.Join(",", Enum.GetNames(typeof(PermissionFlags))));
+        public override void Handle(Client client, string alias, string[] arguments)
+        {
+            if (arguments.Length == 1)
+                client.SendServerMessage(string.Join(",", Enum.GetNames(typeof(PermissionFlags))));
+            else if (arguments.Length == 2)
+            {
+                var clientName = arguments[0];
 
-        public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <Permission>");
+                var cClient = GetClient(clientName);
+                if (cClient == null)
+                {
+                    client.SendServerMessage($"Player {clientName} not found.");
+                    return;
+                }
+
+                client.SendServerMessage($"Player {clientName} permissions are {client.Permissions.ToString()}.");
+            }
+            else
+                client.SendServerMessage($"Invalid arguments given.");
+        }
+
+        public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} [PlayerName]");
     }
 }

@@ -7,7 +7,6 @@ using Aragas.Network.Packets;
 
 using PCLExt.Config;
 
-using PokeD.Core.Components;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Services;
@@ -46,8 +45,8 @@ namespace PokeD.Server.Commands
         }
         private sealed class OfflineClient : Client
         {
-            private IServiceContainer ComponentManager { get; }
-            private DatabaseService Database => ComponentManager.GetService<DatabaseService>();
+            private IServiceContainer ServiceContainer { get; }
+            private DatabaseService Database => ServiceContainer.GetService<DatabaseService>();
 
 
             private int _id;
@@ -93,9 +92,9 @@ namespace PokeD.Server.Commands
             public override GameDataPacket GetDataPacket() => null;
 
 
-            public OfflineClient(IServiceContainer componentManager, ClientTable clientTable) : base(new OfflineServerModule(componentManager))
+            public OfflineClient(IServiceContainer serviceContainer, ClientTable clientTable) : base(new OfflineServerModule(serviceContainer))
             {
-                ComponentManager = componentManager;
+                ServiceContainer = serviceContainer;
 
                 ID = clientTable.ClientID.Value;
                 Nickname = clientTable.Name;
@@ -122,13 +121,12 @@ namespace PokeD.Server.Commands
             public override void Dispose() { }
         }
 
-        private IComponentContainer ServiceContainer { get; }
-        protected ModuleManagerService ModuleManager => ComponentManager.GetService<ModuleManagerService>();
-        protected CommandManagerService CommandManager => ComponentManager.GetService<CommandManagerService>();
-        protected ChatChannelManagerService ChatChannelManager => ComponentManager.GetService<ChatChannelManagerService>();
+        protected ModuleManagerService ModuleManager => ServiceContainer.GetService<ModuleManagerService>();
+        protected CommandManagerService CommandManager => ServiceContainer.GetService<CommandManagerService>();
+        protected ChatChannelManagerService ChatChannelManager => ServiceContainer.GetService<ChatChannelManagerService>();
 
-        private IServiceContainer ComponentManager { get; }
-        protected WorldService World => ComponentManager.GetService<WorldService>();
+        private IServiceContainer ServiceContainer { get; }
+        protected WorldService World => ServiceContainer.GetService<WorldService>();
 
         protected Client GetClient(string name)
         {
@@ -136,8 +134,8 @@ namespace PokeD.Server.Commands
             if (client != null)
                 return client;
             
-            var clientTable = ComponentManager.GetService<DatabaseService>().DatabaseFind<ClientTable>(c => c.Name == name);
-            return clientTable == null ? null : new OfflineClient(ComponentManager, clientTable);
+            var clientTable = ServiceContainer.GetService<DatabaseService>().DatabaseFind<ClientTable>(c => c.Name == name);
+            return clientTable == null ? null : new OfflineClient(ServiceContainer, clientTable);
         }
 
 
@@ -147,7 +145,7 @@ namespace PokeD.Server.Commands
         public virtual PermissionFlags Permissions { get; } = PermissionFlags.None;
         public virtual bool LogCommand { get; } = true;
 
-        protected Command(IServiceContainer componentManager) { ComponentManager = componentManager; }
+        protected Command(IServiceContainer serviceContainer) { ServiceContainer = serviceContainer; }
 
         public virtual void Handle(Client client, string alias, string[] arguments) { Help(client, alias); }
 

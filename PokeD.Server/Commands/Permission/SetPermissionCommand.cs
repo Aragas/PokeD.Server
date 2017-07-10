@@ -53,6 +53,6 @@ namespace PokeD.Server.Commands
                 client.SendServerMessage($"Invalid arguments given.");
         }
 
-        public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <Permission>");
+        public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <PlayerName> <Permission>");
     }
 }
