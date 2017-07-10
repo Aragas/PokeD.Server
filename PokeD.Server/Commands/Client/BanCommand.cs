@@ -57,43 +57,6 @@ namespace PokeD.Server.Commands
             }
             else
                 client.SendServerMessage($"Invalid arguments given.");
-
-            /*
-            if (arguments.Length == 2)
-            {
-                var clientName = arguments[0];
-                var cClient = GetClient(clientName);
-                if (cClient == null)
-                {
-                    client.SendServerMessage($"Player {clientName} not found!");
-                    return;
-                }
-
-                var reason = arguments[1].TrimStart('"').TrimEnd('"');
-                ModuleManager.Ban(cClient, 0, reason);
-            }
-            else if (arguments.Length == 3)
-            {
-                var clientName = arguments[0];
-                var cClient = GetClient(clientName);
-                if (cClient == null)
-                {
-                    client.SendServerMessage($"Player {clientName} not found!");
-                    return;
-                }
-
-                if (!int.TryParse(arguments[1], out int minutes))
-                {
-                    client.SendServerMessage($"Invalid minutes given.");
-                    return;
-                }
-
-                var reason = arguments[2].TrimStart('"').TrimEnd('"');
-                ModuleManager.Ban(cClient, minutes, reason);
-            }
-            else
-                client.SendServerMessage($"Invalid arguments given.");
-            */
         }
 
         public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <PlayerName> [Reason]");

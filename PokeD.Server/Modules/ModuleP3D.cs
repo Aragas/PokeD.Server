@@ -277,14 +277,6 @@ namespace PokeD.Server.Modules
                 return func(Clients);
         }
 
-        /*
-        public override IReadOnlyList<Client> GetClients()
-        {
-            lock (Clients)
-                return new List<Client>(Clients);
-        }
-        */
-
         protected override void OnClientReady(object sender, EventArgs eventArgs)
         {
             var client = sender as Client;
@@ -407,14 +399,6 @@ namespace PokeD.Server.Modules
                 client.SendKick("You are already on server!");
                 return false;
             }
-
-            /*
-            if (ModuleManager.GetAllClients().Any(c => c != client && c.Nickname == client.Nickname) || IsGameJoltIDUsed(p3dClient))
-            {
-                client.SendKick("You are already on server!");
-                return false;
-            }
-            */
 
             if (p3dClient.IsGameJoltPlayer)
             {

@@ -287,20 +287,6 @@ namespace PokeD.Server.Clients.P3D
 
         private void HandleServerDataRequest(ServerDataRequestPacket packet)
         {
-            /*
-            var clients = Module.GetAllClients().ToList();
-            var spacket = new ServerInfoDataPacket
-            {
-                Origin = ID,
-
-                CurrentPlayers = clients.Count(),
-                MaxPlayers = Module.MaxPlayers,
-                PlayerNames = clients.Any() ? clients.Select(client => client.Name).ToArray() : new string[0],
-
-                ServerName = Module.ServerName,
-                ServerMessage = Module.ServerMessage,
-            };
-            */
             var clientNames = Module.AllClientsSelect(clients => clients.Select(client => client.Name).ToList());
             var spacket = new ServerInfoDataPacket
             {

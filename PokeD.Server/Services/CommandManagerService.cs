@@ -128,6 +128,7 @@ namespace PokeD.Server.Services
         public override bool Stop()
         {
             Logger.Log(LogType.Debug, $"Unloading Commands...");
+            Commands.Clear();
             Logger.Log(LogType.Debug, $"Unloaded Commands.");
             return true;
         }
@@ -146,8 +147,6 @@ namespace PokeD.Server.Services
 
         public override void Dispose()
         {
-            //foreach (var command in Commands)
-            //    command.Dispose();
             Commands.Clear();
         }
     }

@@ -46,21 +46,14 @@ namespace PokeD.Server
 
         protected ServerModule(IServiceContainer services, ConfigType configType) : base(configType) { Services = services; }
 
-
-        //public abstract TResult SelectClient<TResult>(Func<IReadOnlyList<Client>, TResult> func);
-
-
+        
+        public abstract void ClientsForeach(Action<IReadOnlyList<Client>> func);
         public abstract TResult ClientsSelect<TResult>(Func<IReadOnlyList<Client>, TResult> func);
         public abstract IReadOnlyList<TResult> ClientsSelect<TResult>(Func<IReadOnlyList<Client>, IReadOnlyList<TResult>> func);
-        public abstract void ClientsForeach(Action<IReadOnlyList<Client>> func);
 
         public TResult AllClientsSelect<TResult>(Func<IReadOnlyList<Client>, TResult> func) => ModuleManager.AllClientsSelect(func);
         public IReadOnlyList<TResult> AllClientsSelect<TResult>(Func<IReadOnlyList<Client>, IReadOnlyList<TResult>> func) => ModuleManager.AllClientsSelect(func);
 
-        /*
-        public IEnumerable<Client> GetAllClients() => ModuleManager.GetAllClients();
-        public abstract IReadOnlyList<Client> GetClients();
-        */
         
         public Client GetClient(int id) => ModuleManager.GetClient(id);
         public Client GetClient(string name) => ModuleManager.GetClient(name);
@@ -113,12 +106,6 @@ namespace PokeD.Server
                 for (var i = clients.Count - 1; i >= 0; i--)
                     clients[i].SendServerMessage(message);
             });
-
-            /*
-            var clients = GetClients();
-            for (var i = clients.Count - 1; i >= 0; i--)
-                clients[i].SendServerMessage(message);
-            */
         }
 
         public void OnClientChatMessage(ChatMessage chatMessage)

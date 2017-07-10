@@ -75,11 +75,6 @@ namespace PokeD.Server
             return true;
         }
 
-        
-        /*
-        public override IReadOnlyList<Client> GetClients() => Clients;
-        */
-        
         public override void ClientsForeach(Action<IReadOnlyList<Client>> action)
         {
             lock (Clients)

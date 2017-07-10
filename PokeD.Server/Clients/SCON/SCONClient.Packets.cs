@@ -119,9 +119,6 @@ namespace PokeD.Server.Clients.SCON
                 return;
             }
 
-            /*
-            SendPacket(new PlayerInfoListResponsePacket { PlayerInfos = Module.GetAllClients().ClientInfos().ToArray() });
-            */
             SendPacket(new PlayerInfoListResponsePacket { PlayerInfos = Module.AllClientsSelect(clients => clients.ClientInfos().ToList()).ToArray() });
         }
 

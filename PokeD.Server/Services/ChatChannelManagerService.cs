@@ -32,6 +32,7 @@ namespace PokeD.Server.Services
         public override bool Stop()
         {
             Logger.Log(LogType.Debug, $"Unloading ChatChannels...");
+            ChatChannels.Clear();
             Logger.Log(LogType.Debug, $"Unloaded ChatChannels.");
             return true;
         }
@@ -50,8 +51,6 @@ namespace PokeD.Server.Services
 
         public override void Dispose()
         {
-            //foreach (var chatChannel in ChatChannels)
-            //    chatChannel.Dispose();
             ChatChannels.Clear();
         }
     }

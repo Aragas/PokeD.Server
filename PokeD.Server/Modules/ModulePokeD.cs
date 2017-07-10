@@ -111,11 +111,6 @@ namespace PokeD.Server.Modules
             SendPacketToAll(new ChatGlobalMessagePacket { Message = $"Player {eventArgs.Client.Name} disconnected!" });
         }
 
-
-        /*
-        public override IReadOnlyList<Client> GetClients() => Clients;
-        */
-        
         public override void ClientsForeach(Action<IReadOnlyList<Client>> action)
         {
             lock (Clients)

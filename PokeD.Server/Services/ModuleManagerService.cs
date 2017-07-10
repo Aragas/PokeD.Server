@@ -236,6 +236,11 @@ namespace PokeD.Server.Services
 
         public IReadOnlyList<IServerModuleBaseSettings> GetModuleSettings() => Modules;
 
+        public void AllClientsForeach(Action<IReadOnlyList<Client>> func)
+        {
+            foreach (var module in Modules.Where(module => module.ClientsVisible))
+                module.ClientsForeach(func);
+        }
         public TResult AllClientsSelect<TResult>(Func<IReadOnlyList<Client>, TResult> func) => Modules.Where(module => module.ClientsVisible).Select(module => module.ClientsSelect(func)).FirstOrDefault();
         public IReadOnlyList<TResult> AllClientsSelect<TResult>(Func<IReadOnlyList<Client>, IReadOnlyList<TResult>> func) => Modules.Where(module => module.ClientsVisible).SelectMany(module => module.ClientsSelect(func)).ToList();
 
@@ -243,15 +248,6 @@ namespace PokeD.Server.Services
         public Client GetClient(string name) => AllClientsSelect(list => list.Where(client => client.Name == name || client.Nickname == name).ToList()).FirstOrDefault();
         public int GetClientID(string name) => GetClient(name)?.ID ?? -1;
         public string GetClientName(int id) => GetClient(id)?.Nickname ?? string.Empty;
-
-        /*
-        public IReadOnlyList<Client> GetAllClients() => Modules.Where(module => module.ClientsVisible).SelectMany(module => module.GetClients().Where(client => !client.Permissions.HasFlag(PermissionFlags.UnVerified))).ToList();
-
-        public Client GetClient(int id) => GetAllClients().FirstOrDefault(client => client.ID == id);
-        public Client GetClient(string name) => GetAllClients().FirstOrDefault(client => client.Name == name || client.Nickname == name);
-        public int GetClientID(string name) => GetClient(name)?.ID ?? -1;
-        public string GetClientName(int id) => GetClient(id)?.Nickname ?? string.Empty;
-        */
 
         public void SendServerMessage(string message)
         {
