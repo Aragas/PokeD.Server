@@ -3,14 +3,13 @@
 using PCLExt.Config;
 using PCLExt.Config.Extensions;
 
-using PokeD.Core;
 using PokeD.Core.Data.PokeApi;
 using PokeD.Server.Services;
 using PokeD.Server.Storage.Files;
 
 namespace PokeD.Server
 {
-    public partial class Server : IUpdatable, IDisposable
+    public partial class Server : IDisposable
     {
         private ConfigType ConfigType { get; }
 
@@ -96,12 +95,14 @@ namespace PokeD.Server
             return status;
         }
 
-
+        
+        /*
         public void Update()
         {
             foreach (var service in Services)
                 (service as IUpdatable)?.Update();
         }
+        */
 
 
         public void Dispose()

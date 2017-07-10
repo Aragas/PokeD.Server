@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 
 using PCLExt.Config;
 
-using PokeD.Core;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Services;
 using PokeD.Server.Clients;
@@ -177,7 +178,7 @@ namespace PokeD.Server.Services
         public ClientLeavedEventArgs(Client client) { Client = client; }
     }
 
-    public class ModuleManagerService : ServerService, IUpdatable
+    public class ModuleManagerService : ServerService
     {
         private List<ServerModule> Modules { get; } = new List<ServerModule>();
 
@@ -187,6 +188,9 @@ namespace PokeD.Server.Services
         
 
         //public BaseEventHandler<ServerSentMessageEventArgs> ServerSentMessage = new CustomEventHandler<ServerSentMessageEventArgs>();
+
+        private CancellationTokenSource UpdateToken { get; set; } = new CancellationTokenSource();
+        private ManualResetEventSlim UpdateLock { get; } = new ManualResetEventSlim(false);
 
         public ModuleManagerService(IServiceContainer services, ConfigType configType) : base(services, configType)
         {
@@ -370,10 +374,28 @@ namespace PokeD.Server.Services
             Logger.Log(LogType.Debug, "Starting Modules...");
             Modules.RemoveAll(module => !module.Start());
             Logger.Log(LogType.Debug, "Started Modules.");
+
+            Logger.Log(LogType.Debug, "Starting UpdateThread...");
+            UpdateToken = new CancellationTokenSource();
+            new Thread(UpdateCycle)
+            {
+                Name = "ModuleManagerUpdateTread",
+                IsBackground = true
+            }.Start();
+            Logger.Log(LogType.Debug, "Started UpdateThread.");
+
             return true;
         }
         public override bool Stop()
         {
+            Logger.Log(LogType.Debug, "Stopping UpdateThread...");
+            if (UpdateToken?.IsCancellationRequested == false)
+            {
+                UpdateToken.Cancel();
+                UpdateLock.Wait();
+            }
+            Logger.Log(LogType.Debug, "Stopped UpdateThread.");
+
             Logger.Log(LogType.Debug, "Stopping Modules...");
             foreach (var module in Modules)
                 module.Stop();
@@ -382,15 +404,41 @@ namespace PokeD.Server.Services
             return true;
         }
 
-        public void Update()
+        public static long UpdateThread { get; private set; }
+        private void UpdateCycle()
         {
-            foreach (var module in Modules)
-                module.Update();
+            UpdateLock.Reset();
+            
+            var watch = Stopwatch.StartNew();
+            while (!UpdateToken.IsCancellationRequested)
+            {
+                foreach (var module in Modules)
+                    module.Update();
+
+                if (watch.ElapsedMilliseconds < 10)
+                {
+                    UpdateThread = watch.ElapsedMilliseconds;
+
+                    var time = (int) (10 - watch.ElapsedMilliseconds);
+                    if (time < 0) time = 0;
+                    Thread.Sleep(time);
+                }
+                watch.Reset();
+                watch.Start();
+            }
+            
+            UpdateLock.Set();
         }
 
         public override void Dispose()
         {
             AppDomain.CurrentDomain.AssemblyResolve -= AppDomain_AssemblyResolve;
+
+            if (UpdateToken?.IsCancellationRequested == false)
+            {
+                UpdateToken.Cancel();
+                UpdateLock.Wait();
+            }
         }
     }
 }

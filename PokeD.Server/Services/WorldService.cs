@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 
 using PCLExt.Config;
 
-using PokeD.Core;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Services;
 using PokeD.Server.Data;
@@ -11,9 +11,12 @@ using PokeD.Server.Storage.Files;
 
 namespace PokeD.Server.Services
 {
-    public class WorldService : ServerService, IUpdatable
+    public class WorldService : ServerService
     {
         protected override IConfigFile ServiceConfigFile => new WorldComponentConfigFile(ConfigType);
+
+        private CancellationTokenSource UpdateToken { get; set; } = new CancellationTokenSource();
+        private ManualResetEventSlim UpdateLock { get; } = new ManualResetEventSlim(false);
 
         [ConfigIgnore]
         public bool UseLocation { get; set; }
@@ -30,6 +33,8 @@ namespace PokeD.Server.Services
         public bool UseRealTime { get; set; } = true;
 
         public bool DoDayCycle { get; set; } = true;
+        
+        public int WeatherUpdateTimeInMinutes { get; set; } = 60;
 
         public Season Season { get; set; } = Season.Spring;
 
@@ -43,34 +48,124 @@ namespace PokeD.Server.Services
 
         string CurrentTimeString { get; set; }
 
-        TimeSpan TimeSpanOffset => TimeSpan.FromSeconds(TimeOffset);
-        int TimeOffset { get; set; }
+        TimeSpan TimeSpanOffset { get; set; }
+        //TimeSpan TimeSpanOffset => TimeSpan.FromSeconds(TimeOffset);
+        //int TimeOffset { get; set; }
+
+        private DateTime WorldUpdateTime { get; set; } = DateTime.UtcNow;
 
 
         public WorldService(IServiceContainer services, ConfigType configType) : base(services, configType) { }
 
 
-        Stopwatch Watch = Stopwatch.StartNew();
-        public void Update()
+        private int WeekOfYear => (int) (DateTime.Now.DayOfYear - (DateTime.Now.DayOfWeek - DayOfWeek.Monday) / 7.0 + 1.0);
+        private void UpdateWorld()
         {
-            if (Watch.ElapsedMilliseconds > 1000)
+            switch (WeekOfYear % 4)
             {
-                TimeOffset++;
-
-                Watch.Reset();
-                Watch.Start();
+                case 1:
+                    Season = Season.Winter;
+                    break;
+                case 2:
+                    Season = Season.Spring;
+                    break;
+                case 3:
+                    Season = Season.Summer;
+                    break;
+                case 0:
+                    Season = Season.Fall;
+                    break;
+                
+                default:
+                    Season = Season.Summer;
+                    break;
             }
+
+            var r = new Random().Next(0, 100);
+            switch (Season)
+            {
+                case Season.Winter:
+                    if (r < 20)
+                        Weather = Weather.Rain;
+                    else if (r >= 20 && r < 50)
+                        Weather = Weather.Clear;
+                    else
+                        Weather = Weather.Snow;
+                    break;
+
+                case Season.Spring:
+                    if (r < 5)
+                        Weather = Weather.Snow;
+                    else if (r >= 5 && r < 40)
+                        Weather = Weather.Rain;
+                    else
+                        Weather = Weather.Clear;
+                    break;
+
+                case Season.Summer:
+                    if (r > 10)
+                        Weather = Weather.Clear;
+                    else
+                        Weather = Weather.Rain;
+                    break;
+
+                case Season.Fall:
+                    if (r < 5)
+                        Weather = Weather.Snow;
+                    else if (r >= 5 && r < 80)
+                        Weather = Weather.Rain;
+                    else
+                        Weather = Weather.Clear;
+                    break;
+                
+                default:
+                    Weather = Weather.Clear;
+                break;
+            }
+
+            Logger.Log(LogType.Event, $"Set Season: {Season}");
+            Logger.Log(LogType.Event, $"Set Weather: {Weather}");
         }
+
+        public void UpdateCycle()
+        {
+            UpdateLock.Reset();
+
+            var watch = Stopwatch.StartNew();
+            while (!UpdateToken.IsCancellationRequested)
+            {
+                if (WorldUpdateTime < DateTime.UtcNow)
+                {
+                    UpdateWorld();
+                    WorldUpdateTime = DateTime.UtcNow.AddMinutes(WeatherUpdateTimeInMinutes);
+                }
+
+                if (watch.ElapsedMilliseconds < 1000)
+                {
+                    var time = (int)(10 - watch.ElapsedMilliseconds);
+                    if (time < 0) time = 0;
+                    Thread.Sleep(time);
+                }
+                TimeSpanOffset.Add(TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds));
+                watch.Reset();
+                watch.Start();
+            }
+
+            UpdateLock.Set();
+        }
+
 
 
         public DataItems GenerateDataItems()
         {
             if (DoDayCycle)
             {
-                var now = DateTime.Now;
-                if (TimeOffset != 0)
+                if (TimeSpanOffset != TimeSpan.Zero)
                     if (UseRealTime)
-                        CurrentTimeString = now.AddSeconds(TimeOffset).Hour + "," + now.AddSeconds(TimeOffset).Minute + "," + now.AddSeconds(TimeOffset).Second;
+                    {
+                        var time = DateTime.Now.Add(TimeSpanOffset);
+                        CurrentTimeString = time.Hour + "," + time.Minute + "," + time.Second;
+                    }
                     else
                         CurrentTime += TimeSpanOffset;
                 else
@@ -90,6 +185,13 @@ namespace PokeD.Server.Services
             if (!base.Start())
                 return false;
 
+            UpdateToken = new CancellationTokenSource();
+            new Thread(UpdateCycle)
+            {
+                Name = "ModuleManagerUpdateTread",
+                IsBackground = true
+            }.Start();
+
             Logger.Log(LogType.Debug, $"Loaded World.");
 
             return true;
@@ -99,6 +201,12 @@ namespace PokeD.Server.Services
             Logger.Log(LogType.Debug, $"Unloading World...");
             if (!base.Stop())
                 return false;
+
+            if (UpdateToken?.IsCancellationRequested == false)
+            {
+                UpdateToken.Cancel();
+                UpdateLock.Wait();
+            }
 
             Logger.Log(LogType.Debug, $"Unloaded World.");
 
