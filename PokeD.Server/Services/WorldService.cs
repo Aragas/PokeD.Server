@@ -89,13 +89,13 @@ namespace PokeD.Server.Services
                         Weather = Weather.Rain;
                     else if (r >= 20 && r < 50)
                         Weather = Weather.Clear;
-                    else
-                        Weather = Weather.Snow;
+                    //else
+                    //    Weather = Weather.Snow;
                     break;
 
                 case Season.Spring:
                     if (r < 5)
-                        Weather = Weather.Snow;
+                        Weather = Weather.Sunny;
                     else if (r >= 5 && r < 40)
                         Weather = Weather.Rain;
                     else
@@ -103,16 +103,19 @@ namespace PokeD.Server.Services
                     break;
 
                 case Season.Summer:
-                    if (r > 10)
+                    if (r < 40)
                         Weather = Weather.Clear;
-                    else
+                    else if(r >= 40 && r < 80)
                         Weather = Weather.Rain;
+                    else
+                        Weather = Weather.Sunny;
                     break;
 
                 case Season.Fall:
-                    if (r < 5)
-                        Weather = Weather.Snow;
-                    else if (r >= 5 && r < 80)
+                    //if (r < 5)
+                    //    Weather = Weather.Snow;
+                    //else 
+                    if (r >= 5 && r < 80)
                         Weather = Weather.Rain;
                     else
                         Weather = Weather.Clear;
