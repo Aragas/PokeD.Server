@@ -203,8 +203,8 @@ namespace PokeD.Server.Clients.P3D
                     HandleBattleHostData((BattleHostDataPacket) packet);
                     break;
 
-                case P3DPacketTypes.BattlePokemonData:
-                    HandleBattlePokemonData((BattlePokemonDataPacket) packet);
+                case P3DPacketTypes.BattleEndRoundData:
+                    HandleBattlePokemonData((BattleEndRoundDataPacket) packet);
                     break;
 
 

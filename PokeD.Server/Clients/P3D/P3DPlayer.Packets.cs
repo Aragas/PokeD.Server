@@ -267,9 +267,9 @@ namespace PokeD.Server.Clients.P3D
                 SendPacket(new BattleQuitPacket { Origin = packet.DestinationPlayerID });
             }
         }
-        private void HandleBattlePokemonData(BattlePokemonDataPacket packet)
+        private void HandleBattlePokemonData(BattleEndRoundDataPacket packet)
         {
-            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattlePokemonDataPacket { Origin = packet.Origin, DataItems = new DataItems(packet.BattleData) });
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleEndRoundDataPacket { Origin = packet.Origin, DataItems = new DataItems(packet.BattleData) });
         }
         private void HandleBattleQuit(BattleQuitPacket packet)
         {
