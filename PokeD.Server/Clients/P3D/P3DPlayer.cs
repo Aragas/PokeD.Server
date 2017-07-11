@@ -28,7 +28,7 @@ namespace PokeD.Server.Clients.P3D
 {
     public partial class P3DPlayer : Client<ModuleP3D>
     {
-        CultureInfo CultureInfo => CultureInfo.InvariantCulture;
+        private static CultureInfo CultureInfo => CultureInfo.InvariantCulture;
 
         #region P3D Values
 
@@ -69,7 +69,7 @@ namespace PokeD.Server.Clients.P3D
         public override CultureInfo Language => new CultureInfo("en");
         public override PermissionFlags Permissions { get; set; } = PermissionFlags.UnVerified;
 
-        bool IsInitialized { get; set; }
+        private bool IsInitialized { get; set; }
 
         #endregion Values
 
@@ -236,7 +236,7 @@ namespace PokeD.Server.Clients.P3D
         }
         public override void SendChatMessage(ChatChannelMessage chatMessage) { SendPacket(new ChatMessageGlobalPacket { Origin = chatMessage.ChatMessage.Sender.ID, Message = chatMessage.ChatMessage.Message }); }
         public override void SendServerMessage(string text) { SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = text }); }
-        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatMessagePrivatePacket { Origin = chatMessage.Sender.ID, DataItems = new DataItems(chatMessage.Message) }); }
+        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatMessagePrivatePacket { Origin = chatMessage.Sender.ID, DataItems = chatMessage.Message }); }
 
         public override void SendKick(string reason = "")
         {

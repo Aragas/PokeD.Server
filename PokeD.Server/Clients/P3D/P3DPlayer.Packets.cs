@@ -19,10 +19,10 @@ namespace PokeD.Server.Clients.P3D
 {
     public partial class P3DPlayer
     {
-        private bool IsOfficialGameMode => String.Equals(GameMode, "Kolben", StringComparison.OrdinalIgnoreCase) || String.Equals(GameMode, "pokemon 3d", StringComparison.OrdinalIgnoreCase);
+        private bool IsOfficialGameMode => string.Equals(GameMode, "Kolben", StringComparison.OrdinalIgnoreCase) || string.Equals(GameMode, "Pokemon 3D", StringComparison.OrdinalIgnoreCase);
 
         private bool PokemonsValid(string pokemonData) => !Module.ValidatePokemons || !IsOfficialGameMode || new DataItems(pokemonData).DataItemsToMonsters().All(pokemon => pokemon.IsValid);
-        private bool PokemonValid(string pokemonData) => !Module.ValidatePokemons || !IsOfficialGameMode || new Monster(new DataItems(pokemonData)).IsValid;
+        private bool PokemonValid(string pokemonData) => !Module.ValidatePokemons || !IsOfficialGameMode || new Monster(pokemonData).IsValid;
 
         private void ParseGameData(GameDataPacket packet)
         {
@@ -173,9 +173,6 @@ namespace PokeD.Server.Clients.P3D
                 if (Module.ExecuteClientCommand(this, packet.Message))
                     return;
 
-                if (ExecuteCommand(packet.Message))
-                    return;
-
                 SendServerMessage("Invalid command!");
             }
             else if(IsInitialized)
@@ -228,30 +225,39 @@ namespace PokeD.Server.Clients.P3D
             else
                 destClient.SendPacket(new TradeRequestPacket { Origin = packet.Origin });
         }
-        private void HandleTradeJoin(TradeJoinPacket packet) => Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new TradeJoinPacket { Origin = packet.Origin });
-        private void HandleTradeQuit(TradeQuitPacket packet) => Module.OnTradeCancel(this, Module.GetClient(packet.DestinationPlayerID));
+        private void HandleTradeJoin(TradeJoinPacket packet)
+        {
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new TradeJoinPacket {Origin = packet.Origin});
+        }
+        private void HandleTradeQuit(TradeQuitPacket packet)
+        {
+            Module.OnTradeCancel(this, Module.GetClient(packet.DestinationPlayerID));
+        }
         private void HandleTradeOffer(TradeOfferPacket packet)
         {
             var destClient = Module.GetClient(packet.DestinationPlayerID);
 
             if (PokemonValid(packet.TradeData))
-                Module.OnTradeRequest(this, /* new Monster(new DataItems(packet.TradeData)) */  new DataItems(packet.TradeData), destClient);
+                Module.OnTradeRequest(this, /* new Monster(new DataItems(packet.TradeData)) */  packet.TradeData, destClient);
             else
             {
                 SendServerMessage("Your Pokemon is not valid!");
                 Module.OnTradeCancel(this, destClient);
             }
         }
-        private void HandleTradeStart(TradeStartPacket packet) => Module.OnTradeConfirm(this, Module.GetClient(packet.DestinationPlayerID));
+        private void HandleTradeStart(TradeStartPacket packet)
+        {
+            Module.OnTradeConfirm(this, Module.GetClient(packet.DestinationPlayerID));
+        }
 
 
         private void HandleBattleClientData(BattleClientDataPacket packet)
         {
-            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleClientDataPacket { Origin = packet.Origin, DataItems = new DataItems(packet.BattleData) });
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleClientDataPacket { Origin = packet.Origin, DataItems = packet.BattleData });
         }
         private void HandleBattleHostData(BattleHostDataPacket packet)
         {
-            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleHostDataPacket { Origin = packet.Origin, DataItems = new DataItems(packet.BattleData) });
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleHostDataPacket { Origin = packet.Origin, DataItems = packet.BattleData });
         }
         private void HandleBattleJoin(BattleJoinPacket packet)
         {
@@ -260,7 +266,7 @@ namespace PokeD.Server.Clients.P3D
         private void HandleBattleOffer(BattleOfferPacket packet)
         {
             if (PokemonsValid(packet.BattleData))
-                Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleOfferPacket { Origin = packet.Origin, DataItems = new DataItems(packet.BattleData) });
+                Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleOfferPacket { Origin = packet.Origin, DataItems = packet.BattleData });
             else
             {
                 SendServerMessage($"One of your Pokemon is not valid!");
@@ -269,7 +275,7 @@ namespace PokeD.Server.Clients.P3D
         }
         private void HandleBattlePokemonData(BattleEndRoundDataPacket packet)
         {
-            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleEndRoundDataPacket { Origin = packet.Origin, DataItems = new DataItems(packet.BattleData) });
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleEndRoundDataPacket { Origin = packet.Origin, DataItems = packet.BattleData });
         }
         private void HandleBattleQuit(BattleQuitPacket packet)
         {
