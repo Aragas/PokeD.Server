@@ -1,24 +1,34 @@
+using System.Linq;
+
+using MoonSharp.Interpreter;
+
+using PokeD.Server.Clients;
+using PokeD.Server.Storage.Files;
+
 namespace PokeD.Server.Chat
 {
-    /*
     public class ChatChannelScriptLua : BaseChatChannelScript
     {
-        private LuaScript Script { get; }
-        private LuaTable Hook => Lua.ToLuaTable(Script["hook"]);
+        private LuaFile LuaFile { get; }
+        private Script Script => LuaFile.Script;
+        private Table Hook => (Table) Script.Globals["hook"];
 
-        public override string Name => (string) Script["Name"];
-        public override string Description => (string) (Script["Description"] ?? string.Empty);
-        public override string Aliases => (string) (Script["Alias"] ?? string.Empty);
+        public override string Name => (string)Script.Globals["Name"];
+        public override string Description => (string) Script.Globals["Description"] ?? string.Empty;
+        public override string Aliases => (string) Script.Globals["Alias"] ?? string.Empty;
 
-        public ChatChannelScriptLua(LuaScript script) { Script = script; }
+        public ChatChannelScriptLua(LuaFile luaFile) { LuaFile = luaFile; }
 
-        public override bool Initialize() => Script.ReloadFile();
+        private object[] CallHookFunction(params object[] args)
+        {
+            var ret = Script.Call(Hook["Call"], args).Tuple;
+            return ret?.Any() == true ? ret.Select(dynVal => dynVal.ToObject()).ToArray() : new object[0];
+        }
 
-        public override bool MessageSend(ChatMessage chatMessage) => (bool) Hook.CallFunction("Call", "MessageSend", chatMessage)[0];
+        public override bool MessageSend(ChatMessage chatMessage) => (bool) CallHookFunction("MessageSend", chatMessage)[0];
 
-        public override bool Subscribe(Client client) => (bool) Hook.CallFunction("Call", "Subscribe", client)[0];
+        public override bool Subscribe(Client client) => (bool) CallHookFunction("Subscribe", client)[0];
 
-        public override bool UnSubscribe(Client client) => (bool) Hook.CallFunction("Call", "UnSubscribe", client)[0];
+        public override bool UnSubscribe(Client client) => (bool) CallHookFunction("UnSubscribe", client)[0];
     }
-    */
 }

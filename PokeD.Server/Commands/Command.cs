@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 
 using Aragas.Network.Data;
-using Aragas.Network.Packets;
 
 using PCLExt.Config;
 
@@ -107,9 +106,9 @@ namespace PokeD.Server.Commands
             public override bool RegisterOrLogIn(string passwordHash) => false;
             public override bool ChangePassword(string oldPassword, string newPassword) => false;
 
-            public override void SendPacket(Packet packet) { }
+            public override void SendPacket<TPacket>(Func<TPacket> func) { }
 
-            public override void SendChatMessage(ChatChannelMessage chatMessage) { }
+            public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage) { }
             public override void SendServerMessage(string text) { }
             public override void SendPrivateMessage(ChatMessage chatMessage) { }
 
@@ -121,9 +120,11 @@ namespace PokeD.Server.Commands
             public override void Dispose() { }
         }
 
+        // -- Should be hidden ideally
         protected ModuleManagerService ModuleManager => ServiceContainer.GetService<ModuleManagerService>();
         protected CommandManagerService CommandManager => ServiceContainer.GetService<CommandManagerService>();
         protected ChatChannelManagerService ChatChannelManager => ServiceContainer.GetService<ChatChannelManagerService>();
+        // -- Should be hidden ideally
 
         private IServiceContainer ServiceContainer { get; }
         protected WorldService World => ServiceContainer.GetService<WorldService>();

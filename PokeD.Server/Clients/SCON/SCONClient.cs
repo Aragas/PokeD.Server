@@ -53,7 +53,9 @@ namespace PokeD.Server.Clients.SCON
 
         #endregion Values
 
-        ProtobufTransmission<SCONPacket> Stream { get; }
+        private Socket Socket { get; }
+        private DefaultPacketFactory<SCONPacket, VarInt, ProtobufSerializer, ProtobufDeserialiser> PacketFactory { get; }
+        private ProtobufTransmission<SCONPacket> Stream { get; set; }
 
 #if DEBUG
         // -- Debug -- //
@@ -64,7 +66,9 @@ namespace PokeD.Server.Clients.SCON
 
         public SCONClient(Socket socket, ModuleSCON module) : base(module)
         {
-            Stream = new ProtobufTransmission<SCONPacket>(socket, typeof(SCONPacketTypes));
+            Socket = socket;
+            PacketFactory = new DefaultPacketFactory<SCONPacket, VarInt, ProtobufSerializer, ProtobufDeserialiser>();
+            Stream = new ProtobufTransmission<SCONPacket>(Socket, new NetworkStream(Socket), PacketFactory);
 
             AuthorizationStatus = (EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0);
         }
@@ -165,34 +169,34 @@ namespace PokeD.Server.Clients.SCON
 
         public override GameDataPacket GetDataPacket() { throw new NotSupportedException(); }
 
-        public override void SendPacket(Packet packet)
+        public override void SendPacket<TPacket>(Func<TPacket> func)
         {
-            var sconPacket = packet as SCONPacket;
-            if (sconPacket == null)
+            var packet = PacketFactory.Create(func) as SCONPacket;
+            if (packet == null)
                 throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
 
             if (packet is ChatMessagePacket)
-                if(!ChatEnabled)
+                if (!ChatEnabled)
                     return;
-            
-            Stream.SendPacket(sconPacket);
-     
+
+            Stream.SendPacket(packet);
+
 #if DEBUG
-            Sended.Add(sconPacket);
+            Sended.Add(packet);
 #endif
         }
-        public override void SendChatMessage(ChatChannelMessage chatMessage) { }
+        public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage) { }
         public override void SendServerMessage(string text) { }
         public override void SendPrivateMessage(ChatMessage chatMessage) { }
 
         public override void SendKick(string reason = "")
         {
-            SendPacket(new AuthorizationDisconnectPacket { Reason = reason });
+            SendPacket(() => new AuthorizationDisconnectPacket { Reason = reason });
             base.SendKick(reason);
         }
         public override void SendBan(BanTable banTable)
         {
-            SendPacket(new AuthorizationDisconnectPacket { Reason = $"This SCON Client was banned from the Server.\r\nTime left: {DateTime.UtcNow - banTable.UnbanTime:%m}\r\nReason: {banTable.Reason}" });
+            SendPacket(() => new AuthorizationDisconnectPacket { Reason = $"This SCON Client was banned from the Server.\r\nTime left: {DateTime.UtcNow - banTable.UnbanTime:%m}\r\nReason: {banTable.Reason}" });
             base.SendBan(banTable);
         }
 

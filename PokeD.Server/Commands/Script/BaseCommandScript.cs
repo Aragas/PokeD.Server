@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Services;
 
@@ -8,13 +9,6 @@ namespace PokeD.Server.Commands
 {
     public abstract class BaseCommandScript
     {
-        public abstract string Name { get; }
-        public abstract string Description { get; }
-        public abstract IEnumerable<string> Aliases { get; }
-        public abstract PermissionFlags Permission { get; }
-
-        public abstract WorldService World { set; }
-
         protected static PermissionFlags ParsePermissionFlags(string permissionFlags)
         {
             var permissions = permissionFlags.Split(' ');
@@ -31,7 +25,15 @@ namespace PokeD.Server.Commands
             return value;
         }
 
-        public abstract bool Initialize();
+        public abstract string Name { get; }
+        public abstract string Description { get; }
+        public abstract IEnumerable<string> Aliases { get; }
+        public abstract PermissionFlags Permission { get; }
+
+        private IServiceContainer ServiceContainer { get; }
+        protected WorldService World => ServiceContainer.GetService<WorldService>();
+
+        protected BaseCommandScript(IServiceContainer serviceContainer) { ServiceContainer = serviceContainer; }
 
         public abstract void Handle(Client client, string alias, string[] arguments);
 

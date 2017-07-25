@@ -25,7 +25,7 @@ namespace PokeD.Server.Chat
             CheckLocation(sender);
 
             foreach (var client in ClientsInLocation[location])
-                client.SendChatMessage(new ChatChannelMessage(this, chatMessage));
+                client.SendChatMessage(this, chatMessage);
 
             return true;
         }

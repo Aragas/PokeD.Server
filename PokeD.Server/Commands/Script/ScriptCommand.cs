@@ -15,12 +15,7 @@ namespace PokeD.Server.Commands
         public override IEnumerable<string> Aliases => Script.Aliases;
         public override PermissionFlags Permissions => Script.Permission;
 
-        public ScriptCommand(IServiceContainer componentManager, BaseCommandScript script) : base(componentManager)
-        {
-            Script = script;
-            Script.World = World;
-            Script.Initialize();
-        }
+        public ScriptCommand(IServiceContainer serviceContainer, BaseCommandScript script) : base(serviceContainer) => Script = script;
 
         public override void Handle(Client client, string alias, string[] arguments) => Script.Handle(client, alias, arguments);
 

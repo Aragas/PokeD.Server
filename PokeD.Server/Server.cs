@@ -12,7 +12,6 @@ namespace PokeD.Server
     public partial class Server : IDisposable
     {
         private ConfigType ConfigType { get; }
-
         private IConfigFile ServerConfigFile => new ServerConfigFile(ConfigType);
 
 
@@ -33,8 +32,7 @@ namespace PokeD.Server
         public bool PreCacheData { get; private set; } = false;
 
         public bool EnableDebug { get => Logger.EnableDebug; private set => Logger.EnableDebug = value; }
-
-
+        
         //public bool AutomaticErrorReporting { get; private set; } = true;
 
         #endregion Settings
@@ -42,13 +40,13 @@ namespace PokeD.Server
         [ConfigIgnore]
         public bool IsDisposing { get; private set; }
 
-
+        
         public Server(ConfigType configType)
         {
             ConfigType = configType;
 
             Logger.Log(LogType.Debug, $"Adding basic services to Server...");
-            //Services.AddService(new SecurityService(this, ConfigType));
+            Services.AddService(new SecurityService(this, ConfigType));
             Services.AddService(new DatabaseService(this, ConfigType));
             Services.AddService(new WorldService(this, ConfigType));
             Services.AddService(new ChatChannelManagerService(this, ConfigType));
@@ -96,15 +94,6 @@ namespace PokeD.Server
         }
 
         
-        /*
-        public void Update()
-        {
-            foreach (var service in Services)
-                (service as IUpdatable)?.Update();
-        }
-        */
-
-
         public void Dispose()
         {
             if (IsDisposing)
@@ -115,7 +104,7 @@ namespace PokeD.Server
             Logger.Log(LogType.Debug, $"Disposing Server...");
 
             foreach (var service in Services)
-                (service as IDisposable)?.Dispose();
+                service?.Dispose();
 
             Logger.Log(LogType.Debug, $"Disposed Server.");
         }

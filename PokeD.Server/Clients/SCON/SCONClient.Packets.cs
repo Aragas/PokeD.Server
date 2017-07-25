@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using Aragas.Network.IO;
+
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Prng;
+
 using PCLExt.FileStorage;
 
 using PokeD.Core.Data.SCON;
@@ -13,6 +18,7 @@ using PokeD.Core.Packets.SCON.Logs;
 using PokeD.Core.Packets.SCON.Script;
 using PokeD.Core.Packets.SCON.Status;
 using PokeD.Server.Extensions;
+using PokeD.Server.IO;
 using PokeD.Server.Storage.Folders;
 
 namespace PokeD.Server.Clients.SCON
@@ -29,19 +35,17 @@ namespace PokeD.Server.Clients.SCON
             if (Authorized)
                 return;
 
-            SendPacket(new AuthorizationResponsePacket { AuthorizationStatus = AuthorizationStatus });
+            SendPacket(() => new AuthorizationResponsePacket { AuthorizationStatus = AuthorizationStatus });
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                /*
                 var publicKey = Module.Security.RSAKeyPair.PublicKeyToByteArray();
 
                 VerificationToken = new byte[4];
                 var drg = new DigestRandomGenerator(new Sha512Digest());
                 drg.NextBytes(VerificationToken);
 
-                SendPacket(new EncryptionRequestPacket { PublicKey = publicKey, VerificationToken = VerificationToken });
-                */
+                SendPacket(() => new EncryptionRequestPacket { PublicKey = publicKey, VerificationToken = VerificationToken });
             }
         }
         private void HandleEncryptionResponse(EncryptionResponsePacket packet)
@@ -51,49 +55,46 @@ namespace PokeD.Server.Clients.SCON
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
-                /*
                 var pkcs = new PKCS1Signer(Module.Security.RSAKeyPair);
 
                 var decryptedToken = pkcs.DeSignData(packet.VerificationToken);
-                for (int i = 0; i < VerificationToken.Length; i++)
+                for (var i = 0; i < VerificationToken.Length; i++)
                     if (decryptedToken[i] != VerificationToken[i])
                     {
-                        SendPacket(new AuthorizationDisconnectPacket { Reason = "Unable to authenticate." });
+                        SendPacket(() => new AuthorizationDisconnectPacket { Reason = "Unable to authenticate." });
                         return;
                     }
                 Array.Clear(VerificationToken, 0, VerificationToken.Length);
 
                 var sharedKey = pkcs.DeSignData(packet.SharedSecret);
 
-                // TODO
-                //Stream.InitializeEncryption(sharedKey);
-                */
+                Stream = new ProtobufTransmission<SCONPacket>(Socket, new BouncyCastleAesStream(Socket, sharedKey));
             }
             else
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Encryption not enabled!" });
+                SendPacket(() => new AuthorizationDisconnectPacket { Reason = "Encryption not enabled!" });
         }
         private void HandleAuthorizationPassword(AuthorizationPasswordPacket packet)
         {
             if (Authorized)
                 return;
 
-            if (((ModuleSCON) Module).SCONPassword.Hash == packet.PasswordHash)
+            if (Module.SCONPassword.Hash == packet.PasswordHash)
             {
                 Authorized = true;
-                SendPacket(new AuthorizationCompletePacket());
+                SendPacket(() => new AuthorizationCompletePacket());
 
                 Join();
                 IsInitialized = true;
             }
             else
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Password not correct!" });
+                SendPacket(() => new AuthorizationDisconnectPacket { Reason = "Password not correct!" });
         }
 
         private void HandleExecuteCommand(ExecuteCommandPacket packet)
         {
             if (!Authorized)
             {
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
+                SendPacket(() => new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
                 return;
             }
 
@@ -104,7 +105,7 @@ namespace PokeD.Server.Clients.SCON
         {
             if (!Authorized)
             {
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
+                SendPacket(() => new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
                 return;
             }
 
@@ -115,18 +116,18 @@ namespace PokeD.Server.Clients.SCON
         {
             if (!Authorized)
             {
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
+                SendPacket(() => new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
                 return;
             }
 
-            SendPacket(new PlayerInfoListResponsePacket { PlayerInfos = Module.AllClientsSelect(clients => clients.ClientInfos().ToList()).ToArray() });
+            SendPacket(() => new PlayerInfoListResponsePacket { PlayerInfos = Module.AllClientsSelect(clients => clients.ClientInfos().ToList()).ToArray() });
         }
 
         private void HandleLogListRequest(LogListRequestPacket packet)
         {
             if (!Authorized)
             {
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
+                SendPacket(() => new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
                 return;
             }
 
@@ -136,13 +137,13 @@ namespace PokeD.Server.Clients.SCON
             foreach (var file in list)
                 logs.Add(new Log { LogFileName = file.Name });
             
-            SendPacket(new LogListResponsePacket { Logs = logs.ToArray() });
+            SendPacket(() => new LogListResponsePacket { Logs = logs.ToArray() });
         }
         private void HandleLogFileRequest(LogFileRequestPacket packet)
         {
             if (!Authorized)
             {
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
+                SendPacket(() => new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
                 return;
             }
 
@@ -150,7 +151,7 @@ namespace PokeD.Server.Clients.SCON
                 using (var reader = new StreamReader(new LogsFolder().GetFile(packet.LogFilename).Open(PCLExt.FileStorage.FileAccess.Read)))
                 {
                     var logText = reader.ReadToEnd();
-                    SendPacket(new LogFileResponsePacket { LogFilename = packet.LogFilename, LogFile = logText });
+                    SendPacket(() => new LogFileResponsePacket { LogFilename = packet.LogFilename, LogFile = logText });
                 }
         }
 
@@ -158,7 +159,7 @@ namespace PokeD.Server.Clients.SCON
         {
             if (!Authorized)
             {
-                SendPacket(new AuthorizationDisconnectPacket {Reason = "Not authorized!"});
+                SendPacket(() => new AuthorizationDisconnectPacket {Reason = "Not authorized!"});
                 return;
             }
 
@@ -168,13 +169,13 @@ namespace PokeD.Server.Clients.SCON
             foreach (var file in list)
                 crashLogs.Add(new Log {LogFileName = file.Name});
 
-            SendPacket(new CrashLogListResponsePacket { CrashLogs = crashLogs.ToArray() });
+            SendPacket(() => new CrashLogListResponsePacket { CrashLogs = crashLogs.ToArray() });
         }
         private void HandleCrashLogFileRequest(CrashLogFileRequestPacket packet)
         {
             if (!Authorized)
             {
-                SendPacket(new AuthorizationDisconnectPacket {Reason = "Not authorized!"});
+                SendPacket(() => new AuthorizationDisconnectPacket {Reason = "Not authorized!"});
                 return;
             }
 
@@ -182,7 +183,7 @@ namespace PokeD.Server.Clients.SCON
                 using (var reader = new StreamReader(new CrashLogsFolder().GetFile(packet.CrashLogFilename).Open(PCLExt.FileStorage.FileAccess.Read)))
                 {
                     var logText = reader.ReadToEnd();
-                    SendPacket(new CrashLogFileResponsePacket {CrashLogFilename = packet.CrashLogFilename, CrashLogFile = logText});
+                    SendPacket(() => new CrashLogFileResponsePacket {CrashLogFilename = packet.CrashLogFilename, CrashLogFile = logText});
                 }
         }
 
@@ -190,22 +191,22 @@ namespace PokeD.Server.Clients.SCON
         {
             if (!Authorized)
             {
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
+                SendPacket(() => new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
                 return;
             }
 
-            SendPacket(new PlayerDatabaseListResponsePacket { PlayerDatabases = new PlayerDatabase[0] });
+            SendPacket(() => new PlayerDatabaseListResponsePacket { PlayerDatabases = new PlayerDatabase[0] });
         }
 
         private void HandleBanListRequest(BanListRequestPacket packet)
         {
             if (!Authorized)
             {
-                SendPacket(new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
+                SendPacket(() => new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
                 return;
             }
 
-            SendPacket(new BanListResponsePacket { Bans = new Ban[0] });
+            SendPacket(() => new BanListResponsePacket { Bans = new Ban[0] });
         }
 
         private void HandleUploadLuaToServer(UploadScriptToServerPacket packet)

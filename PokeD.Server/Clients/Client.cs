@@ -102,9 +102,10 @@ namespace PokeD.Server.Clients
 
         public abstract GameDataPacket GetDataPacket();
 
-        public abstract void SendPacket(Packet packet);
+        //public abstract void SendPacket(Packet packet);
+        public abstract void SendPacket<TPacket>(Func<TPacket> packet) where TPacket : Packet, new();
 
-        public abstract void SendChatMessage(ChatChannelMessage chatMessage);
+        public abstract void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage);
         public abstract void SendPrivateMessage(ChatMessage chatMessage);
         public abstract void SendServerMessage(string text);
 

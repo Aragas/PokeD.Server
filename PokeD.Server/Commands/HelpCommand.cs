@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
 namespace PokeD.Server.Commands
@@ -13,7 +14,7 @@ namespace PokeD.Server.Commands
         public override IEnumerable<string> Aliases => new [] { "h" };
         public override PermissionFlags Permissions => PermissionFlags.UnVerifiedOrHigher;
 
-        public HelpCommand(Server server) : base(server) { }
+        public HelpCommand(IServiceContainer server) : base(server) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {

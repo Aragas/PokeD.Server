@@ -1,11 +1,10 @@
 using PCLExt.FileStorage;
-
-using PokeD.Core.Storage.Folders;
+using PCLExt.FileStorage.Folders;
 
 namespace PokeD.Server.Storage.Folders
 {
     public class ContentFolder : BaseFolder
     {
-        public ContentFolder() : base(new MainFolder().CreateFolder("Content", CreationCollisionOption.OpenIfExists)) { }
+        public ContentFolder() : base(new ApplicationFolder().CreateFolder("Content", CreationCollisionOption.OpenIfExists)) { }
     }
 }

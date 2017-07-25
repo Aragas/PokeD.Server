@@ -7,7 +7,6 @@ using Aragas.Network.Data;
 using Aragas.Network.IO;
 using Aragas.Network.Packets;
 
-
 using PokeD.Core.Data.PokeD;
 using PokeD.Core.Packets.PokeD;
 using PokeD.Core.Packets.P3D.Shared;
@@ -94,7 +93,8 @@ namespace PokeD.Server.Clients.PokeD
 
         #endregion Other Values
 
-        ProtobufTransmission<PokeDPacket> Stream { get; }
+        private DefaultPacketFactory<PokeDPacket, VarInt, ProtobufSerializer, ProtobufDeserialiser> PacketFactory { get; }
+        private ProtobufTransmission<PokeDPacket> Stream { get; }
 
 #if DEBUG
         // -- Debug -- //
@@ -103,7 +103,11 @@ namespace PokeD.Server.Clients.PokeD
         // -- Debug -- //
 #endif
 
-        public PokeDPlayer(Socket socket, ModulePokeD module) : base(module) { Stream = new ProtobufTransmission<PokeDPacket>(socket, typeof(PokeDPacketTypes)); }
+        public PokeDPlayer(Socket socket, ModulePokeD module) : base(module)
+        {
+            PacketFactory = new DefaultPacketFactory<PokeDPacket, VarInt, ProtobufSerializer, ProtobufDeserialiser>();
+            Stream = new ProtobufTransmission<PokeDPacket>(socket, factory: PacketFactory);
+        }
 
 
         public override void Update()
@@ -198,30 +202,30 @@ namespace PokeD.Server.Clients.PokeD
         public override bool RegisterOrLogIn(string passwordHash) => false;
         public override bool ChangePassword(string oldPassword, string newPassword) => false;
 
-        public override void SendPacket(Packet packet)
+        public override void SendPacket<TPacket>(Func<TPacket> func)
         {
-            var pokeDPacket = packet as PokeDPacket;
-            if (pokeDPacket == null)
+            var packet = PacketFactory.Create(func) as PokeDPacket;
+            if (packet == null)
                 throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
 
-            Stream.SendPacket(pokeDPacket);
+            Stream.SendPacket(packet);
 
 #if DEBUG
-            Sended.Add(pokeDPacket);
+            Sended.Add(packet);
 #endif
         }
-        public override void SendChatMessage(ChatChannelMessage chatMessage) { SendPacket(new ChatGlobalMessagePacket { Message = chatMessage.ChatMessage.Message }); }
-        public override void SendServerMessage(string text) { SendPacket(new ChatServerMessagePacket { Message = text }); }
-        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatPrivateMessagePacket { PlayerID = new VarInt(chatMessage.Sender.ID), Message = chatMessage.Message }); }
+        public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage) { SendPacket(() => new ChatGlobalMessagePacket { Message = chatMessage.Message }); }
+        public override void SendServerMessage(string text) { SendPacket(() => new ChatServerMessagePacket { Message = text }); }
+        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(() => new ChatPrivateMessagePacket { PlayerID = new VarInt(chatMessage.Sender.ID), Message = chatMessage.Message }); }
 
         public override void SendKick(string reason = "")
         {
-            SendPacket(new DisconnectPacket { Reason = reason });
+            SendPacket(() => new DisconnectPacket { Reason = reason });
             base.SendKick(reason);
         }
         public override void SendBan(BanTable banTable)
         {
-            SendPacket(new DisconnectPacket { Reason = $"You have banned from this server\r\nReason: {banTable.Reason}\r\nTime left: {(banTable.UnbanTime - DateTime.UtcNow):%m} minutes." });
+            SendPacket(() => new DisconnectPacket { Reason = $"You have banned from this server\r\nReason: {banTable.Reason}\r\nTime left: {(banTable.UnbanTime - DateTime.UtcNow):%m} minutes." });
             base.SendBan(banTable);
         }
 

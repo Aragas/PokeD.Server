@@ -7,9 +7,8 @@ namespace PokeD.Server.Chat
 {
     public abstract class ChatChannel
     {
-        protected static ConcurrentDictionary<Client, ChatChannel> Subscription { get; } = new ConcurrentDictionary<Client, ChatChannel>();
+        private static ConcurrentDictionary<Client, ChatChannel> Subscription { get; } = new ConcurrentDictionary<Client, ChatChannel>();
 
-        public List<Client> Subscribers { get; } = new List<Client>();
         public List<ChatMessage> History { get; } = new List<ChatMessage>();
 
         public abstract string Name { get; }
@@ -18,16 +17,10 @@ namespace PokeD.Server.Chat
 
         public virtual bool MessageSend(ChatMessage chatMessage)
         {
-            if (!Subscription.TryGetValue(chatMessage.Sender, out _))
+            if (!Subscription.TryGetValue(chatMessage.Sender, out var chatChannel) || chatChannel != this)
                 return false;
 
             History.Add(chatMessage);
-
-            lock (Subscribers)
-            {
-                foreach (var client in Subscribers)
-                    client?.SendChatMessage(new ChatChannelMessage(this, chatMessage));
-            }
 
             return true;
         }
@@ -37,34 +30,18 @@ namespace PokeD.Server.Chat
             if (Subscription.TryGetValue(client, out var chatChannel))
                 chatChannel.UnSubscribe(client);
 
-            lock (Subscribers)
-            {
-                if (!Subscribers.Contains(client))
-                {
-                    Subscribers.Add(client);
-                    Subscription[client] = this;
-                    return true;
-                }
-            }
+            lock (Subscription)
+                Subscription.AddOrUpdate(client, this, (_, cc) => cc);
 
-            return false;
+            return true;
         }
+
         public virtual bool UnSubscribe(Client client)
         {
-            if (!Subscription.TryGetValue(client, out _))
-                return false;
-
-            lock (Subscribers)
-            {
-                if (Subscribers.Contains(client))
-                {
-                    Subscribers.Remove(client);
-                    Subscription[client] = null;
-                    return true;
-                }
-            }
-
-            return false;
+            lock (Subscription)
+                Subscription.TryRemove(client, out _);
+            
+            return true;
         }
     }
 }

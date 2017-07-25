@@ -73,17 +73,20 @@ namespace PokeD.Server.Clients.P3D
 
         #endregion Values
 
+        private DefaultPacketFactory<P3DPacket, int, P3DSerializer, P3DDeserializer> PacketFactory { get; }
         private P3DTransmission Stream { get; }
 
         private ConcurrentQueue<P3DPacket> PacketsToSend { get; } = new ConcurrentQueue<P3DPacket>();
 
 #if DEBUG
-        // -- Debug -- //
         private List<P3DPacket> Received { get; } =  new List<P3DPacket>();
         private List<P3DPacket> Sended { get; } = new List<P3DPacket>();
-        // -- Debug -- //
 #endif
-        public P3DPlayer(Socket socket, ModuleP3D module) : base(module) { Stream = new P3DTransmission(socket, typeof(P3DPacketTypes)); }
+        public P3DPlayer(Socket socket, ModuleP3D module) : base(module)
+        {
+            PacketFactory = new DefaultPacketFactory<P3DPacket, int, P3DSerializer, P3DDeserializer>();
+            Stream = new P3DTransmission(socket, PacketFactory);
+        }
 
         public override void Update()
         {
@@ -226,21 +229,21 @@ namespace PokeD.Server.Clients.P3D
             return false;
         }
 
-        public override void SendPacket(Packet packet)
-        {
-            var p3dPacket = packet as P3DPacket;
-            if(p3dPacket == null)
+        public override void SendPacket<TPacket>(Func<TPacket> func)
+        {    
+            var packet = PacketFactory.Create(func) as P3DPacket;
+            if (packet == null)
                 throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
 
-            PacketsToSend.Enqueue(p3dPacket);
+            PacketsToSend.Enqueue(packet);
         }
-        public override void SendChatMessage(ChatChannelMessage chatMessage) { SendPacket(new ChatMessageGlobalPacket { Origin = chatMessage.ChatMessage.Sender.ID, Message = chatMessage.ChatMessage.Message }); }
-        public override void SendServerMessage(string text) { SendPacket(new ChatMessageGlobalPacket { Origin = -1, Message = text }); }
-        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatMessagePrivatePacket { Origin = chatMessage.Sender.ID, DataItems = chatMessage.Message }); }
+        public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage) => SendPacket(() => new ChatMessageGlobalPacket { Origin = chatMessage.Sender.ID, Message = chatMessage.Message });
+        public override void SendServerMessage(string text) => SendPacket(() => new ChatMessageGlobalPacket { Origin = Origin.Server, Message = text });
+        public override void SendPrivateMessage(ChatMessage chatMessage) => SendPacket(() => new ChatMessagePrivatePacket { Origin = chatMessage.Sender.ID, DataItems = chatMessage.Message });
 
         public override void SendKick(string reason = "")
         {
-            SendPacket(new KickedPacket { Origin = -1, Reason = reason });
+            SendPacket(() => new KickedPacket { Origin = Origin.Server, Reason = reason });
             base.SendKick(reason);
         }
         public override void SendBan(BanTable banTable)
@@ -294,7 +297,7 @@ namespace PokeD.Server.Clients.P3D
                 PokemonSkin,
                 PokemonFacing.ToString(CultureInfo));
         }
-        public override GameDataPacket GetDataPacket() => new GameDataPacket { DataItems = GenerateDataItems() };
+        public override GameDataPacket GetDataPacket() => PacketFactory.Create(() => new GameDataPacket { Origin = ID, DataItems = GenerateDataItems() });
 
 
         public override void Dispose()

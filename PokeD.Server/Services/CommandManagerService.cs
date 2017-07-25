@@ -38,9 +38,9 @@ namespace PokeD.Server.Services
 
             public ServerClient(ServerModule serverModule) : base(serverModule) { }
 
-            public override void SendPacket(Packet packet) { }
+            public override void SendPacket<TPacket>(Func<TPacket> func) { }
 
-            public override void SendChatMessage(ChatChannelMessage chatMessage) => Logger.LogChatMessage(chatMessage.ChatMessage.Sender.Name, chatMessage.ChatChannel.Name, chatMessage.ChatMessage.Message);
+            public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage) => Logger.LogChatMessage(chatMessage.Sender.Name, chatChannel.Name, chatMessage.Message);
             public override void SendServerMessage(string text) => Logger.Log(LogType.Command, text);
             public override void SendPrivateMessage(ChatMessage chatMessage) { }
 
@@ -142,7 +142,14 @@ namespace PokeD.Server.Services
             foreach (var command in types.Where(type => !Equals(type, typeof(ScriptCommand).GetTypeInfo())).Select(type => (Command)Activator.CreateInstance(type.AsType(), Services)))
                 Commands.Add(command);
 
-            Commands.AddRange(ScriptCommandLoader.LoadCommands(Services));
+
+            var scriptCommandLoaderTypes = typeof(CommandManagerService).GetTypeInfo().Assembly.DefinedTypes
+                .Where(typeInfo => typeof(ScriptCommandLoader).GetTypeInfo().IsAssignableFrom(typeInfo))
+                .Where(typeInfo => !typeInfo.IsDefined(typeof(CommandDisableAutoLoadAttribute), true))
+                .Where(typeInfo => !typeInfo.IsAbstract);
+
+            foreach (var scriptCommandLoader in scriptCommandLoaderTypes.Where(type => type != typeof(ScriptCommandLoader).GetTypeInfo()).Select(type => (ScriptCommandLoader) Activator.CreateInstance(type.AsType())))
+                Commands.AddRange(scriptCommandLoader.LoadCommands(Services));
         }
 
         public override void Dispose()

@@ -7,6 +7,7 @@ using Aragas.Network.Data;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Data.PokeD;
 using PokeD.Core.Extensions;
+using PokeD.Core.Packets.P3D;
 using PokeD.Core.Packets.P3D.Battle;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Client;
@@ -128,13 +129,11 @@ namespace PokeD.Server.Clients.P3D
                 Save();
 
             if (!Moving)
-                Module.SendPacketToAll(packet);
+                Module.SendPacketToAll(() => packet);
             else
                 Module.OnPosition(this);
 
-            var dataPacket = GetDataPacket();
-            dataPacket.Origin = ID;
-            SendPacket(dataPacket);
+            SendPacket(GetDataPacket);
 
 
             // We assume that if we get a GameData, it's a client that wanna play
@@ -145,8 +144,8 @@ namespace PokeD.Server.Clients.P3D
             if (!Module.AssignID(this))
                 return;
 
-            SendPacket(new IDPacket { Origin = -1, PlayerID = ID });
-            SendPacket(new WorldDataPacket { Origin = -1, DataItems = Module.World.GenerateDataItems() });
+            SendPacket(() => new IDPacket { Origin = Origin.Server, PlayerID = ID });
+            SendPacket(() => new WorldDataPacket { Origin = Origin.Server, DataItems = Module.World.GenerateDataItems() });
 
             if (!IsGameJoltPlayer)
             {
@@ -168,7 +167,7 @@ namespace PokeD.Server.Clients.P3D
             {
                 // Do not show login command
                 if (!packet.Message.ToLower().StartsWith("/login"))
-                    SendChatMessage(new ChatChannelMessage(null, message));
+                    SendChatMessage(null, message);
 
                 if (Module.ExecuteClientCommand(this, packet.Message))
                     return;
@@ -183,7 +182,7 @@ namespace PokeD.Server.Clients.P3D
             var destClient = Module.GetClient(packet.DestinationPlayerName);
             if (destClient != null)
             {
-                SendPacket(new ChatMessagePrivatePacket { Origin = packet.Origin, DataItems = packet.DataItems });
+                SendPacket(() => new ChatMessagePrivatePacket { Origin = packet.Origin, DataItems = packet.DataItems });
                 destClient.SendPrivateMessage(new ChatMessage(this, packet.Message));
             }
             else
@@ -208,8 +207,8 @@ namespace PokeD.Server.Clients.P3D
                 if (GameMode == ((P3DPlayer) destClient).GameMode)
                 {
                     // XNOR
-                    if (IsGameJoltPlayer == ((P3DPlayer)destClient).IsGameJoltPlayer)
-                        destClient.SendPacket(new TradeRequestPacket { Origin = packet.Origin });
+                    if (IsGameJoltPlayer == ((P3DPlayer) destClient).IsGameJoltPlayer)
+                        destClient.SendPacket(() => new TradeRequestPacket { Origin = packet.Origin });
                     else
                     {
                         SendServerMessage($"Can not start trade with {destClient.Name}! Online-Offline trade disabled.");
@@ -223,11 +222,11 @@ namespace PokeD.Server.Clients.P3D
                 }
             }
             else
-                destClient.SendPacket(new TradeRequestPacket { Origin = packet.Origin });
+                destClient.SendPacket(() => new TradeRequestPacket { Origin = packet.Origin });
         }
         private void HandleTradeJoin(TradeJoinPacket packet)
         {
-            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new TradeJoinPacket {Origin = packet.Origin});
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(() => new TradeJoinPacket {Origin = packet.Origin});
         }
         private void HandleTradeQuit(TradeQuitPacket packet)
         {
@@ -253,48 +252,48 @@ namespace PokeD.Server.Clients.P3D
 
         private void HandleBattleClientData(BattleClientDataPacket packet)
         {
-            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleClientDataPacket { Origin = packet.Origin, DataItems = packet.BattleData });
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(() => new BattleClientDataPacket { Origin = packet.Origin, DataItems = packet.BattleData });
         }
         private void HandleBattleHostData(BattleHostDataPacket packet)
         {
-            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleHostDataPacket { Origin = packet.Origin, DataItems = packet.BattleData });
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(() => new BattleHostDataPacket { Origin = packet.Origin, DataItems = packet.BattleData });
         }
         private void HandleBattleJoin(BattleJoinPacket packet)
         {
-            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleJoinPacket { Origin = packet.Origin });
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(() => new BattleJoinPacket { Origin = packet.Origin });
         }
         private void HandleBattleOffer(BattleOfferPacket packet)
         {
             if (PokemonsValid(packet.BattleData))
-                Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleOfferPacket { Origin = packet.Origin, DataItems = packet.BattleData });
+                Module.GetClient(packet.DestinationPlayerID)?.SendPacket(() => new BattleOfferPacket { Origin = packet.Origin, DataItems = packet.BattleData });
             else
             {
                 SendServerMessage($"One of your Pokemon is not valid!");
-                SendPacket(new BattleQuitPacket { Origin = packet.DestinationPlayerID });
+                SendPacket(() => new BattleQuitPacket { Origin = packet.DestinationPlayerID });
             }
         }
         private void HandleBattlePokemonData(BattleEndRoundDataPacket packet)
         {
-            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleEndRoundDataPacket { Origin = packet.Origin, DataItems = packet.BattleData });
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(() => new BattleEndRoundDataPacket { Origin = packet.Origin, DataItems = packet.BattleData });
         }
         private void HandleBattleQuit(BattleQuitPacket packet)
         {
-            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleQuitPacket { Origin = packet.Origin });
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(() => new BattleQuitPacket { Origin = packet.Origin });
         }
         private void HandleBattleRequest(BattleRequestPacket packet)
         {
-            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleRequestPacket { Origin = packet.Origin });
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(() => new BattleRequestPacket { Origin = packet.Origin });
         }
         private void HandleBattleStart(BattleStartPacket packet)
         {
-            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(new BattleStartPacket { Origin = packet.Origin });
+            Module.GetClient(packet.DestinationPlayerID)?.SendPacket(() => new BattleStartPacket { Origin = packet.Origin });
         }
 
 
         private void HandleServerDataRequest(ServerDataRequestPacket packet)
         {
             var clientNames = Module.AllClientsSelect(clients => clients.Select(client => client.Name).ToList());
-            var spacket = new ServerInfoDataPacket
+            SendPacket(() => new ServerInfoDataPacket
             {
                 Origin = ID,
 
@@ -304,8 +303,7 @@ namespace PokeD.Server.Clients.P3D
 
                 ServerName = Module.ServerName,
                 ServerMessage = Module.ServerMessage,
-            };
-            SendPacket(spacket);
+            });
 
             ThreadPool.QueueUserWorkItem(obj => Leave()); // We can't call Leave() from Update() cycle.
         }

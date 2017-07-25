@@ -10,6 +10,6 @@ namespace PokeD.Server.Storage.Files
     {
         public ConfigType ConfigType { get; }
 
-        public ServerConfigFile(ConfigType configType) : base(new ConfigFolder().CreateFile($"Server{configType.GetFileExtension()}", CreationCollisionOption.OpenIfExists)) { ConfigType = configType; }
+        public ServerConfigFile(ConfigType configType) : base(new ConfigFolder().CreateFile($"Server{configType.GetFileExtension()}", CreationCollisionOption.OpenIfExists)) => ConfigType = configType;
     }
 }

@@ -38,15 +38,21 @@ namespace PokeD.Server.Services
         }
         private void LoadChatChannels()
         {
-            var types = typeof(ChatChannelManagerService).GetTypeInfo().Assembly.DefinedTypes
+            var chatChannelTypes = typeof(ChatChannelManagerService).GetTypeInfo().Assembly.DefinedTypes
                 .Where(typeInfo => typeof(ChatChannel).GetTypeInfo().IsAssignableFrom(typeInfo))
                 .Where(typeInfo => !typeInfo.IsDefined(typeof(ChatChannelDisableAutoLoadAttribute), true))
                 .Where(typeInfo => !typeInfo.IsAbstract);
 
-            foreach (var chatChannel in types.Where(type => type != typeof(ScriptChatChannel).GetTypeInfo()).Select(type => (ChatChannel)Activator.CreateInstance(type.AsType())))
+            foreach (var chatChannel in chatChannelTypes.Where(type => type != typeof(ScriptChatChannel).GetTypeInfo()).Select(type => (ChatChannel) Activator.CreateInstance(type.AsType())))
                 ChatChannels.Add(chatChannel);
 
-            ChatChannels.AddRange(ScriptChatChannelLoader.LoadChatChannels());
+            var scriptChatChannelLoaderTypes = typeof(ChatChannelManagerService).GetTypeInfo().Assembly.DefinedTypes
+                .Where(typeInfo => typeof(ScriptChatChannelLoader).GetTypeInfo().IsAssignableFrom(typeInfo))
+                .Where(typeInfo => !typeInfo.IsDefined(typeof(ChatChannelDisableAutoLoadAttribute), true))
+                .Where(typeInfo => !typeInfo.IsAbstract);
+
+            foreach (var scriptChatChannelLoader in scriptChatChannelLoaderTypes.Where(type => type != typeof(ScriptChatChannelLoader).GetTypeInfo()).Select(type => (ScriptChatChannelLoader) Activator.CreateInstance(type.AsType())))
+                ChatChannels.AddRange(scriptChatChannelLoader.LoadChatChannels());
         }
 
         public override void Dispose()

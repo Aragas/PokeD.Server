@@ -17,16 +17,10 @@ namespace PokeD.Server.Commands
 
         public override void Handle(Client client, string alias, string[] arguments)
         {
-            if (arguments.Length == 1)
-            {
-                var channelName = arguments[0].ToLower();
-                var channel = ChatChannelManager.FindByAlias(channelName);
-                client.SendServerMessage(channel != null ? $"{channel.Name}: {channel.Description}" : $"Channel '{channelName}' not found!");
-            }
-            else
-                client.SendServerMessage($"Invalid arguments given.");
+            foreach (var channel in ChatChannelManager.GetChatChannels())
+                client.SendServerMessage($"{channel.Name}: {channel.Description}");
         }
 
-        public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <global/local/'custom'>");
+        public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias}");
     }
 }

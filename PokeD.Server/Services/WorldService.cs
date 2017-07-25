@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading;
 
 using PCLExt.Config;
@@ -42,7 +43,7 @@ namespace PokeD.Server.Services
 
         public TimeSpan CurrentTime
         {
-            get => TimeSpan.TryParseExact(CurrentTimeString, "hh\\,mm\\,ss", null, out TimeSpan timeSpan) ? timeSpan : TimeSpan.Zero;
+            get => TimeSpan.TryParseExact(CurrentTimeString, "hh\\,mm\\,ss", CultureInfo.InvariantCulture, TimeSpanStyles.None, out TimeSpan timeSpan) ? timeSpan : TimeSpan.Zero;
             set => CurrentTimeString = $"{value.Hours:00},{value.Minutes:00},{value.Seconds:00}";
         }
 
@@ -167,13 +168,17 @@ namespace PokeD.Server.Services
                     if (UseRealTime)
                     {
                         var time = DateTime.Now.Add(TimeSpanOffset);
-                        CurrentTimeString = time.Hour + "," + time.Minute + "," + time.Second;
+                        CurrentTimeString = $"{time.Hour:00},{time.Minute:00},{time.Second:00}";
                     }
                     else
+                    {
                         CurrentTime += TimeSpanOffset;
-                else
-                if (UseRealTime)
-                    CurrentTimeString = DateTime.Now.Hour + "," + DateTime.Now.Minute + "," + DateTime.Now.Second;
+                    }
+                else if (UseRealTime)
+                {
+                    var time = DateTime.Now.Add(TimeSpanOffset);
+                    CurrentTimeString = $"{time.Hour:00},{time.Minute:00},{time.Second:00}";
+                }
             }
             else
                 CurrentTimeString = "12,00,00";

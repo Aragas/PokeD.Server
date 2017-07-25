@@ -10,6 +10,6 @@ namespace PokeD.Server.Storage.Files
     {
         public ConfigType ConfigType { get; }
 
-        public ModuleSCONConfigFile(ConfigType configType) : base(new ModuleConfigFolder().CreateFile($"SCON{configType.GetFileExtension()}", CreationCollisionOption.OpenIfExists)) { ConfigType = configType; }
+        public ModuleSCONConfigFile(ConfigType configType) : base(new ModuleConfigFolder().CreateFile($"SCON{configType.GetFileExtension()}", CreationCollisionOption.OpenIfExists)) => ConfigType = configType;
     }
 }
