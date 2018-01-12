@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)\PokeD.BattleEngine\PokeD.BattleEngine.csproj" />
     <ProjectReference Include="$(SolutionDir)\PokeD.Core\PokeD.Core\PokeD.Core.csproj" />
+    <ProjectReference Include="$(SolutionDir)\PokeD.Server\kolben\Kolben\Kolben.Core.csproj" />
   </ItemGroup>
 
 </Project>
