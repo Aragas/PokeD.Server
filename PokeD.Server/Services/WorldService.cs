@@ -5,6 +5,7 @@ using System.Threading;
 
 using PCLExt.Config;
 
+using PokeD.Core;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Services;
 using PokeD.Server.Data;
@@ -12,7 +13,7 @@ using PokeD.Server.Storage.Files;
 
 namespace PokeD.Server.Services
 {
-    public class WorldService : ServerService
+    public class WorldService : BaseServerService
     {
         protected override IConfigFile ServiceConfigFile => new WorldComponentConfigFile(ConfigType);
 
@@ -21,7 +22,7 @@ namespace PokeD.Server.Services
 
         [ConfigIgnore]
         public bool UseLocation { get; set; }
-        bool LocationChanged { get; set; }
+        private bool LocationChanged { get; set; }
 
         [ConfigIgnore]
         public string Location
@@ -29,7 +30,7 @@ namespace PokeD.Server.Services
             get => _location;
             set { LocationChanged = _location != value; _location = value; }
         }
-        string _location = string.Empty;
+        private string _location = string.Empty;
 
         public bool UseRealTime { get; set; } = true;
 
@@ -46,12 +47,11 @@ namespace PokeD.Server.Services
             get => TimeSpan.TryParseExact(CurrentTimeString, "hh\\,mm\\,ss", CultureInfo.InvariantCulture, TimeSpanStyles.None, out TimeSpan timeSpan) ? timeSpan : TimeSpan.Zero;
             set => CurrentTimeString = $"{value.Hours:00},{value.Minutes:00},{value.Seconds:00}";
         }
+        private string CurrentTimeString { get; set; }
 
-        string CurrentTimeString { get; set; }
-
-        TimeSpan TimeSpanOffset { get; set; }
-        //TimeSpan TimeSpanOffset => TimeSpan.FromSeconds(TimeOffset);
-        //int TimeOffset { get; set; }
+        private TimeSpan TimeSpanOffset { get; set; }
+        //private TimeSpan TimeSpanOffset => TimeSpan.FromSeconds(TimeOffset);
+        //private int TimeOffset { get; set; }
 
         private DateTime WorldUpdateTime { get; set; } = DateTime.UtcNow;
 
@@ -189,7 +189,7 @@ namespace PokeD.Server.Services
 
         public override bool Start()
         {
-            Logger.Log(LogType.Debug, $"Loading World...");
+            Logger.Log(LogType.Debug, "Loading World...");
             if (!base.Start())
                 return false;
 
@@ -200,13 +200,13 @@ namespace PokeD.Server.Services
                 IsBackground = true
             }.Start();
 
-            Logger.Log(LogType.Debug, $"Loaded World.");
+            Logger.Log(LogType.Debug, "Loaded World.");
 
             return true;
         }
         public override bool Stop()
         {
-            Logger.Log(LogType.Debug, $"Unloading World...");
+            Logger.Log(LogType.Debug, "Unloading World...");
             if (!base.Stop())
                 return false;
 
@@ -216,11 +216,18 @@ namespace PokeD.Server.Services
                 UpdateLock.Wait();
             }
 
-            Logger.Log(LogType.Debug, $"Unloaded World.");
+            Logger.Log(LogType.Debug, "Unloaded World.");
 
             return true;
         }
 
-        public override void Dispose() { }
+        public override void Dispose()
+        {
+            if (UpdateToken?.IsCancellationRequested == false)
+            {
+                UpdateToken.Cancel();
+                UpdateLock.Wait();
+            }
+        }
     }
 }

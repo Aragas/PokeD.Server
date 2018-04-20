@@ -7,13 +7,14 @@ using Aragas.Network.Data;
 
 using PCLExt.Config;
 
+using PokeD.Core;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.SCON;
 using PokeD.Server.Storage.Files;
 
-namespace PokeD.Server
+namespace PokeD.Server.Modules
 {
     public class ModuleSCON : ServerModule
     {

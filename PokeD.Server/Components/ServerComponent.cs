@@ -1,6 +1,7 @@
 ﻿using PCLExt.Config;
 using PCLExt.Config.Extensions;
 
+using PokeD.Core;
 using PokeD.Core.Components;
 
 namespace PokeD.Server.Components

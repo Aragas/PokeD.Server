@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using PokeD.Server.Storage.Folders.Scripts;
+
+using PokeD.Server.Storage.Folders;
 
 namespace PokeD.Server.Chat
 {

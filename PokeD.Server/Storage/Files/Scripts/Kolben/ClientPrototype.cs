@@ -3,7 +3,7 @@ using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Services;
 
-namespace PokeD.Server.Storage.Files
+namespace PokeD.Server.Storage.Files.Scripts.Kolben
 {
     [ScriptPrototype(VariableName = "Client")]
     public class ClientPrototype
@@ -23,8 +23,8 @@ namespace PokeD.Server.Storage.Files
         [ScriptFunction(ScriptFunctionType.Constructor, VariableName = "constructor")]
         public static object Constructor(object @this, ScriptObjectLink objectLink, object[] parameters)
         {
-            if (parameters.Length > 0 && parameters[0] is int)
-                objectLink.SetReference(nameof(_reference), ModuleManager.GetClient((int) parameters[0]));
+            if (parameters.Length > 0 && parameters[0] is int clientID)
+                objectLink.SetReference(nameof(_reference), ModuleManager.GetClient(clientID));
 
             return NetUndefined.Instance;
         }
@@ -38,8 +38,8 @@ namespace PokeD.Server.Storage.Files
         [ScriptFunction(ScriptFunctionType.Standard, VariableName = "sendServerMessage")]
         public static object SendServerMessage(object @this, ScriptObjectLink objectLink, object[] parameters)
         {
-            if (parameters.Length > 0 && parameters[0] is string)
-                GetClient(@this).SendServerMessage((string) parameters[0]);
+            if (parameters.Length > 0 && parameters[0] is string message)
+                GetClient(@this).SendServerMessage(message);
 
             return NetUndefined.Instance;
         }

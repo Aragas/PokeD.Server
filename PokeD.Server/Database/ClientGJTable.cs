@@ -5,9 +5,9 @@ namespace PokeD.Server.Database
     public sealed class ClientGJTable : IDatabaseTable
     {
         [PrimaryKey]
-        public int ClientID { get; private set; }
+        public int ClientID { get; set; }
 
-        public long GameJoltID { get; private set; }
+        public long GameJoltID { get; set; }
 
 
         public ClientGJTable() { }

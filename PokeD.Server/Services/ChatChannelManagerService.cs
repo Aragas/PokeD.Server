@@ -5,12 +5,13 @@ using System.Reflection;
 
 using PCLExt.Config;
 
+using PokeD.Core;
 using PokeD.Core.Services;
 using PokeD.Server.Chat;
 
 namespace PokeD.Server.Services
 {
-    public class ChatChannelManagerService : ServerService
+    public class ChatChannelManagerService : BaseServerService
     {
         private List<ChatChannel> ChatChannels { get; } = new List<ChatChannel>();
 
@@ -23,17 +24,17 @@ namespace PokeD.Server.Services
 
         public override bool Start()
         {
-            Logger.Log(LogType.Debug, $"Loading ChatChannels...");
+            Logger.Log(LogType.Debug, "Loading ChatChannels...");
             LoadChatChannels();
-            Logger.Log(LogType.Debug, $"Loaded ChatChannels.");
+            Logger.Log(LogType.Debug, "Loaded ChatChannels.");
 
             return true;
         }
         public override bool Stop()
         {
-            Logger.Log(LogType.Debug, $"Unloading ChatChannels...");
+            Logger.Log(LogType.Debug, "Unloading ChatChannels...");
             ChatChannels.Clear();
-            Logger.Log(LogType.Debug, $"Unloaded ChatChannels.");
+            Logger.Log(LogType.Debug, "Unloaded ChatChannels.");
             return true;
         }
         private void LoadChatChannels()

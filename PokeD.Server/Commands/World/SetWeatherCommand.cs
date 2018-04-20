@@ -5,14 +5,13 @@ using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Data;
 
-// ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
     public class SetWeatherCommand : Command
     {
         public override string Name => "setweather";
         public override string Description => "Set World Weather.";
-        public override IEnumerable<string> Aliases => new string[] { "sw" };
+        public override IEnumerable<string> Aliases => new [] { "sw" };
         public override PermissionFlags Permissions => PermissionFlags.ModeratorOrHigher;
 
         public SetWeatherCommand(IServiceContainer componentManager) : base(componentManager) { }
@@ -30,7 +29,7 @@ namespace PokeD.Server.Commands
                     client.SendServerMessage($"Weather '{weather}' not found!");
             }
             else
-                client.SendServerMessage($"Invalid arguments given.");
+                client.SendServerMessage("Invalid arguments given.");
         }
 
         public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <Weather>");

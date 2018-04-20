@@ -5,6 +5,6 @@ namespace PokeD.Server.Storage.Folders
 {
     public class LogsFolder : BaseFolder
     {
-        public LogsFolder() : base(new ApplicationFolder().CreateFolder("Logs", CreationCollisionOption.OpenIfExists)) { }
+        public LogsFolder() : base(new ApplicationRootFolder().CreateFolder("Logs", CreationCollisionOption.OpenIfExists)) { }
     }
 }

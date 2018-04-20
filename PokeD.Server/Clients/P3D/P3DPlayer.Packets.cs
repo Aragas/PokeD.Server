@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Threading;
 
-using Aragas.Network.Data;
-
+using PokeD.Core;
+using PokeD.Core.Data;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Data.PokeD;
 using PokeD.Core.Extensions;
@@ -20,7 +20,12 @@ namespace PokeD.Server.Clients.P3D
 {
     public partial class P3DPlayer
     {
-        private bool IsOfficialGameMode => string.Equals(GameMode, "Kolben", StringComparison.OrdinalIgnoreCase) || string.Equals(GameMode, "Pokemon 3D", StringComparison.OrdinalIgnoreCase);
+        private bool IsOfficialGameMode =>
+            string.Equals(GameMode, "Kolben", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(GameMode, "Pokemon3D", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(GameMode, "Pokémon3D", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(GameMode, "Pokemon 3D", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(GameMode, "Pokémon 3D", StringComparison.OrdinalIgnoreCase);
 
         private bool PokemonsValid(string pokemonData) => !Module.ValidatePokemons || !IsOfficialGameMode || new DataItems(pokemonData).DataItemsToMonsters().All(pokemon => pokemon.IsValid);
         private bool PokemonValid(string pokemonData) => !Module.ValidatePokemons || !IsOfficialGameMode || new Monster(pokemonData).IsValid;
@@ -117,7 +122,7 @@ namespace PokeD.Server.Clients.P3D
                     Logger.Log(LogType.Warning, $"P3D Reading Error: ParseGameData DataItems < 14. Packet DataItems {packet.DataItems}.");
             }
             else
-                Logger.Log(LogType.Warning, $"P3D Reading Error: ParseGameData DataItems is null.");
+                Logger.Log(LogType.Warning, "P3D Reading Error: ParseGameData DataItems is null.");
         }
 
         private bool FirstGameData { get; set; }
@@ -202,23 +207,23 @@ namespace PokeD.Server.Clients.P3D
         private void HandleTradeRequest(TradeRequestPacket packet)
         {
             var destClient = Module.GetClient(packet.DestinationPlayerID);
-            if (destClient is P3DPlayer)
+            if (destClient is P3DPlayer player)
             {
-                if (GameMode == ((P3DPlayer) destClient).GameMode)
+                if (GameMode == player.GameMode)
                 {
                     // XNOR
-                    if (IsGameJoltPlayer == ((P3DPlayer) destClient).IsGameJoltPlayer)
-                        destClient.SendPacket(() => new TradeRequestPacket { Origin = packet.Origin });
+                    if (IsGameJoltPlayer == player.IsGameJoltPlayer)
+                        player.SendPacket(() => new TradeRequestPacket { Origin = packet.Origin });
                     else
                     {
-                        SendServerMessage($"Can not start trade with {destClient.Name}! Online-Offline trade disabled.");
-                        Module.OnTradeCancel(this, destClient);
+                        SendServerMessage($"Can not start trade with {player.Name}! Online-Offline trade disabled.");
+                        Module.OnTradeCancel(this, player);
                     }
                 }
                 else
                 {
-                    SendServerMessage($"Can not start trade with {destClient.Name}! Different GameModes used.");
-                    Module.OnTradeCancel(this, destClient);
+                    SendServerMessage($"Can not start trade with {player.Name}! Different GameModes used.");
+                    Module.OnTradeCancel(this, player);
                 }
             }
             else
@@ -268,7 +273,7 @@ namespace PokeD.Server.Clients.P3D
                 Module.GetClient(packet.DestinationPlayerID)?.SendPacket(() => new BattleOfferPacket { Origin = packet.Origin, DataItems = packet.BattleData });
             else
             {
-                SendServerMessage($"One of your Pokemon is not valid!");
+                SendServerMessage("One of your Pokemon is not valid!");
                 SendPacket(() => new BattleQuitPacket { Origin = packet.DestinationPlayerID });
             }
         }

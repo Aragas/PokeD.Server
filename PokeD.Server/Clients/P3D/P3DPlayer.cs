@@ -5,9 +5,9 @@ using System.Globalization;
 using System.Net.Sockets;
 using System.Threading;
 
-using Aragas.Network.Data;
 using Aragas.Network.Packets;
 
+using PokeD.Core.Data;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Extensions;
 using PokeD.Core.IO;
@@ -73,18 +73,21 @@ namespace PokeD.Server.Clients.P3D
 
         #endregion Values
 
-        private DefaultPacketFactory<P3DPacket, int, P3DSerializer, P3DDeserializer> PacketFactory { get; }
+        private BasePacketFactory<P3DPacket, int, P3DSerializer, P3DDeserializer> PacketFactory { get; }
         private P3DTransmission Stream { get; }
 
         private ConcurrentQueue<P3DPacket> PacketsToSend { get; } = new ConcurrentQueue<P3DPacket>();
 
 #if DEBUG
-        private List<P3DPacket> Received { get; } =  new List<P3DPacket>();
-        private List<P3DPacket> Sended { get; } = new List<P3DPacket>();
+        // -- Debug -- //
+        private const int QueueSize = 1000;
+        private Queue<P3DPacket> Received { get; } = new Queue<P3DPacket>(QueueSize);
+        private Queue<P3DPacket> Sended { get; } = new Queue<P3DPacket>(QueueSize);
+        // -- Debug -- //
 #endif
         public P3DPlayer(Socket socket, ModuleP3D module) : base(module)
         {
-            PacketFactory = new DefaultPacketFactory<P3DPacket, int, P3DSerializer, P3DDeserializer>();
+            PacketFactory = new PacketAttributeFactory<P3DPacket, int, P3DSerializer, P3DDeserializer>();
             Stream = new P3DTransmission(socket, PacketFactory);
         }
 
@@ -103,7 +106,9 @@ namespace PokeD.Server.Clients.P3D
                             HandlePacket(packetToReceive);
 
 #if DEBUG
-                            Received.Add(packetToReceive);
+                            Received.Enqueue(packetToReceive);
+                            if (Received.Count >= QueueSize)
+                                Received.Dequeue();
 #endif
                         }
 
@@ -112,7 +117,9 @@ namespace PokeD.Server.Clients.P3D
                             Stream.SendPacket(packetToSend);
 
 #if DEBUG
-                            Sended.Add(packetToSend);
+                            Sended.Enqueue(packetToSend);
+                            if (Sended.Count >= QueueSize)
+                                Sended.Dequeue();
 #endif
                         }
                     }
@@ -128,7 +135,7 @@ namespace PokeD.Server.Clients.P3D
             {               
                 UpdateLock.Set(); // Signal that the UpdateThread is finished
 
-                if (!UpdateToken.IsCancellationRequested &&!Stream.IsConnected) // Leave() if the update cycle stopped unexpectedly
+                if (!UpdateToken.IsCancellationRequested && !Stream.IsConnected) // Leave() if the update cycle stopped unexpectedly
                     Leave();
             }
         }
@@ -230,10 +237,9 @@ namespace PokeD.Server.Clients.P3D
         }
 
         public override void SendPacket<TPacket>(Func<TPacket> func)
-        {    
-            var packet = PacketFactory.Create(func) as P3DPacket;
-            if (packet == null)
-                throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
+        {
+            if (!(PacketFactory.Create(func) is P3DPacket packet))
+                throw new Exception($"Wrong packet type, {typeof(TPacket).FullName}");
 
             PacketsToSend.Enqueue(packet);
         }
@@ -303,7 +309,12 @@ namespace PokeD.Server.Clients.P3D
         public override void Dispose()
         {
             Stream.Dispose();
-            
+
+#if DEBUG
+            Sended.Clear();
+            Received.Clear();
+#endif
+
             base.Dispose();
         }
     }

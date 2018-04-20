@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
+using PokeD.Core;
 using PokeD.Core.Data.PokeApi;
 
 namespace PokeD.Server
@@ -16,7 +17,7 @@ namespace PokeD.Server
 
         private static async Task CacheDoMultiTask(int size, int max, Func<int, Task> func)
         {
-            var index = 0;
+            int index;
             var array = new Task[size];
 
             for (index = 1; index + size <= max; index += size)

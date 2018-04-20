@@ -5,7 +5,6 @@ using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Data;
 
-// ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
     public class SetSeasonCommand : Command
@@ -30,7 +29,7 @@ namespace PokeD.Server.Commands
                     client.SendServerMessage($"Season '{season}' not found!");
             }
             else
-                client.SendServerMessage($"Invalid arguments given.");
+                client.SendServerMessage("Invalid arguments given.");
         }
 
         public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <Season>");

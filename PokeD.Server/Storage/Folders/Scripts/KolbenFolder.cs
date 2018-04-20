@@ -6,7 +6,7 @@ using PCLExt.FileStorage;
 
 using PokeD.Server.Storage.Files;
 
-namespace PokeD.Server.Storage.Folders.Scripts
+namespace PokeD.Server.Storage.Folders
 {
     class KolbenFolder : BaseFolder
     {

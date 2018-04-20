@@ -3,7 +3,9 @@
 using PCLExt.Config;
 using PCLExt.Config.Extensions;
 
+using PokeD.Core;
 using PokeD.Core.Data.PokeApi;
+using PokeD.Core.Services;
 using PokeD.Server.Services;
 using PokeD.Server.Storage.Files;
 
@@ -32,27 +34,30 @@ namespace PokeD.Server
         public bool PreCacheData { get; private set; } = false;
 
         public bool EnableDebug { get => Logger.EnableDebug; private set => Logger.EnableDebug = value; }
-        
+
         //public bool AutomaticErrorReporting { get; private set; } = true;
 
         #endregion Settings
 
         [ConfigIgnore]
+        public ServiceContainer Services { get; } = new ServiceContainer();
+
+        [ConfigIgnore]
         public bool IsDisposing { get; private set; }
 
-        
+
         public Server(ConfigType configType)
         {
             ConfigType = configType;
 
-            Logger.Log(LogType.Debug, $"Adding basic services to Server...");
-            Services.AddService(new SecurityService(this, ConfigType));
-            Services.AddService(new DatabaseService(this, ConfigType));
-            Services.AddService(new WorldService(this, ConfigType));
-            Services.AddService(new ChatChannelManagerService(this, ConfigType));
-            Services.AddService(new CommandManagerService(this, ConfigType));
-            Services.AddService(new ModuleManagerService(this, ConfigType));
-            Logger.Log(LogType.Debug, $"Added basic services to Server.");
+            Logger.Log(LogType.Debug, "Adding basic services to Server...");
+            Services.AddService(new SecurityService(Services, ConfigType));
+            Services.AddService(new DatabaseService(Services, ConfigType));
+            Services.AddService(new WorldService(Services, ConfigType));
+            Services.AddService(new ChatChannelManagerService(Services, ConfigType));
+            Services.AddService(new CommandManagerService(Services, ConfigType));
+            Services.AddService(new ModuleManagerService(Services, ConfigType));
+            Logger.Log(LogType.Debug, "Added basic services to Server.");
         }
 
 
@@ -70,10 +75,10 @@ namespace PokeD.Server
                 Logger.Log(LogType.Info, "Caching data done.");
             }
 
-            Logger.Log(LogType.Debug, $"Starting Services...");
+            Logger.Log(LogType.Debug, "Starting Services...");
             foreach (var service in Services)
                 (service as IStartable)?.Start();
-            Logger.Log(LogType.Debug, $"Started Services.");
+            Logger.Log(LogType.Debug, "Started Services.");
 
             return status;
         }
@@ -83,12 +88,12 @@ namespace PokeD.Server
             if (!status)
                 Logger.Log(LogType.Warning, "Failed to save Server settings!");
 
-            Logger.Log(LogType.Debug, $"Stopping Server.");
+            Logger.Log(LogType.Debug, "Stopping Server.");
 
             foreach (var service in Services)
                 (service as IStoppable)?.Stop();
 
-            Logger.Log(LogType.Debug, $"Stopped Server.");
+            Logger.Log(LogType.Debug, "Stopped Server.");
 
             return status;
         }
@@ -101,12 +106,12 @@ namespace PokeD.Server
 
             IsDisposing = true;
 
-            Logger.Log(LogType.Debug, $"Disposing Server...");
+            Logger.Log(LogType.Debug, "Disposing Server...");
 
             foreach (var service in Services)
                 service?.Dispose();
 
-            Logger.Log(LogType.Debug, $"Disposed Server.");
+            Logger.Log(LogType.Debug, "Disposed Server.");
         }
     }
 }

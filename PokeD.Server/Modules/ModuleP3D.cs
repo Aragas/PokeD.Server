@@ -11,6 +11,7 @@ using Aragas.Network.Packets;
 
 using PCLExt.Config;
 
+using PokeD.Core;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Packets.P3D;
 using PokeD.Core.Packets.P3D.Chat;
@@ -138,7 +139,7 @@ namespace PokeD.Server.Modules
             lock (JoiningClients)
             {
                 foreach (var client in JoiningClients)
-                    client?.SendKick("Server is closing!");
+                    client?.Dispose();
                 JoiningClients.Clear();
             }
 
@@ -294,7 +295,7 @@ namespace PokeD.Server.Modules
             var client = sender as Client;
             // -- We assume the Client is a GameJolt or the Client's password is correct and no one is using the Client's name.
 
-            (var isBanned, var banInfo) = ModuleManager.BanStatus(client);
+            var (isBanned, banInfo) = ModuleManager.BanStatus(client);
             if (isBanned)
             {
                 client.SendBan(banInfo);
@@ -338,7 +339,7 @@ namespace PokeD.Server.Modules
         }
 
 
-        Stopwatch UpdateWatch = Stopwatch.StartNew();
+        private Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
         public override void Update()
         {
             if (UpdateWatch.ElapsedMilliseconds > 1000)
@@ -390,8 +391,7 @@ namespace PokeD.Server.Modules
 
         public override bool AssignID(Client client)
         {
-            var p3dClient = client as P3DPlayer;
-            if (p3dClient == null)
+            if (!(client is P3DPlayer p3dClient))
                 return false;
 
             if (!EnableOfflineAccounts && !p3dClient.IsGameJoltPlayer)
@@ -454,7 +454,7 @@ namespace PokeD.Server.Modules
         private (bool IsBanned, BanTable BanTable) BanStatusGJ(P3DPlayer client)
         {
             var table = Database.DatabaseGetAll<BanTable>().FirstOrDefault(banTable => Database.DatabaseGetAll<ClientGJTable>().Where(gjTable => gjTable.GameJoltID == client.GameJoltID).FirstOrDefault(table1 => banTable.ClientID == table1.ClientID) != null);
-            return table != null ? (true, table) : (false, table);
+            return table != null ? (true, table) : (false, null);
         }
 
 

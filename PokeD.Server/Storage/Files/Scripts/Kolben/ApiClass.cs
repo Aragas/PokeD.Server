@@ -1,4 +1,4 @@
-﻿namespace PokeD.Server.Storage.Files
+﻿namespace PokeD.Server.Storage.Files.Scripts.Kolben
 {
     public abstract class ApiClass
     {

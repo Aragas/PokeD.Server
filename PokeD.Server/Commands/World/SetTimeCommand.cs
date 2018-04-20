@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
-// ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
     public class SetTimeCommand : Command
@@ -44,7 +43,7 @@ namespace PokeD.Server.Commands
                     client.SendServerMessage("Invalid time!");
             }
             else
-                client.SendServerMessage($"Invalid arguments given.");
+                client.SendServerMessage("Invalid arguments given.");
         }
 
         public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <Time[HH:mm:ss]/Real>");

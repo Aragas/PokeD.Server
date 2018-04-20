@@ -6,15 +6,16 @@ using System.Net.Sockets;
 using System.Threading;
 
 using Aragas.Network.Data;
-using Aragas.Network.Extensions;
 using Aragas.Network.Packets;
 
 using PCLExt.Config;
 using PCLExt.FileStorage;
 using PCLExt.FileStorage.Extensions;
 
+using PokeD.Core;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Data.PokeD;
+using PokeD.Core.Extensions;
 using PokeD.Core.Packets.PokeD.Authorization;
 using PokeD.Core.Packets.PokeD.Chat;
 using PokeD.Core.Packets.PokeD.Overworld.Map;
@@ -129,8 +130,7 @@ namespace PokeD.Server.Modules
 
         protected override void OnClientReady(object sender, EventArgs eventArgs)
         {
-            var client = sender as PokeDPlayer;
-            if (client == null)
+            if (!(sender is PokeDPlayer client))
                 return;
 
             if (!AssignID(client))
@@ -149,8 +149,7 @@ namespace PokeD.Server.Modules
         }
         protected override void OnClientLeave(object sender, EventArgs eventArgs)
         {
-            var client = sender as PokeDPlayer;
-            if (client == null)
+            if (!(sender is PokeDPlayer client))
                 return;
 
             SendPacketToAll(() => new ChatGlobalMessagePacket { Message = $"Player {client.Name} disconnected!" });
@@ -160,7 +159,7 @@ namespace PokeD.Server.Modules
         }
 
 
-        Stopwatch UpdateWatch = Stopwatch.StartNew();
+        private Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
         public override void Update()
         {
             if (Listener?.Pending() == true)
@@ -306,7 +305,7 @@ namespace PokeD.Server.Modules
                 tileSets.Add(new TileSetResponse() { Name = tileSetName, TileSetData = TileSets.GetFileAsync($"{tileSetName}.tsx").Result.ReadAllTextAsync().Result });
 
                 var image = new ImageResponse { Name = tileSetName };
-                using (var fileStream = TileSets.GetFileAsync($"{tileSetName}.png").Result.OpenAsync(PCLExt.FileStorage.FileAccess.Read).Result)
+                using (var fileStream = TileSets.GetFileAsync($"{tileSetName}.png").Result.OpenAsync(FileAccess.Read).Result)
                     image.ImageData = fileStream.ReadFully();
                 images.Add(image);
             }

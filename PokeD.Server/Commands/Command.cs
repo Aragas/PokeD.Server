@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Globalization;
 
-using Aragas.Network.Data;
-
 using PCLExt.Config;
 
+using PokeD.Core.Data;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Services;
@@ -13,6 +12,7 @@ using PokeD.Server.Chat;
 using PokeD.Server.Clients;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
+using PokeD.Server.Modules;
 using PokeD.Server.Services;
 
 namespace PokeD.Server.Commands
@@ -31,7 +31,7 @@ namespace PokeD.Server.Commands
             public override void Update() { }
             
             public override void ClientsForeach(Action<IReadOnlyList<Client>> func) { }
-            public override TResult ClientsSelect<TResult>(Func<IReadOnlyList<Client>, TResult> func) => default(TResult);
+            public override TResult ClientsSelect<TResult>(Func<IReadOnlyList<Client>, TResult> func) => default;
             public override IReadOnlyList<TResult> ClientsSelect<TResult>(Func<IReadOnlyList<Client>, IReadOnlyList<TResult>> func) => new List<TResult>();
 
             public override void OnTradeRequest(Client sender, DataItems monster, Client destClient) { }

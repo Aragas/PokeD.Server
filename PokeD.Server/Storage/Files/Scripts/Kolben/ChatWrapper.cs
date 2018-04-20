@@ -5,7 +5,7 @@ using PokeD.Core.Services;
 using PokeD.Server.Chat;
 using PokeD.Server.Services;
 
-namespace PokeD.Server.Storage.Files
+namespace PokeD.Server.Storage.Files.Scripts.Kolben
 {
     [ApiClass("Chat")]
     public class ChatWrapper : ApiClass
@@ -19,8 +19,8 @@ namespace PokeD.Server.Storage.Files
         //[ApiMethodSignature]
         public static SObject Send(ScriptProcessor processor, object[] parameters)
         {
-            if (parameters.Length > 2 && parameters[0] is int && parameters[1] is string && parameters[2] is string)
-                ChatManager.FindByName((string) parameters[1]).MessageSend(new ChatMessage(ModuleManager.GetClient((int) parameters[0]), (string) parameters[2]));
+            if (parameters.Length > 2 && parameters[0] is int clientID && parameters[1] is string name && parameters[2] is string message)
+                ChatManager.FindByName(name).MessageSend(new ChatMessage(ModuleManager.GetClient(clientID), message));
 
             return ScriptInAdapter.GetUndefined(processor);
         }

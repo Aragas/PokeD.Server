@@ -3,15 +3,16 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
 
-using Aragas.Network.Data;
 using Aragas.Network.Packets;
 
 using PokeD.Core;
+using PokeD.Core.Data;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Server.Chat;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
 using PokeD.Server.Commands;
+using PokeD.Server.Modules;
 
 namespace PokeD.Server.Clients
 {

@@ -11,49 +11,49 @@ namespace PokeD.Server.Database
     public sealed class MonsterTable : IDatabaseTable
     {
         [PrimaryKey, AutoIncrement]
-        public int? MonsterID { get; private set; }
+        public int? MonsterID { get; set; }
 
 
-        public short Species { get; private set; }
+        public short Species { get; set; }
 
         #region CatchInfo
-        public string Method { get; private set; } = string.Empty;
-        public string Location { get; private set; } = string.Empty;
+        public string Method { get; set; } = string.Empty;
+        public string Location { get; set; } = string.Empty;
 
-        public string TrainerName { get; private set; } = string.Empty;
-        public ushort TrainerID { get; private set; }
+        public string TrainerName { get; set; } = string.Empty;
+        public ushort TrainerID { get; set; }
 
-        public byte PokeballID { get; private set; }
+        public byte PokeballID { get; set; }
 
-        public string Nickname { get; private set; } = string.Empty;
+        public string Nickname { get; set; } = string.Empty;
         #endregion
 
-        public uint PersonalityValue { get; private set; }
+        public uint PersonalityValue { get; set; }
 
-        public Gender Gender { get; private set; }
+        public Gender Gender { get; set; }
 
-        public short Ability { get; private set; }
-        public byte Nature { get; private set; }
+        public short Ability { get; set; }
+        public byte Nature { get; set; }
 
-        public long Experience { get; private set; }
+        public long Experience { get; set; }
 
-        public string IV_Json { get; private set; } = string.Empty;
-        public string EV_Json { get; private set; } = string.Empty;
+        public string IV_Json { get; set; } = string.Empty;
+        public string EV_Json { get; set; } = string.Empty;
 
-        public short CurrentHP { get; private set; }
-        public byte StatusEffect { get; private set; }
+        public short CurrentHP { get; set; }
+        public byte StatusEffect { get; set; }
 
-        public byte Affection { get; private set; }
-        public byte Friendship { get; private set; }
+        public byte Affection { get; set; }
+        public byte Friendship { get; set; }
 
-        public bool IsShiny { get; private set; }
+        public bool IsShiny { get; set; }
 
-        public int EggSteps { get; private set; }
+        public int EggSteps { get; set; }
 
 
-        public string Moves_Json { get; private set; } = string.Empty;
+        public string Moves_Json { get; set; } = string.Empty;
 
-        public int HeldItem { get; private set; }
+        public int HeldItem { get; set; }
         
 
         public MonsterTable() { }

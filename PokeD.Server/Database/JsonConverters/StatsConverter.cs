@@ -20,7 +20,7 @@ namespace PokeD.Server.Database.JsonConverters
                 new JProperty("ATK", stats.Attack),
                 new JProperty("DEF", stats.Defense),
                 new JProperty("SPATK", stats.SpecialAttack),
-                new JProperty("SPDEF", stats.Defense),
+                new JProperty("SPDEF", stats.SpecialDefense),
                 new JProperty("SPE", stats.Speed),
             };
             jo.WriteTo(writer);
@@ -47,7 +47,7 @@ namespace PokeD.Server.Database.JsonConverters
 
             short spDef = 1;
             if (jo.TryGetValue("SPDEF", StringComparison.OrdinalIgnoreCase, out var spDefToken))
-                spDefToken = spDefToken.ToObject<short>();
+                spDef = spDefToken.ToObject<short>();
 
             short spe = 1;
             if (jo.TryGetValue("SPE", StringComparison.OrdinalIgnoreCase, out var speToken))

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PokeD.Server.Storage.Files
+namespace PokeD.Server.Storage.Files.Scripts.Kolben
 {
     [AttributeUsage(AttributeTargets.Class)]
     public class ApiClassAttribute : Attribute

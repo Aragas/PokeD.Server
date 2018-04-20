@@ -3,7 +3,6 @@
 using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
-// ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
     public sealed class ScriptCommand : Command

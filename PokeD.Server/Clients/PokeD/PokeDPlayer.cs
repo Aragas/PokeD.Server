@@ -7,6 +7,7 @@ using Aragas.Network.Data;
 using Aragas.Network.IO;
 using Aragas.Network.Packets;
 
+using PokeD.Core.Data;
 using PokeD.Core.Data.PokeD;
 using PokeD.Core.Packets.PokeD;
 using PokeD.Core.Packets.P3D.Shared;
@@ -32,7 +33,7 @@ namespace PokeD.Server.Clients.PokeD
 
         public override int ID 
         { 
-            get { return PlayerRef.ID; } 
+            get => PlayerRef.ID;
             set 
             { 
                 // PlayerRef.ID = new VarInt(value);
@@ -47,7 +48,7 @@ namespace PokeD.Server.Clients.PokeD
 
         public override string Nickname 
         { 
-            get { return PlayerRef.Name; } 
+            get => PlayerRef.Name;
             protected set 
             { 
                 throw new NotSupportedException(); 
@@ -64,7 +65,7 @@ namespace PokeD.Server.Clients.PokeD
                 return Vector3.Zero;
                 //return PlayerRef.Position;
             }
-            set { throw new NotSupportedException(); }
+            set => throw new NotSupportedException();
         }
 
         public int Facing => 0; //PlayerRef.Facing;
@@ -93,19 +94,20 @@ namespace PokeD.Server.Clients.PokeD
 
         #endregion Other Values
 
-        private DefaultPacketFactory<PokeDPacket, VarInt, ProtobufSerializer, ProtobufDeserialiser> PacketFactory { get; }
+        private BasePacketFactory<PokeDPacket, VarInt, ProtobufSerializer, ProtobufDeserialiser> PacketFactory { get; }
         private ProtobufTransmission<PokeDPacket> Stream { get; }
 
 #if DEBUG
         // -- Debug -- //
-        List<PokeDPacket> Received { get; } = new List<PokeDPacket>();
-        List<PokeDPacket> Sended { get; } = new List<PokeDPacket>();
+        private const int QueueSize = 1000;
+        private Queue<PokeDPacket> Received { get; } = new Queue<PokeDPacket>(QueueSize);
+        private Queue<PokeDPacket> Sended { get; } = new Queue<PokeDPacket>(QueueSize);
         // -- Debug -- //
 #endif
 
         public PokeDPlayer(Socket socket, ModulePokeD module) : base(module)
         {
-            PacketFactory = new DefaultPacketFactory<PokeDPacket, VarInt, ProtobufSerializer, ProtobufDeserialiser>();
+            PacketFactory = new PacketEnumFactory<PokeDPacket, PokeDPacketTypes, VarInt, ProtobufSerializer, ProtobufDeserialiser>();
             Stream = new ProtobufTransmission<PokeDPacket>(socket, factory: PacketFactory);
         }
 
@@ -114,15 +116,15 @@ namespace PokeD.Server.Clients.PokeD
         {
             if (Stream.IsConnected)
             {
-                var t = Stream.ReadPacket();
-
                 PokeDPacket packet;
                 while ((packet = Stream.ReadPacket()) != null)
                 {
                     HandlePacket(packet);
 
 #if DEBUG
-                    Received.Add(packet);
+                    Received.Enqueue(packet);
+                    if (Received.Count >= QueueSize)
+                        Received.Dequeue();
 #endif
                 }
             }
@@ -204,14 +206,15 @@ namespace PokeD.Server.Clients.PokeD
 
         public override void SendPacket<TPacket>(Func<TPacket> func)
         {
-            var packet = PacketFactory.Create(func) as PokeDPacket;
-            if (packet == null)
-                throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
+            if (!(PacketFactory.Create(func) is PokeDPacket packet))
+                throw new Exception($"Wrong packet type, {typeof(TPacket).FullName}");
 
             Stream.SendPacket(packet);
 
 #if DEBUG
-            Sended.Add(packet);
+            Sended.Enqueue(packet);
+            if (Sended.Count >= QueueSize)
+                Sended.Dequeue();
 #endif
         }
         public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage) { SendPacket(() => new ChatGlobalMessagePacket { Message = chatMessage.Message }); }
@@ -277,6 +280,11 @@ namespace PokeD.Server.Clients.PokeD
         {
             Stream.Disconnect();
             Stream.Dispose();
+
+#if DEBUG
+            Sended.Clear();
+            Received.Clear();
+#endif
 
             base.Dispose();
         }

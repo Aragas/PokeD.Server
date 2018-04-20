@@ -9,6 +9,7 @@ using Kolben.Types;
 using PCLExt.FileStorage;
 using PCLExt.FileStorage.Extensions;
 
+using PokeD.Core;
 using PokeD.Core.Services;
 
 using ScriptRuntimeException = Kolben.Adapters.ScriptRuntimeException;

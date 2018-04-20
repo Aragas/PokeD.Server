@@ -6,11 +6,12 @@ using Org.BouncyCastle.Security;
 
 using PCLExt.Config;
 
+using PokeD.Core;
 using PokeD.Core.Services;
 
 namespace PokeD.Server.Services
 {
-    public class SecurityService : ServerService
+    public class SecurityService : BaseServerService
     {
         private const int RsaKeySize = 1024;
 

@@ -5,7 +5,6 @@ using Aragas.Network.Data;
 using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
-// ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
     public class ChangePasswordCommand : Command

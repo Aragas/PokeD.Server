@@ -24,7 +24,7 @@ namespace PokeD.Server.Commands.Chat
                 ModuleManager.SendServerMessage(message);
             }
             else
-                client.SendServerMessage($"Invalid arguments given.");
+                client.SendServerMessage("Invalid arguments given.");
         }
 
         public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <Message>");

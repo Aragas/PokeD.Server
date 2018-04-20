@@ -11,8 +11,8 @@ namespace PokeD.Server.Clients.PokeD
 {
     public partial class PokeDPlayer
     {
-        AuthorizationStatus AuthorizationStatus => Module.EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0;
-        byte[] VerificationToken { get; set; }
+        private AuthorizationStatus AuthorizationStatus => Module.EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0;
+        private byte[] VerificationToken { get; set; }
 
         private void HandleAuthorizationRequest(AuthorizationRequestPacket packet)
         {
@@ -108,7 +108,7 @@ namespace PokeD.Server.Clients.PokeD
                 SendPacket(() => new ChatPrivateMessagePacket { Message = packet.Message });
             }
             else
-                SendPacket(() => new ChatGlobalMessagePacket { Message = $"The player with the name \"{destClient.Name}\" doesn't exist." });
+                SendPacket(() => new ChatGlobalMessagePacket { Message = "The player doesn't exist." });
         }
 
         private void HandleBattleRequest(BattleRequestPacket packet){ }

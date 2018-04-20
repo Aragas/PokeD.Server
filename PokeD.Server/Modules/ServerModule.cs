@@ -4,6 +4,7 @@ using System.Linq;
 
 using PCLExt.Config;
 
+using PokeD.Core;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Services;
 using PokeD.Server.Chat;
@@ -12,7 +13,7 @@ using PokeD.Server.Components;
 using PokeD.Server.Database;
 using PokeD.Server.Services;
 
-namespace PokeD.Server
+namespace PokeD.Server.Modules
 {
     public interface IServerModuleBaseSettings
     {
@@ -80,7 +81,7 @@ namespace PokeD.Server
         protected virtual void OnClientReady(object sender, EventArgs eventArgs)
         {
             var client = sender as Client;
-            (ModuleManager.ClientJoined as BaseEventHandlerWithInvoke<ClientJoinedEventArgs>)?.Invoke(this, new ClientJoinedEventArgs(client));
+           ((Action<object, ClientJoinedEventArgs>) ModuleManager.ClientJoined)?.Invoke(this, new ClientJoinedEventArgs(client));
 
             Services.GetService<ChatChannelManagerService>().FindByAlias("global").Subscribe(client);
 
@@ -90,7 +91,7 @@ namespace PokeD.Server
         protected virtual void OnClientLeave(object sender, EventArgs eventArgs)
         {
             var client = sender as Client;
-            (ModuleManager.ClientLeaved as BaseEventHandlerWithInvoke<ClientLeavedEventArgs>)?.Invoke(this, new ClientLeavedEventArgs(client));
+            ((Action<object, ClientLeavedEventArgs>) ModuleManager.ClientLeaved)?.Invoke(this, new ClientLeavedEventArgs(client));
 
             foreach (var chatChannel in Services.GetService<ChatChannelManagerService>().GetChatChannels())
                 chatChannel.UnSubscribe(client);
@@ -154,17 +155,9 @@ namespace PokeD.Server
             return true;
         }
 
-        public override int GetHashCode()
-        {
-            return ComponentName.GetHashCode();
-        }
+        public override int GetHashCode() => ComponentName.GetHashCode();
 
         private bool Equals(ServerModule a, ServerModule b) => string.Equals(a.ComponentName, b.ComponentName, StringComparison.Ordinal);
-
-        public override bool Equals(object obj)
-        {
-            var serverModule = obj as ServerModule;
-            return !ReferenceEquals(serverModule, null) && Equals(this, serverModule);
-        }
+        public override bool Equals(object obj) => obj is ServerModule serverModule && Equals(this, serverModule);
     }
 }

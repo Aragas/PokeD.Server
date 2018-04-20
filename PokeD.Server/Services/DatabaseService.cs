@@ -7,6 +7,7 @@ using System.Reflection;
 
 using PCLExt.Config;
 
+using PokeD.Core;
 using PokeD.Core.Services;
 using PokeD.Server.Database;
 using PokeD.Server.Storage.Files;
@@ -16,7 +17,7 @@ using SQLite;
 
 namespace PokeD.Server.Services
 {
-    public class DatabaseService : ServerService
+    public class DatabaseService : BaseServerService
     {
         protected override IConfigFile ServiceConfigFile => new DatabaseComponentConfigFile(ConfigType);
 

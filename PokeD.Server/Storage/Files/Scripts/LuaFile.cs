@@ -72,9 +72,11 @@ namespace PokeD.Server.Storage.Files
             // Preset_SoftSandbox = Preset_HardSandbox | Json | Dynamic | OS_Time | Coroutine | ErrorHandling | Metatables,
             // Preset_Default = Preset_SoftSandbox | IO | OS_System | LoadMethods,
             // Preset_Complete = Preset_Default | Debug,
-            Script = new Script(CoreModules.Preset_SoftSandbox);
-            Script.Options.ScriptLoader = new FileSystemScriptLoader();
-            
+            Script = new Script(CoreModules.Preset_SoftSandbox)
+            {
+                Options = {ScriptLoader = new FileSystemScriptLoader()}
+            };
+
             RegisterModules(Modules);
             
             var fileContent = this.ReadAllText();

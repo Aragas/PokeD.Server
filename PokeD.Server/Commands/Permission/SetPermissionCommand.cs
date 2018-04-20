@@ -5,7 +5,6 @@ using System.Linq;
 using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
-// ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
     public class SetPermissionCommand : Command
@@ -50,7 +49,7 @@ namespace PokeD.Server.Commands
                 client.SendServerMessage($"Changed {clientName} permissions!");
             }
             else
-                client.SendServerMessage($"Invalid arguments given.");
+                client.SendServerMessage("Invalid arguments given.");
         }
 
         public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <PlayerName> <Permission>");

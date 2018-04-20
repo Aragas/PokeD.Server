@@ -4,11 +4,11 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Threading.Tasks;
 
-using Aragas.Network.Extensions;
-
 using PCLExt.FileStorage;
 
-namespace PokeD.Server.Storage.Folders
+using PokeD.Core.Extensions;
+
+namespace PokeD.Server.Storage.Files
 {
     /// <summary>
     /// A .Zip file pls.

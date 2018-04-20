@@ -3,7 +3,6 @@
 using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
-// ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
     public class UnMuteCommand : Command
@@ -17,7 +16,7 @@ namespace PokeD.Server.Commands
 
         public override void Handle(Client client, string alias, string[] arguments)
         {
-            client.SendServerMessage($"Command not implemented.");
+            client.SendServerMessage("Command not implemented.");
             return;
 
             if (arguments.Length == 1)
@@ -32,7 +31,7 @@ namespace PokeD.Server.Commands
 
             }
             else
-                client.SendServerMessage($"Invalid arguments given.");
+                client.SendServerMessage("Invalid arguments given.");
 
             /*
             if (!MutedPlayers.ContainsKey(id))

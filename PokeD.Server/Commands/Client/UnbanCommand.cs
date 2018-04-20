@@ -3,7 +3,6 @@
 using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
-// ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
     public class UnbanCommand : Command
@@ -30,7 +29,7 @@ namespace PokeD.Server.Commands
                 ModuleManager.Unban(cClient);
             }
             else
-                client.SendServerMessage($"Invalid arguments given.");
+                client.SendServerMessage("Invalid arguments given.");
         }
 
         public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <PlayerName> [Reason]");

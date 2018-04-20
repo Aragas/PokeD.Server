@@ -1,4 +1,4 @@
-using Aragas.Network.Data;
+using PokeD.Core.Data;
 
 namespace PokeD.Server.Clients.NPC
 {

@@ -12,6 +12,6 @@ namespace PokeD.Server.Data
         public Monster Client1Monster { get; set; }
         public bool Client1Confirmed { get; set; }
 
-        public bool Equals(int player0ID, int player1ID) => (Client0ID == player0ID || Client0ID == player1ID) || (Client1ID == player0ID || Client1ID == player1ID);
+        public bool Equals(int player0ID, int player1ID) => Client0ID == player0ID || Client0ID == player1ID || Client1ID == player0ID || Client1ID == player1ID;
     }
 }

@@ -5,11 +5,10 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
-using Aragas.Network.Data;
-using Aragas.Network.Packets;
-
 using PCLExt.Config;
 
+using PokeD.Core;
+using PokeD.Core.Data;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Services;
 using PokeD.Server.Chat;
@@ -17,10 +16,11 @@ using PokeD.Server.Clients;
 using PokeD.Server.Commands;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
+using PokeD.Server.Modules;
 
 namespace PokeD.Server.Services
 {
-    public class CommandManagerService : ServerService
+    public class CommandManagerService : BaseServerService
     {
         private class ServerClient : Client
         {
@@ -99,13 +99,13 @@ namespace PokeD.Server.Services
 
             if (command.Permissions == PermissionFlags.None)
             {
-                client.SendServerMessage($@"Command is disabled!");
+                client.SendServerMessage(@"Command is disabled!");
                 return;
             }
 
             if ((client.Permissions & command.Permissions) == PermissionFlags.None)
             {
-                client.SendServerMessage($@"You have not the permission to use this command!");
+                client.SendServerMessage(@"You have not the permission to use this command!");
                 return;
             }
 
@@ -120,16 +120,16 @@ namespace PokeD.Server.Services
 
         public override bool Start()
         {
-            Logger.Log(LogType.Debug, $"Loading Commands...");
+            Logger.Log(LogType.Debug, "Loading Commands...");
             LoadCommands();
-            Logger.Log(LogType.Debug, $"Loaded Commands.");
+            Logger.Log(LogType.Debug, "Loaded Commands.");
             return true;
         }
         public override bool Stop()
         {
-            Logger.Log(LogType.Debug, $"Unloading Commands...");
+            Logger.Log(LogType.Debug, "Unloading Commands...");
             Commands.Clear();
-            Logger.Log(LogType.Debug, $"Unloaded Commands.");
+            Logger.Log(LogType.Debug, "Unloaded Commands.");
             return true;
         }
         private void LoadCommands()

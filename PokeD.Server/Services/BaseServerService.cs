@@ -1,11 +1,12 @@
 ﻿using PCLExt.Config;
 using PCLExt.Config.Extensions;
 
+using PokeD.Core;
 using PokeD.Core.Services;
 
 namespace PokeD.Server.Services
 {
-    public abstract class ServerService : IService, IStartable, IStoppable
+    public abstract class BaseServerService : IService, IStartable, IStoppable
     {
         [ConfigIgnore]
         public IServiceContainer Services { get; }
@@ -14,7 +15,7 @@ namespace PokeD.Server.Services
         protected virtual IConfigFile ServiceConfigFile { get; }
         protected ConfigType ConfigType { get; }
 
-        protected ServerService(IServiceContainer services, ConfigType configType) { Services = services; ConfigType = configType; }
+        protected BaseServerService(IServiceContainer services, ConfigType configType) { Services = services; ConfigType = configType; }
 
         public virtual bool Start()
         {

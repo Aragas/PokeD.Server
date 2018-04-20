@@ -4,7 +4,6 @@ using System.Linq;
 using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
-// ReSharper disable once CheckNamespace
 namespace PokeD.Server.Commands
 {
     public class BanCommand : Command
@@ -30,7 +29,7 @@ namespace PokeD.Server.Commands
 
                 if (!int.TryParse(arguments[1], out int minutes))
                 {
-                    client.SendServerMessage($"Invalid minutes given.");
+                    client.SendServerMessage("Invalid minutes given.");
                     return;
                 }
 
@@ -49,7 +48,7 @@ namespace PokeD.Server.Commands
 
                 if (!int.TryParse(arguments[1], out int minutes))
                 {
-                    client.SendServerMessage($"Invalid minutes given.");
+                    client.SendServerMessage("Invalid minutes given.");
                     return;
                 }
 
@@ -57,7 +56,7 @@ namespace PokeD.Server.Commands
                 ModuleManager.Ban(cClient, minutes, reason);
             }
             else
-                client.SendServerMessage($"Invalid arguments given.");
+                client.SendServerMessage("Invalid arguments given.");
         }
 
         public override void Help(Client client, string alias) => client.SendServerMessage($"Correct usage is /{alias} <PlayerName> [Reason]");

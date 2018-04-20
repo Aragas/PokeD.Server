@@ -16,19 +16,19 @@ namespace PokeD.Server.Database
     public sealed class ClientTable : IDatabaseTable
     {
         [PrimaryKey, AutoIncrement]
-        public int? ClientID { get; private set; }
+        public int? ClientID { get; set; }
 
 
-        public Prefix Prefix { get; private set; }
-        public PermissionFlags Permissions { get; private set; }
-        public string Name { get; private set; }
-        public string PasswordHash { get; private set; }
+        public Prefix Prefix { get; set; }
+        public PermissionFlags Permissions { get; set; }
+        public string Name { get; set; }
+        public string PasswordHash { get; set; }
 
-        public string Position { get; private set; }
-        public string LevelFile { get; private set; }
+        public string Position { get; set; }
+        public string LevelFile { get; set; }
 
-        public string LastIP { get; private set; }
-        public int LastConnectionTime { get; private set; }
+        public string LastIP { get; set; }
+        public int LastConnectionTime { get; set; }
 
 
         public ClientTable(){ }

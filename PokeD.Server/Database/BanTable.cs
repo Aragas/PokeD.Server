@@ -9,10 +9,10 @@ namespace PokeD.Server.Database
     public sealed class BanTable : IDatabaseTable
     {
         [PrimaryKey]
-        public int ClientID { get; private set; }
+        public int ClientID { get; set; }
 
-        public DateTime UnbanTime { get; private set; }
-        public string Reason { get; private set; }
+        public DateTime UnbanTime { get; set; }
+        public string Reason { get; set; }
 
         public BanTable() { }
         public BanTable(Client client, DateTime unbanTime, string reason)

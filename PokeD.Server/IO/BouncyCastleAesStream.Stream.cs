@@ -50,7 +50,7 @@ namespace PokeD.Server.IO
             Stream.Write(encrypted, 0, encrypted.Length);
         }
 
-        public override void WriteByte(byte value) { Write(new byte[] { value }, 0, 1); }
+        public override void WriteByte(byte value) { Write(new [] { value }, 0, 1); } // TODO: Why is that here?
 
         public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) { return Stream.WriteAsync(buffer, offset, count, cancellationToken); }
 

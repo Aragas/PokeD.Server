@@ -5,12 +5,12 @@ namespace PokeD.Server.Database
     public sealed class TradeClientTable : IDatabaseTable
     {
         [PrimaryKey, AutoIncrement]
-        public int? TradeClientID { get; private set; }
+        public int? TradeClientID { get; set; }
 
 
-        public int ClientID { get; private set; }
+        public int ClientID { get; set; }
 
-        public int MonsterID { get; private set; }
+        public int MonsterID { get; set; }
 
 
         public TradeClientTable() { }

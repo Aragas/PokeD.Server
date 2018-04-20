@@ -25,10 +25,10 @@ namespace PokeD.Server.Clients.SCON
 {
     public partial class SCONClient
     {
-        AuthorizationStatus AuthorizationStatus { get; }
+        private AuthorizationStatus AuthorizationStatus { get; }
 
-        byte[] VerificationToken { get; set; }
-        bool Authorized { get; set; }
+        private byte[] VerificationToken { get; set; }
+        private bool Authorized { get; set; }
 
         private void HandleAuthorizationRequest(AuthorizationRequestPacket packet)
         {
@@ -167,7 +167,7 @@ namespace PokeD.Server.Clients.SCON
 
             var crashLogs = new List<Log>();
             foreach (var file in list)
-                crashLogs.Add(new Log {LogFileName = file.Name});
+                crashLogs.Add(new Log { LogFileName = file.Name });
 
             SendPacket(() => new CrashLogListResponsePacket { CrashLogs = crashLogs.ToArray() });
         }
@@ -175,7 +175,7 @@ namespace PokeD.Server.Clients.SCON
         {
             if (!Authorized)
             {
-                SendPacket(() => new AuthorizationDisconnectPacket {Reason = "Not authorized!"});
+                SendPacket(() => new AuthorizationDisconnectPacket { Reason = "Not authorized!" });
                 return;
             }
 
@@ -183,7 +183,7 @@ namespace PokeD.Server.Clients.SCON
                 using (var reader = new StreamReader(new CrashLogsFolder().GetFile(packet.CrashLogFilename).Open(PCLExt.FileStorage.FileAccess.Read)))
                 {
                     var logText = reader.ReadToEnd();
-                    SendPacket(() => new CrashLogFileResponsePacket {CrashLogFilename = packet.CrashLogFilename, CrashLogFile = logText});
+                    SendPacket(() => new CrashLogFileResponsePacket { CrashLogFilename = packet.CrashLogFilename, CrashLogFile = logText });
                 }
         }
 

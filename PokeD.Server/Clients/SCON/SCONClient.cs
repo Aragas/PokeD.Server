@@ -7,6 +7,7 @@ using Aragas.Network.Data;
 using Aragas.Network.IO;
 using Aragas.Network.Packets;
 
+using PokeD.Core.Data;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Core.Packets.SCON;
 using PokeD.Core.Packets.SCON.Authorization;
@@ -18,6 +19,7 @@ using PokeD.Server.Chat;
 using PokeD.Server.Commands;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
+using PokeD.Server.Modules;
 
 namespace PokeD.Server.Clients.SCON
 {
@@ -25,49 +27,50 @@ namespace PokeD.Server.Clients.SCON
     {
         #region P3D Values
 
-        public override int ID { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
-        public override string Nickname { get { throw new NotSupportedException(); } protected set { throw new NotSupportedException(); } }
+        public override int ID { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override string Nickname { get => throw new NotSupportedException(); protected set => throw new NotSupportedException(); }
         
-        public override string LevelFile { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
-        public override Vector3 Position { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
+        public override string LevelFile { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override Vector3 Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
 
         #endregion P3D Values
 
         #region Values
 
-        public override Prefix Prefix { get { throw new NotSupportedException(); } protected set { throw new NotSupportedException(); } }
+        public override Prefix Prefix { get => throw new NotSupportedException(); protected set => throw new NotSupportedException(); }
 
-        public override string PasswordHash { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
+        public override string PasswordHash { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
 
         public override string IP => Stream.Host;
 
         public override DateTime ConnectionTime { get; } = DateTime.Now;
         public override CultureInfo Language { get; }
-        public override PermissionFlags Permissions { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
+        public override PermissionFlags Permissions { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
 
-        bool EncryptionEnabled => ((ModuleSCON) Module).EncryptionEnabled;
+        private bool EncryptionEnabled => Module.EncryptionEnabled;
 
-        bool IsInitialized { get; set; }
+        private bool IsInitialized { get; set; }
 
-        bool ChatEnabled { get; set; }
+        private bool ChatEnabled { get; set; }
 
         #endregion Values
 
         private Socket Socket { get; }
-        private DefaultPacketFactory<SCONPacket, VarInt, ProtobufSerializer, ProtobufDeserialiser> PacketFactory { get; }
+        private BasePacketFactory<SCONPacket, VarInt, ProtobufSerializer, ProtobufDeserialiser> PacketFactory { get; }
         private ProtobufTransmission<SCONPacket> Stream { get; set; }
 
 #if DEBUG
         // -- Debug -- //
-        List<SCONPacket> Received { get; } = new List<SCONPacket>();
-        List<SCONPacket> Sended { get; } = new List<SCONPacket>();
+        private const int QueueSize = 1000;
+        private Queue<SCONPacket> Received { get; } = new Queue<SCONPacket>(QueueSize);
+        private Queue<SCONPacket> Sended { get; } = new Queue<SCONPacket>(QueueSize);
         // -- Debug -- //
 #endif
 
         public SCONClient(Socket socket, ModuleSCON module) : base(module)
         {
             Socket = socket;
-            PacketFactory = new DefaultPacketFactory<SCONPacket, VarInt, ProtobufSerializer, ProtobufDeserialiser>();
+            PacketFactory = new PacketEnumFactory<SCONPacket, SCONPacketTypes, VarInt, ProtobufSerializer, ProtobufDeserialiser>();
             Stream = new ProtobufTransmission<SCONPacket>(Socket, new NetworkStream(Socket), PacketFactory);
 
             AuthorizationStatus = (EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0);
@@ -83,7 +86,9 @@ namespace PokeD.Server.Clients.SCON
                     HandlePacket(packet);
 
 #if DEBUG
-                    Received.Add(packet);
+                    Received.Enqueue(packet);
+                    if (Received.Count >= QueueSize)
+                        Received.Dequeue();
 #endif
                 }
             }
@@ -171,9 +176,8 @@ namespace PokeD.Server.Clients.SCON
 
         public override void SendPacket<TPacket>(Func<TPacket> func)
         {
-            var packet = PacketFactory.Create(func) as SCONPacket;
-            if (packet == null)
-                throw new Exception($"Wrong packet type, {packet.GetType().FullName}");
+            if (!(PacketFactory.Create(func) is SCONPacket packet))
+                throw new Exception($"Wrong packet type, {typeof(TPacket).FullName}");
 
             if (packet is ChatMessagePacket)
                 if (!ChatEnabled)
@@ -182,7 +186,9 @@ namespace PokeD.Server.Clients.SCON
             Stream.SendPacket(packet);
 
 #if DEBUG
-            Sended.Add(packet);
+            Sended.Enqueue(packet);
+            if (Sended.Count >= QueueSize)
+                Sended.Dequeue();
 #endif
         }
         public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage) { }
@@ -207,6 +213,11 @@ namespace PokeD.Server.Clients.SCON
         {
             Stream.Disconnect();
             Stream.Dispose();
+
+#if DEBUG
+            Sended.Clear();
+            Received.Clear();
+#endif
 
             base.Dispose();
         }

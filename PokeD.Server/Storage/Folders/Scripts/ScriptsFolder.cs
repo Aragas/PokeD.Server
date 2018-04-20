@@ -5,6 +5,6 @@ namespace PokeD.Server.Storage.Folders
 {
     public class ScriptsFolder : BaseFolder
     {
-        public ScriptsFolder() : base(new ApplicationFolder().CreateFolder("Scripts", CreationCollisionOption.OpenIfExists)) { }
+        public ScriptsFolder() : base(new ApplicationRootFolder().CreateFolder("Scripts", CreationCollisionOption.OpenIfExists)) { }
     }
 }

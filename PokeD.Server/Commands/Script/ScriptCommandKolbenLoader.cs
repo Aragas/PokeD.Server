@@ -2,7 +2,7 @@
 using System.Linq;
 
 using PokeD.Core.Services;
-using PokeD.Server.Storage.Folders.Scripts;
+using PokeD.Server.Storage.Folders;
 
 namespace PokeD.Server.Commands
 {
