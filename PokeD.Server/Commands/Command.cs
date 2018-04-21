@@ -39,8 +39,6 @@ namespace PokeD.Server.Commands
             public override void OnTradeCancel(Client sender, Client destClient) { }
 
             public override void OnPosition(Client sender) { }
-
-            public override void Dispose() { }
         }
         private sealed class OfflineClient : Client
         {
@@ -116,8 +114,6 @@ namespace PokeD.Server.Commands
 
 
             public override void Update() { }
-
-            public override void Dispose() { }
         }
 
         // -- Should be hidden ideally

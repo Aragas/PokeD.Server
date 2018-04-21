@@ -48,11 +48,11 @@ namespace PokeD.Server.Services
 
 
             public override void Update() { }
-
-            public override void Dispose() { }
         }
 
         private List<Command> Commands { get; } = new List<Command>();
+
+        private bool IsDisposed { get; set; }
 
         public CommandManagerService(IServiceContainer services, ConfigType configType) : base(services, configType) { }
 
@@ -152,9 +152,19 @@ namespace PokeD.Server.Services
                 Commands.AddRange(scriptCommandLoader.LoadCommands(Services));
         }
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            Commands.Clear();
+            if (!IsDisposed)
+            {
+                if (disposing)
+                {
+                    Commands.Clear();
+                }
+
+
+                IsDisposed = true;
+            }
+            base.Dispose(disposing);
         }
     }
 }

@@ -46,6 +46,8 @@ namespace PokeD.Server.Services
         private CancellationTokenSource UpdateToken { get; set; } = new CancellationTokenSource();
         private ManualResetEventSlim UpdateLock { get; } = new ManualResetEventSlim(false);
 
+        private bool IsDisposed { get; set; }
+
         public ModuleManagerService(IServiceContainer services, ConfigType configType) : base(services, configType)
         {
             Modules.Add(new ModuleSCON(Services, ConfigType));
@@ -284,18 +286,28 @@ namespace PokeD.Server.Services
             UpdateLock.Set();
         }
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            AppDomain.CurrentDomain.AssemblyResolve -= AppDomain_AssemblyResolve;
-
-            ClientJoined?.Dispose();
-            ClientLeaved?.Dispose();
-
-            if (UpdateToken?.IsCancellationRequested == false)
+            if (!IsDisposed)
             {
-                UpdateToken.Cancel();
-                UpdateLock.Wait();
+                if (disposing)
+                {
+                    AppDomain.CurrentDomain.AssemblyResolve -= AppDomain_AssemblyResolve;
+
+                    ClientJoined?.Dispose();
+                    ClientLeaved?.Dispose();
+
+                    if (UpdateToken?.IsCancellationRequested == false)
+                    {
+                        UpdateToken.Cancel();
+                        UpdateLock.Wait();
+                    }
+                }
+
+
+                IsDisposed = true;
             }
+            base.Dispose(disposing);
         }
     }
 }

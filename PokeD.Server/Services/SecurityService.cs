@@ -18,6 +18,8 @@ namespace PokeD.Server.Services
         [ConfigIgnore]
         public AsymmetricCipherKeyPair RSAKeyPair { get; private set; }
 
+        private bool IsDisposed { get; set; }
+
         public SecurityService(IServiceContainer services, ConfigType configType) : base(services, configType) { }
 
 
@@ -51,9 +53,15 @@ namespace PokeD.Server.Services
             return keyPairGenerator.GenerateKeyPair();
         }
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
+            if (!IsDisposed)
+            {
 
+
+                IsDisposed = true;
+            }
+            base.Dispose(disposing);
         }
     }
 }

@@ -65,7 +65,9 @@ namespace PokeD.Server.Modules
 
         private List<P3DPlayer> JoiningClients { get; } = new List<P3DPlayer>();
         private List<P3DPlayer> Clients { get; } = new List<P3DPlayer>();
-        
+
+        private bool IsDisposed { get; set; }
+
         public ModuleP3D(IServiceContainer services, ConfigType configType) : base(services, configType) { }
 
         public override bool Start()
@@ -458,20 +460,29 @@ namespace PokeD.Server.Modules
         }
 
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            // TODO
-            
-            if (PlayerWatcherToken?.IsCancellationRequested == false)
+            if (!IsDisposed)
             {
-                PlayerWatcherToken.Cancel();
-                PlayerWatcherLock.Wait();
+                if (disposing)
+                {
+                    // TODO
+                    if (PlayerWatcherToken?.IsCancellationRequested == false)
+                    {
+                        PlayerWatcherToken.Cancel();
+                        PlayerWatcherLock.Wait();
+                    }
+                    if (PlayerCorrectionToken?.IsCancellationRequested == false)
+                    {
+                        PlayerCorrectionToken.Cancel();
+                        PlayerCorrectionLock.Wait();
+                    }
+                }
+
+
+                IsDisposed = true;
             }
-            if (PlayerCorrectionToken?.IsCancellationRequested == false)
-            {
-                PlayerCorrectionToken.Cancel();
-                PlayerCorrectionLock.Wait();
-            }
+            base.Dispose(disposing);
         }
     }
 }

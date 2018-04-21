@@ -29,6 +29,8 @@ namespace PokeD.Server.Services
 
         #endregion
 
+        private bool IsDisposed { get; set; }
+
         public DatabaseService(IServiceContainer services, ConfigType configType) : base(services, configType) { }
 
         public T DatabaseFind<T>(Expression<Func<T, bool>> exp) where T : IDatabaseTable, new() => Database.Find(exp);
@@ -71,9 +73,19 @@ namespace PokeD.Server.Services
                 Database.CreateTable(typeInfo.AsType());
         }
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            Database?.Dispose();
+            if (!IsDisposed)
+            {
+                if (disposing)
+                {
+                    Database?.Dispose();
+                }
+
+
+                IsDisposed = true;
+            }
+            base.Dispose(disposing);
         }
     }
 }

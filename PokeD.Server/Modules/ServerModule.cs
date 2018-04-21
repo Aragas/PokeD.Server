@@ -44,6 +44,8 @@ namespace PokeD.Server.Modules
         [ConfigIgnore]
         public virtual bool ClientsVisible => true;
 
+        private bool IsDisposed { get; set; }
+
 
         protected ServerModule(IServiceContainer services, ConfigType configType) : base(configType) { Services = services; }
 
@@ -159,5 +161,20 @@ namespace PokeD.Server.Modules
 
         private bool Equals(ServerModule a, ServerModule b) => string.Equals(a.ComponentName, b.ComponentName, StringComparison.Ordinal);
         public override bool Equals(object obj) => obj is ServerModule serverModule && Equals(this, serverModule);
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!IsDisposed)
+            {
+                if (disposing)
+                {
+
+                }
+
+
+                IsDisposed = true;
+            }
+            base.Dispose(disposing);
+        }
     }
 }

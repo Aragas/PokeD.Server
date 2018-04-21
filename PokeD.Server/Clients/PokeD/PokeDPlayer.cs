@@ -105,6 +105,8 @@ namespace PokeD.Server.Clients.PokeD
         // -- Debug -- //
 #endif
 
+        private bool IsDisposing { get; set; }
+
         public PokeDPlayer(Socket socket, ModulePokeD module) : base(module)
         {
             PacketFactory = new PacketEnumFactory<PokeDPacket, PokeDPacketTypes, VarInt, ProtobufSerializer, ProtobufDeserialiser>();
@@ -276,17 +278,25 @@ namespace PokeD.Server.Clients.PokeD
             return packet;
         }
         
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            Stream.Disconnect();
-            Stream.Dispose();
+            if (!IsDisposing)
+            {
+                if (disposing)
+                {
+                    Stream.Disconnect();
+                    Stream.Dispose();
 
 #if DEBUG
-            Sended.Clear();
-            Received.Clear();
+                    Sended.Clear();
+                    Received.Clear();
 #endif
+                }
 
-            base.Dispose();
+
+                IsDisposing = true;
+            }
+            base.Dispose(disposing);
         }
 
 

@@ -55,6 +55,8 @@ namespace PokeD.Server.Services
 
         private DateTime WorldUpdateTime { get; set; } = DateTime.UtcNow;
 
+        private bool IsDisposed { get; set; }
+
 
         public WorldService(IServiceContainer services, ConfigType configType) : base(services, configType) { }
 
@@ -221,13 +223,23 @@ namespace PokeD.Server.Services
             return true;
         }
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            if (UpdateToken?.IsCancellationRequested == false)
+            if (!IsDisposed)
             {
-                UpdateToken.Cancel();
-                UpdateLock.Wait();
+                if (disposing)
+                {
+                    if (UpdateToken?.IsCancellationRequested == false)
+                    {
+                        UpdateToken.Cancel();
+                        UpdateLock.Wait();
+                    }
+                }
+
+
+                IsDisposed = true;
             }
+            base.Dispose(disposing);
         }
     }
 }

@@ -42,8 +42,7 @@ namespace PokeD.Server
         [ConfigIgnore]
         public ServiceContainer Services { get; } = new ServiceContainer();
 
-        [ConfigIgnore]
-        public bool IsDisposing { get; private set; }
+        private bool IsDisposed { get; set; }
 
 
         public Server(ConfigType configType)
@@ -101,17 +100,29 @@ namespace PokeD.Server
         
         public void Dispose()
         {
-            if (IsDisposing)
-                return;
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        private void Dispose(bool disposing)
+        {
+            if (!IsDisposed)
+            {
+                if (disposing)
+                {
+                    Logger.Log(LogType.Debug, "Disposing Server...");
 
-            IsDisposing = true;
+                    foreach (var service in Services)
+                        service?.Dispose();
 
-            Logger.Log(LogType.Debug, "Disposing Server...");
+                    Logger.Log(LogType.Debug, "Disposed Server.");
+                }
 
-            foreach (var service in Services)
-                service?.Dispose();
-
-            Logger.Log(LogType.Debug, "Disposed Server.");
+                IsDisposed = true;
+            }
+        }
+        ~Server()
+        {
+            Dispose(false);
         }
     }
 }

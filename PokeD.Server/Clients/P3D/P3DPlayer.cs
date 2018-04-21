@@ -85,6 +85,9 @@ namespace PokeD.Server.Clients.P3D
         private Queue<P3DPacket> Sended { get; } = new Queue<P3DPacket>(QueueSize);
         // -- Debug -- //
 #endif
+
+        private bool IsDisposing { get; set; }
+
         public P3DPlayer(Socket socket, ModuleP3D module) : base(module)
         {
             PacketFactory = new PacketAttributeFactory<P3DPacket, int, P3DSerializer, P3DDeserializer>();
@@ -306,16 +309,24 @@ namespace PokeD.Server.Clients.P3D
         public override GameDataPacket GetDataPacket() => PacketFactory.Create(() => new GameDataPacket { Origin = ID, DataItems = GenerateDataItems() });
 
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            Stream.Dispose();
+            if (!IsDisposing)
+            {
+                if (disposing)
+                {
+                    Stream.Dispose();
 
 #if DEBUG
-            Sended.Clear();
-            Received.Clear();
+                    Sended.Clear();
+                    Received.Clear();
 #endif
+                }
 
-            base.Dispose();
+
+                IsDisposing = true;
+            }
+            base.Dispose(disposing);
         }
     }
 }

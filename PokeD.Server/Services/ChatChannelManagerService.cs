@@ -15,6 +15,8 @@ namespace PokeD.Server.Services
     {
         private List<ChatChannel> ChatChannels { get; } = new List<ChatChannel>();
 
+        private bool IsDisposed { get; set; }
+
         public ChatChannelManagerService(IServiceContainer services, ConfigType configType) : base(services, configType) { }
 
         public ChatChannel FindByName(string name) => ChatChannels.FirstOrDefault(chatChannel => chatChannel.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
@@ -56,9 +58,19 @@ namespace PokeD.Server.Services
                 ChatChannels.AddRange(scriptChatChannelLoader.LoadChatChannels());
         }
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            ChatChannels.Clear();
+            if (!IsDisposed)
+            {
+                if (disposing)
+                {
+                    ChatChannels.Clear();
+                }
+
+
+                IsDisposed = true;
+            }
+            base.Dispose(disposing);
         }
     }
 }

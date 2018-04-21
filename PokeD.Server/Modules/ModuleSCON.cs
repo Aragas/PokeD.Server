@@ -33,8 +33,6 @@ namespace PokeD.Server.Modules
         
         #endregion Settings
 
-        bool IsDisposing { get; set; }
-
         TcpListener Listener { get; set; }
 
         [ConfigIgnore]
@@ -44,6 +42,7 @@ namespace PokeD.Server.Modules
         List<SCONClient> PlayersToAdd { get; } = new List<SCONClient>();
         List<SCONClient> PlayersToRemove { get; } = new List<SCONClient>();
 
+        private bool IsDisposed { get; set; }
 
         public ModuleSCON(IServiceContainer services, ConfigType configType) : base(services, configType) { }
 
@@ -160,34 +159,38 @@ namespace PokeD.Server.Modules
         public override void OnPosition(Client sender) { }
 
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            if (IsDisposing)
-                return;
-
-            IsDisposing = true;
-
-
-            for (var i = PlayersJoining.Count - 1; i >= 0; i--)
-                PlayersJoining[i].Dispose();
-            PlayersJoining.Clear();
-
-            for (var i = Clients.Count - 1; i >= 0; i--)
+            if (!IsDisposed)
             {
-                Clients[i].SendKick("Closing server!");
-                Clients[i].Dispose();
-            }
-            Clients.Clear();
+                if (disposing)
+                {
+                    for (var i = PlayersJoining.Count - 1; i >= 0; i--)
+                        PlayersJoining[i].Dispose();
+                    PlayersJoining.Clear();
 
-            for (var i = PlayersToAdd.Count - 1; i >= 0; i--)
-            {
-                PlayersToAdd[i].SendKick("Closing server!");
-                PlayersToAdd[i].Dispose();
-            }
-            PlayersToAdd.Clear();
+                    for (var i = Clients.Count - 1; i >= 0; i--)
+                    {
+                        Clients[i].SendKick("Closing server!");
+                        Clients[i].Dispose();
+                    }
+                    Clients.Clear();
 
-            // Do not dispose PlayersToRemove!
-            PlayersToRemove.Clear();
+                    for (var i = PlayersToAdd.Count - 1; i >= 0; i--)
+                    {
+                        PlayersToAdd[i].SendKick("Closing server!");
+                        PlayersToAdd[i].Dispose();
+                    }
+                    PlayersToAdd.Clear();
+
+                    // Do not dispose PlayersToRemove!
+                    PlayersToRemove.Clear();
+                }
+
+
+                IsDisposed = true;
+            }
+            base.Dispose(disposing);
         }
     }
 }

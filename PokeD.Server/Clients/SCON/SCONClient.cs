@@ -67,6 +67,8 @@ namespace PokeD.Server.Clients.SCON
         // -- Debug -- //
 #endif
 
+        private bool IsDisposing { get; set; }
+
         public SCONClient(Socket socket, ModuleSCON module) : base(module)
         {
             Socket = socket;
@@ -209,17 +211,25 @@ namespace PokeD.Server.Clients.SCON
         public override void Load(ClientTable data) { }
 
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            Stream.Disconnect();
-            Stream.Dispose();
+            if (!IsDisposing)
+            {
+                if (disposing)
+                {
+                    Stream.Disconnect();
+                    Stream.Dispose();
 
 #if DEBUG
-            Sended.Clear();
-            Received.Clear();
+                    Sended.Clear();
+                    Received.Clear();
 #endif
+                }
 
-            base.Dispose();
+
+                IsDisposing = true;
+            }
+            base.Dispose(disposing);
         }
     }
 }

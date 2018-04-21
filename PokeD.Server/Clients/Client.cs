@@ -42,6 +42,8 @@ namespace PokeD.Server.Clients
 
         private ServerModule Module { get; }
 
+        private bool IsDisposing { get; set; }
+
 
         protected Client(ServerModule serverModule) { Module = serverModule; }
 
@@ -143,16 +145,34 @@ namespace PokeD.Server.Clients
 
         public abstract void Update();
 
-        public virtual void Dispose()
+        public void Dispose()
         {
-            if (UpdateToken?.IsCancellationRequested == false)
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!IsDisposing)
             {
-                UpdateToken.Cancel();
-                UpdateLock.Wait();
-            }
+                if (disposing)
+                {
+                    if (UpdateToken?.IsCancellationRequested == false)
+                    {
+                        UpdateToken.Cancel();
+                        UpdateLock.Wait();
+                    }
 
-            UpdateLock.Dispose();
-            ConnectionLock.Dispose();
+                    UpdateLock.Dispose();
+                    ConnectionLock.Dispose();
+                }
+
+
+                IsDisposing = true;
+            }
+        }
+        ~Client()
+        {
+            Dispose(false);
         }
     }
 

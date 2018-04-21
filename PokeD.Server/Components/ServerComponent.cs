@@ -1,4 +1,6 @@
-﻿using PCLExt.Config;
+﻿using System;
+
+using PCLExt.Config;
 using PCLExt.Config.Extensions;
 
 using PokeD.Core;
@@ -11,6 +13,8 @@ namespace PokeD.Server.Components
         protected virtual string ComponentName => GetType().Name;
         protected virtual IConfigFile ComponentConfigFile { get; }
         protected ConfigType ConfigType { get; }
+
+        private bool IsDisposed { get; set; }
 
         protected ServerComponent(ConfigType configType) { ConfigType = configType; }
 
@@ -37,6 +41,27 @@ namespace PokeD.Server.Components
 
         public abstract void Update();
 
-        public abstract void Dispose();
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!IsDisposed)
+            {
+                if (disposing)
+                {
+
+                }
+
+
+                IsDisposed = true;
+            }
+        }
+        ~ServerComponent()
+        {
+            Dispose(false);
+        }
     }
 }
