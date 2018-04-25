@@ -19,19 +19,17 @@ namespace PokeD.Server
 
         #region Settings
 
+        private string _pokeApiUrl;
         public string PokeApiUrl
         {
-            get => ResourceUri.URL;
+            get => _pokeApiUrl;
             private set
             {
                 if (!value.EndsWith("/"))
                     value += "/";
-                ResourceUri.URL = value;
+                _pokeApiUrl = value;
             }
         }
-
-        public PokeApiV2.CacheTypeEnum CacheType { get => PokeApiV2.CacheType; private set => PokeApiV2.CacheType = value; } 
-        public bool PreCacheData { get; private set; } = false;
 
         public bool EnableDebug { get => Logger.EnableDebug; private set => Logger.EnableDebug = value; }
 
@@ -65,15 +63,7 @@ namespace PokeD.Server
             var status = FileSystemExtensions.LoadConfig(ServerConfigFile, this);
             if(!status)
                 Logger.Log(LogType.Warning, "Failed to load Server settings!");
-
-
-            if (PreCacheData)
-            {
-                Logger.Log(LogType.Info, "Pre Cache enabled, caching data...");
-                PreCache();
-                Logger.Log(LogType.Info, "Caching data done.");
-            }
-
+            
             Logger.Log(LogType.Debug, "Starting Services...");
             foreach (var service in Services)
                 (service as IStartable)?.Start();

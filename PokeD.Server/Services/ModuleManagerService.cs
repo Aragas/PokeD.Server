@@ -9,6 +9,7 @@ using PCLExt.Config;
 
 using PokeD.Core;
 using PokeD.Core.Data.P3D;
+using PokeD.Core.Data.PokeD;
 using PokeD.Core.Event;
 using PokeD.Core.Services;
 using PokeD.Server.Clients;
@@ -127,12 +128,12 @@ namespace PokeD.Server.Services
                 module.OnTradeRequest(sender, monster, destClient);
 
 
-            /*
+            TradeInstance trade;
             if (!CurrentTrades.Any(t => t.Equals(sender.ID, destClient.ID)))
-                CurrentTrades.Add(new TradeInstance { Client0ID = sender.ID, Client1ID = destClient.ID });
-
-            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(sender.ID, destClient.ID));
-            if (trade != null)
+                CurrentTrades.Add((trade = new TradeInstance { Client0ID = sender.ID, Client1ID = destClient.ID }));
+            else
+                trade = CurrentTrades.First(t => t.Equals(sender.ID, destClient.ID));
+            try // TODO: specify exceptions that should be processed here. 
             {
                 if (trade.Client0ID == sender.ID)
                     trade.Client0Monster = new Monster(monster);
@@ -140,7 +141,13 @@ namespace PokeD.Server.Services
                 if (trade.Client1ID == sender.ID)
                     trade.Client1Monster = new Monster(monster);
             }
-            */
+            catch (Exception e)
+            {
+                Logger.Log(LogType.Error, $"Error while creating trade request! Type: {e.GetType()}, Message: {e.Message}");
+                CurrentTrades.Remove(trade);
+            }
+
+
             Logger.Log(LogType.Trade, $"{sender.Name} sent a trade request to {destClient.Name}. Module {callerModule.GetType().Name}");
         }
         public void TradeConfirm(Client sender, Client destClient, ServerModule callerModule)
@@ -149,7 +156,6 @@ namespace PokeD.Server.Services
                 module.OnTradeConfirm(sender, destClient);
 
 
-            /*
             var trade = CurrentTrades.FirstOrDefault(t => t.Equals(sender.ID, destClient.ID));
             if (trade != null)
             {
@@ -164,7 +170,8 @@ namespace PokeD.Server.Services
                     CurrentTrades.Remove(trade);
                 }
             }
-            */
+
+
             Logger.Log(LogType.Trade, $"{sender.Name} confirmed a trade request with {destClient.Name}. Module {callerModule.GetType().Name}");
         }
         public void TradeCancel(Client sender, Client destClient, ServerModule callerModule)
@@ -173,11 +180,11 @@ namespace PokeD.Server.Services
                 module.OnTradeCancel(sender, destClient);
 
 
-            /*
             var trade = CurrentTrades.FirstOrDefault(t => t.Equals(sender.ID, destClient.ID));
             if (trade != null)
                 CurrentTrades.Remove(trade);
-            */
+
+
             Logger.Log(LogType.Trade, $"{sender.Name} cancelled a trade request with {destClient.Name}. Module {callerModule.GetType().Name}");
         }
 
