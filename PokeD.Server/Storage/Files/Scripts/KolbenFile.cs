@@ -76,7 +76,7 @@ namespace PokeD.Server.Storage.Files
 
         private ScriptProcessor CreateProcessor()
         {
-            if (PrototypeBuffer == null)
+            if (PrototypeBuffer is null)
                 InitializePrototypeBuffer();
 
             var processor = new ScriptProcessor(PrototypeBuffer);
@@ -96,7 +96,7 @@ namespace PokeD.Server.Storage.Files
 
         private SObject ExecuteMethod(ScriptProcessor processor, string className, string methodName, SObject[] parameters)
         {
-            if (ApiClasses == null)
+            if (ApiClasses is null)
                 InitializeApiClasses();
 
             if (ApiClasses.ContainsKey(className))

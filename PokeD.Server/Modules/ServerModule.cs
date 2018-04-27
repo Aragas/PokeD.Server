@@ -66,7 +66,7 @@ namespace PokeD.Server.Modules
         public virtual bool AssignID(Client client)
         {
             var clientTable = Database.DatabaseGetAll<ClientTable>().FirstOrDefault(table => table.Name == client.Nickname);
-            if (clientTable == null)
+            if (clientTable is null)
             {
                 clientTable = new ClientTable(client);
                 Database.DatabaseSet(clientTable);

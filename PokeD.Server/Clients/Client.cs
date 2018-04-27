@@ -78,7 +78,7 @@ namespace PokeD.Server.Clients
             ClientTable table;
             if ((table = Module.Database.DatabaseGet<ClientTable>(ID)) != null)
             {
-                if (table.PasswordHash == null)
+                if (table.PasswordHash is null)
                 {
                     PasswordHash = passwordHash;
                     Save(true);

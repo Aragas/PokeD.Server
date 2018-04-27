@@ -24,7 +24,7 @@ namespace PokeD.Server.Commands
                 var permissions = arguments.Skip(1).Where(arg => arg != "," || arg != "|").ToArray();
 
                 var cClient = GetClient(clientName);
-                if (cClient == null)
+                if (cClient is null)
                 {
                     client.SendServerMessage($"Player {clientName} not found.");
                     return;
