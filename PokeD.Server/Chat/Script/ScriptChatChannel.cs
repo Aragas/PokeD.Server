@@ -12,28 +12,10 @@ namespace PokeD.Server.Chat
 
         public ScriptChatChannel(BaseChatChannelScript script) => Script = script;
 
-        public override bool MessageSend(ChatMessage chatMessage)
-        {
-            if (!base.MessageSend(chatMessage))
-                return false;
+        public override bool MessageSend(ChatMessage chatMessage) => base.MessageSend(chatMessage) && Script.MessageSend(chatMessage);
 
-            return Script.MessageSend(chatMessage);
-        }
+        public override bool Subscribe(Client client) => base.Subscribe(client) && Script.Subscribe(client);
 
-        public override bool Subscribe(Client client)
-        {
-            if (!base.Subscribe(client))
-                return false;
-
-            return Script.Subscribe(client);
-        }
-
-        public override bool UnSubscribe(Client client)
-        {
-            if (!base.UnSubscribe(client))
-                return false;
-
-            return Script.UnSubscribe(client);
-        }
+        public override bool UnSubscribe(Client client) => base.UnSubscribe(client) && Script.UnSubscribe(client);
     }
 }

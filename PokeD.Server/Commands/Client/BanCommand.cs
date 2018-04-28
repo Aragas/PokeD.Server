@@ -27,7 +27,7 @@ namespace PokeD.Server.Commands
                     return;
                 }
 
-                if (!int.TryParse(arguments[1], out int minutes))
+                if (!int.TryParse(arguments[1], out var minutes))
                 {
                     client.SendServerMessage("Invalid minutes given.");
                     return;
@@ -46,7 +46,7 @@ namespace PokeD.Server.Commands
                     return;
                 }
 
-                if (!int.TryParse(arguments[1], out int minutes))
+                if (!int.TryParse(arguments[1], out var minutes))
                 {
                     client.SendServerMessage("Invalid minutes given.");
                     return;
