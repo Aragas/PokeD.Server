@@ -88,7 +88,7 @@ namespace PokeD.Server.Services
         private void HandleCommand(Client client, string alias, string[] arguments)
         {
             var command = FindByName(alias) ?? FindByAlias(alias);
-            if (command is null)
+            if (command == null)
             {
                 client.SendServerMessage($@"Invalid command ""{alias}"".");
                 return;

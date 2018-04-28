@@ -21,7 +21,7 @@ namespace PokeD.Server.Commands
             {
                 var clientName = arguments[0];
                 var cClient = GetClient(clientName);
-                if (cClient is null)
+                if (cClient == null)
                 {
                     client.SendServerMessage($"Player {clientName} not found!");
                     return;
@@ -40,7 +40,7 @@ namespace PokeD.Server.Commands
             {
                 var clientName = arguments[0];
                 var cClient = GetClient(clientName);
-                if (cClient is null)
+                if (cClient == null)
                 {
                     client.SendServerMessage($"Player {clientName} not found!");
                     return;

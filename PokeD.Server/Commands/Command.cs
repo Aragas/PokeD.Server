@@ -132,7 +132,7 @@ namespace PokeD.Server.Commands
                 return client;
             
             var clientTable = ServiceContainer.GetService<DatabaseService>().DatabaseFind<ClientTable>(c => c.Name == name);
-            return clientTable is null ? null : new OfflineClient(ServiceContainer, clientTable);
+            return clientTable == null ? null : new OfflineClient(ServiceContainer, clientTable);
         }
 
 

@@ -411,7 +411,7 @@ namespace PokeD.Server.Modules
             if (p3dClient.IsGameJoltPlayer)
             {
                 var clientGJTable = Database.DatabaseGetAll<ClientGJTable>().FirstOrDefault(table => table.GameJoltID == p3dClient.GameJoltID);
-                if (clientGJTable is null)
+                if (clientGJTable == null)
                 {
                     var clientTable = new ClientTable(client);
                     Database.DatabaseSet(clientTable);
