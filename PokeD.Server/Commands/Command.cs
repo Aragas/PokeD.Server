@@ -104,7 +104,7 @@ namespace PokeD.Server.Commands
             public override bool RegisterOrLogIn(string passwordHash) => false;
             public override bool ChangePassword(string oldPassword, string newPassword) => false;
 
-            public override void SendPacket<TPacket>(Func<TPacket> func) { }
+            public override void SendPacket<TPacket>(TPacket packet) { }
 
             public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage) { }
             public override void SendServerMessage(string text) { }

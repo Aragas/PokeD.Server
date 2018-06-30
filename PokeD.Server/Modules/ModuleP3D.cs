@@ -169,14 +169,14 @@ namespace PokeD.Server.Modules
                 Clients.Add(player);
 
 
-            SendPacketToAll(() => new CreatePlayerPacket { Origin = Origin.Server, PlayerID = eventArgs.Client.ID });
-            SendPacketToAll(eventArgs.Client.GetDataPacket);
-            SendPacketToAll(() => new ChatMessageGlobalPacket { Origin = Origin.Server, Message = $"Player {eventArgs.Client.Name} joined the game!" });
+            SendPacketToAll(new CreatePlayerPacket { Origin = Origin.Server, PlayerID = eventArgs.Client.ID });
+            SendPacketToAll(eventArgs.Client.GetDataPacket());
+            SendPacketToAll(new ChatMessageGlobalPacket { Origin = Origin.Server, Message = $"Player {eventArgs.Client.Name} joined the game!" });
         }
         private void ModuleManager_ClientLeaved(object sender, ClientLeavedEventArgs eventArgs)
         {
-            SendPacketToAll(() => new DestroyPlayerPacket { Origin = Origin.Server, PlayerID = eventArgs.Client.ID });
-            SendPacketToAll(() => new ChatMessageGlobalPacket { Origin = Origin.Server, Message = $"Player {eventArgs.Client.Name} disconnected!" });
+            SendPacketToAll(new DestroyPlayerPacket { Origin = Origin.Server, PlayerID = eventArgs.Client.ID });
+            SendPacketToAll(new ChatMessageGlobalPacket { Origin = Origin.Server, Message = $"Player {eventArgs.Client.Name} disconnected!" });
         }
 
 
@@ -256,7 +256,7 @@ namespace PokeD.Server.Modules
                     foreach (var player in nearPlayers.Value.Where(player => player.Moving))
                         foreach (var playerToSend in nearPlayers.Value.Where(playerToSend => player != playerToSend))
                         {
-                            playerToSend.SendPacket(player.GetDataPacket);
+                            playerToSend.SendPacket(player.GetDataPacket());
                         }
 
 
@@ -315,15 +315,15 @@ namespace PokeD.Server.Modules
             lock (Clients)
                 foreach (var aClient in Clients)
                 {
-                    client.SendPacket(() => new CreatePlayerPacket { Origin = Origin.Server, PlayerID = aClient.ID });
-                    client.SendPacket(aClient.GetDataPacket);
+                    client.SendPacket(new CreatePlayerPacket { Origin = Origin.Server, PlayerID = aClient.ID });
+                    client.SendPacket(aClient.GetDataPacket());
                 }
 
             // Send to Players player ID
-            SendPacketToAll(() => new CreatePlayerPacket { Origin = Origin.Server, PlayerID = client.ID });
+            SendPacketToAll(new CreatePlayerPacket { Origin = Origin.Server, PlayerID = client.ID });
             // Send to player his ID
-            client.SendPacket(() => new CreatePlayerPacket { Origin = Origin.Server, PlayerID = client.ID });
-            SendPacketToAll(client.GetDataPacket);
+            client.SendPacket(new CreatePlayerPacket { Origin = Origin.Server, PlayerID = client.ID });
+            SendPacketToAll(client.GetDataPacket());
 
             base.OnClientReady(sender, eventArgs);
         }
@@ -346,19 +346,19 @@ namespace PokeD.Server.Modules
         {
             if (UpdateWatch.ElapsedMilliseconds > 1000)
             {
-                SendPacketToAll(() => new WorldDataPacket { Origin = Origin.Server, DataItems = World.GenerateDataItems() });
+                SendPacketToAll(new WorldDataPacket { Origin = Origin.Server, DataItems = World.GenerateDataItems() });
 
                 UpdateWatch.Reset();
                 UpdateWatch.Start();
             }
         }
 
-        public void SendPacketToAll<TPacket>(Func<TPacket> func) where TPacket : Packet, new()
+        public void SendPacketToAll<TPacket>(TPacket packet) where TPacket : Packet, new()
         {
             lock (Clients)
             {
                 foreach (var client in Clients)
-                    client?.SendPacket(func);
+                    client?.SendPacket(packet);
             }
         }
 
@@ -367,28 +367,28 @@ namespace PokeD.Server.Modules
             base.OnTradeRequest(sender, monster, destClient);
 
             if (destClient is P3DPlayer)
-                destClient.SendPacket(() => new TradeOfferPacket { Origin = sender.ID, DataItems = monster });
+                destClient.SendPacket(new TradeOfferPacket { Origin = sender.ID, DataItems = monster });
         }
         public override void OnTradeConfirm(Client sender, Client destClient)
         {
             base.OnTradeConfirm(sender, destClient);
 
             if (destClient is P3DPlayer)
-                destClient.SendPacket(() => new TradeStartPacket { Origin = sender.ID });
+                destClient.SendPacket(new TradeStartPacket { Origin = sender.ID });
         }
         public override void OnTradeCancel(Client sender, Client destClient)
         {
             base.OnTradeCancel(sender, destClient);
 
             if (destClient is P3DPlayer)
-                destClient.SendPacket(() => new TradeQuitPacket { Origin = sender.ID });
+                destClient.SendPacket(new TradeQuitPacket { Origin = sender.ID });
         }
 
         public override void OnPosition(Client sender)
         {
             base.OnPosition(sender);
 
-            SendPacketToAll(sender.GetDataPacket);
+            SendPacketToAll(sender.GetDataPacket());
         }
 
         public override bool AssignID(Client client)

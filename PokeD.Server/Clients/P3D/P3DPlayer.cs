@@ -1,11 +1,6 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Net.Sockets;
-using System.Threading;
-
-using Aragas.Network.Packets;
 
 using PokeD.Core.Data;
 using PokeD.Core.Data.P3D;
@@ -26,7 +21,7 @@ using PokeD.Server.Modules;
 
 namespace PokeD.Server.Clients.P3D
 {
-    public partial class P3DPlayer : Client<ModuleP3D>
+    public partial class P3DPlayer : StandardClient<ModuleP3D, P3DTransmission, P3DPacket, int, P3DSerializer, P3DDeserializer>
     {
         private static CultureInfo CultureInfo => CultureInfo.InvariantCulture;
 
@@ -72,78 +67,11 @@ namespace PokeD.Server.Clients.P3D
         private bool IsInitialized { get; set; }
 
         #endregion Values
-
-        private BasePacketFactory<P3DPacket, int, P3DSerializer, P3DDeserializer> PacketFactory { get; }
-        private P3DTransmission Stream { get; }
-
-        private ConcurrentQueue<P3DPacket> PacketsToSend { get; } = new ConcurrentQueue<P3DPacket>();
-
-#if DEBUG
-        // -- Debug -- //
-        private const int QueueSize = 1000;
-        private Queue<P3DPacket> Received { get; } = new Queue<P3DPacket>(QueueSize);
-        private Queue<P3DPacket> Sended { get; } = new Queue<P3DPacket>(QueueSize);
-        // -- Debug -- //
-#endif
-
         private bool IsDisposing { get; set; }
 
-        public P3DPlayer(Socket socket, ModuleP3D module) : base(module)
-        {
-            PacketFactory = new PacketAttributeFactory<P3DPacket, int, P3DSerializer, P3DDeserializer>();
-            Stream = new P3DTransmission(socket, PacketFactory);
-        }
+        public P3DPlayer(Socket socket, ModuleP3D module) : base(socket, module) { }
 
-        public override void Update()
-        {
-            UpdateLock.Reset(); // Signal that the UpdateThread is alive.
-            try
-            {
-                while (!UpdateToken.IsCancellationRequested && Stream.IsConnected)
-                {
-                    ConnectionLock.Reset(); // Signal that we are handling pending client data.
-                    try
-                    {
-                        while (Stream.TryReadPacket(out var packetToReceive))
-                        {
-                            HandlePacket(packetToReceive);
-
-#if DEBUG
-                            Received.Enqueue(packetToReceive);
-                            if (Received.Count >= QueueSize)
-                                Received.Dequeue();
-#endif
-                        }
-
-                        while (PacketsToSend.TryDequeue(out var packetToSend))
-                        {
-                            Stream.SendPacket(packetToSend);
-
-#if DEBUG
-                            Sended.Enqueue(packetToSend);
-                            if (Sended.Count >= QueueSize)
-                                Sended.Dequeue();
-#endif
-                        }
-                    }
-                    finally
-                    {
-                        ConnectionLock.Set(); // Signal that we are not handling anymore pending client data.
-                    }
-
-                    Thread.Sleep(100); // 100 calls per second should not be too often?
-                }
-            }
-            finally
-            {               
-                UpdateLock.Set(); // Signal that the UpdateThread is finished
-
-                if (!UpdateToken.IsCancellationRequested && !Stream.IsConnected) // Leave() if the update cycle stopped unexpectedly
-                    Leave();
-            }
-        }
-
-        private void HandlePacket(P3DPacket packet)
+        public override void HandlePacket(P3DPacket packet)
         {
             switch ((P3DPacketTypes) packet.ID)
             {
@@ -239,20 +167,13 @@ namespace PokeD.Server.Clients.P3D
             return false;
         }
 
-        public override void SendPacket<TPacket>(Func<TPacket> func)
-        {
-            if (!(PacketFactory.Create(func) is P3DPacket packet))
-                throw new Exception($"Wrong packet type, {typeof(TPacket).FullName}");
-
-            PacketsToSend.Enqueue(packet);
-        }
-        public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage) => SendPacket(() => new ChatMessageGlobalPacket { Origin = chatMessage.Sender.ID, Message = chatMessage.Message });
-        public override void SendServerMessage(string text) => SendPacket(() => new ChatMessageGlobalPacket { Origin = Origin.Server, Message = text });
-        public override void SendPrivateMessage(ChatMessage chatMessage) => SendPacket(() => new ChatMessagePrivatePacket { Origin = chatMessage.Sender.ID, DataItems = chatMessage.Message });
+        public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage) => SendPacket(new ChatMessageGlobalPacket { Origin = chatMessage.Sender.ID, Message = chatMessage.Message });
+        public override void SendServerMessage(string text) => SendPacket(new ChatMessageGlobalPacket { Origin = Origin.Server, Message = text });
+        public override void SendPrivateMessage(ChatMessage chatMessage) => SendPacket(new ChatMessagePrivatePacket { Origin = chatMessage.Sender.ID, DataItems = chatMessage.Message });
 
         public override void SendKick(string reason = "")
         {
-            SendPacket(() => new KickedPacket { Origin = Origin.Server, Reason = reason });
+            SendPacket(new KickedPacket { Origin = Origin.Server, Reason = reason });
             base.SendKick(reason);
         }
         public override void SendBan(BanTable banTable)
@@ -306,7 +227,7 @@ namespace PokeD.Server.Clients.P3D
                 PokemonSkin,
                 PokemonFacing.ToString(CultureInfo));
         }
-        public override GameDataPacket GetDataPacket() => PacketFactory.Create(() => new GameDataPacket { Origin = ID, DataItems = GenerateDataItems() });
+        public override GameDataPacket GetDataPacket() => new GameDataPacket { Origin = ID, DataItems = GenerateDataItems() };
 
 
         protected override void Dispose(bool disposing)
@@ -315,12 +236,7 @@ namespace PokeD.Server.Clients.P3D
             {
                 if (disposing)
                 {
-                    Stream.Dispose();
 
-#if DEBUG
-                    Sended.Clear();
-                    Received.Clear();
-#endif
                 }
 
 

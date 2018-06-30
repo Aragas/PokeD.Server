@@ -176,19 +176,19 @@ namespace PokeD.Server.Clients.SCON
 
         public override GameDataPacket GetDataPacket() { throw new NotSupportedException(); }
 
-        public override void SendPacket<TPacket>(Func<TPacket> func)
+        public override void SendPacket<TPacket>(TPacket packet)
         {
-            if (!(PacketFactory.Create(func) is SCONPacket packet))
+            if (!(packet is SCONPacket sconPacket))
                 throw new Exception($"Wrong packet type, {typeof(TPacket).FullName}");
 
-            if (packet is ChatMessagePacket)
+            if (sconPacket is ChatMessagePacket)
                 if (!ChatEnabled)
                     return;
 
-            Stream.SendPacket(packet);
+            Stream.SendPacket(sconPacket);
 
 #if DEBUG
-            Sended.Enqueue(packet);
+            Sended.Enqueue(sconPacket);
             if (Sended.Count >= QueueSize)
                 Sended.Dequeue();
 #endif
@@ -199,12 +199,12 @@ namespace PokeD.Server.Clients.SCON
 
         public override void SendKick(string reason = "")
         {
-            SendPacket(() => new AuthorizationDisconnectPacket { Reason = reason });
+            SendPacket(new AuthorizationDisconnectPacket { Reason = reason });
             base.SendKick(reason);
         }
         public override void SendBan(BanTable banTable)
         {
-            SendPacket(() => new AuthorizationDisconnectPacket { Reason = $"This SCON Client was banned from the Server.\r\nTime left: {DateTime.UtcNow - banTable.UnbanTime:%m}\r\nReason: {banTable.Reason}" });
+            SendPacket(new AuthorizationDisconnectPacket { Reason = $"This SCON Client was banned from the Server.\r\nTime left: {DateTime.UtcNow - banTable.UnbanTime:%m}\r\nReason: {banTable.Reason}" });
             base.SendBan(banTable);
         }
 

@@ -206,31 +206,31 @@ namespace PokeD.Server.Clients.PokeD
         public override bool RegisterOrLogIn(string passwordHash) => false;
         public override bool ChangePassword(string oldPassword, string newPassword) => false;
 
-        public override void SendPacket<TPacket>(Func<TPacket> func)
+        public override void SendPacket<TPacket>(TPacket packet)
         {
-            if (!(PacketFactory.Create(func) is PokeDPacket packet))
+            if (!(packet is PokeDPacket pokeDPacket))
                 throw new Exception($"Wrong packet type, {typeof(TPacket).FullName}");
 
-            Stream.SendPacket(packet);
+            Stream.SendPacket(pokeDPacket);
 
 #if DEBUG
-            Sended.Enqueue(packet);
+            Sended.Enqueue(pokeDPacket);
             if (Sended.Count >= QueueSize)
                 Sended.Dequeue();
 #endif
         }
-        public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage) { SendPacket(() => new ChatGlobalMessagePacket { Message = chatMessage.Message }); }
-        public override void SendServerMessage(string text) { SendPacket(() => new ChatServerMessagePacket { Message = text }); }
-        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(() => new ChatPrivateMessagePacket { PlayerID = new VarInt(chatMessage.Sender.ID), Message = chatMessage.Message }); }
+        public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage) { SendPacket(new ChatGlobalMessagePacket { Message = chatMessage.Message }); }
+        public override void SendServerMessage(string text) { SendPacket(new ChatServerMessagePacket { Message = text }); }
+        public override void SendPrivateMessage(ChatMessage chatMessage) { SendPacket(new ChatPrivateMessagePacket { PlayerID = new VarInt(chatMessage.Sender.ID), Message = chatMessage.Message }); }
 
         public override void SendKick(string reason = "")
         {
-            SendPacket(() => new DisconnectPacket { Reason = reason });
+            SendPacket(new DisconnectPacket { Reason = reason });
             base.SendKick(reason);
         }
         public override void SendBan(BanTable banTable)
         {
-            SendPacket(() => new DisconnectPacket { Reason = $"You have banned from this server\r\nReason: {banTable.Reason}\r\nTime left: {(banTable.UnbanTime - DateTime.UtcNow):%m} minutes." });
+            SendPacket(new DisconnectPacket { Reason = $"You have banned from this server\r\nReason: {banTable.Reason}\r\nTime left: {(banTable.UnbanTime - DateTime.UtcNow):%m} minutes." });
             base.SendBan(banTable);
         }
 

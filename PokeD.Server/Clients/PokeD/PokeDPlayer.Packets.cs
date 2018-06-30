@@ -21,7 +21,7 @@ namespace PokeD.Server.Clients.PokeD
 
             //PlayerRef = new Trainer(packet.Name);
 
-            SendPacket(() => new AuthorizationResponsePacket { AuthorizationStatus = AuthorizationStatus });
+            SendPacket(new AuthorizationResponsePacket { AuthorizationStatus = AuthorizationStatus });
 
             if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
             {
@@ -72,7 +72,7 @@ namespace PokeD.Server.Clients.PokeD
                 */
             }
             else
-                SendPacket(() => new AuthorizationDisconnectPacket { Reason = "Encryption not enabled!" });
+                SendPacket(new AuthorizationDisconnectPacket { Reason = "Encryption not enabled!" });
         }
 
 
@@ -92,7 +92,7 @@ namespace PokeD.Server.Clients.PokeD
             if (packet.Message.StartsWith("/"))
             {
                 if (!packet.Message.ToLower().StartsWith("/login"))
-                    SendPacket(() => new ChatGlobalMessagePacket { Message = packet.Message });
+                    SendPacket(new ChatGlobalMessagePacket { Message = packet.Message });
 
                 ExecuteCommand(packet.Message);
             }
@@ -105,10 +105,10 @@ namespace PokeD.Server.Clients.PokeD
             if (destClient != null)
             {
                 destClient.SendPrivateMessage(new ChatMessage(this, packet.Message));
-                SendPacket(() => new ChatPrivateMessagePacket { Message = packet.Message });
+                SendPacket(new ChatPrivateMessagePacket { Message = packet.Message });
             }
             else
-                SendPacket(() => new ChatGlobalMessagePacket { Message = "The player doesn't exist." });
+                SendPacket(new ChatGlobalMessagePacket { Message = "The player doesn't exist." });
         }
 
         private void HandleBattleRequest(BattleRequestPacket packet){ }

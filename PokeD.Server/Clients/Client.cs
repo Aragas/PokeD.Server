@@ -37,7 +37,8 @@ namespace PokeD.Server.Clients
 
         protected CancellationTokenSource UpdateToken { get; set; }
         protected ManualResetEventSlim UpdateLock { get; } = new ManualResetEventSlim(false);
-        
+        protected Thread UpdateLockThread { get; set; }
+
         protected ManualResetEventSlim ConnectionLock { get; } = new ManualResetEventSlim(true); // Will cause deadlock if false. See Leave();
 
         private ServerModule Module { get; }
@@ -45,7 +46,7 @@ namespace PokeD.Server.Clients
         private bool IsDisposing { get; set; }
 
 
-        protected Client(ServerModule serverModule) { Module = serverModule; }
+        protected Client(ServerModule serverModule) => Module = serverModule;
 
 
         public void StartListening()
@@ -53,15 +54,23 @@ namespace PokeD.Server.Clients
             if (!UpdateLock.IsSet)
             {
                 UpdateToken = new CancellationTokenSource();
-                new Thread(Update).Start();
+                UpdateLockThread = new Thread(Update);
+                UpdateLockThread.Start();
             }
             else
                 throw new Exception("UpdateThread is already running!");
         }
 
         protected void Join() => Ready?.Invoke(this, EventArgs.Empty);
+
+        /// <summary>
+        /// Do not call Leave() directly from Update() cycle.
+        /// </summary>
         protected void Leave()
         {
+            if (UpdateLockThread == Thread.CurrentThread)
+                throw new InvalidOperationException("Do not call Leave() from Update() cycle, use LeaveAsync().");
+
             ConnectionLock.Wait(); // this should ensure we will send every packet enqueued at the moment of calling Leave()
 
             if (UpdateToken?.IsCancellationRequested == false)
@@ -72,6 +81,11 @@ namespace PokeD.Server.Clients
 
             Disconnected?.Invoke(this, EventArgs.Empty);
         }
+        /// <summary>
+        /// We do not need to call Leave() synchronously because of lock usages.
+        /// Calling Leave() from the Update() cycle will cause a deadlock, this is the fix for it.
+        /// </summary>
+        protected void LeaveAsync() => ThreadPool.QueueUserWorkItem(obj => Leave());
 
         public virtual bool RegisterOrLogIn(string passwordHash)
         {
@@ -105,8 +119,7 @@ namespace PokeD.Server.Clients
 
         public abstract GameDataPacket GetDataPacket();
 
-        //public abstract void SendPacket(Packet packet);
-        public abstract void SendPacket<TPacket>(Func<TPacket> packet) where TPacket : Packet, new();
+        public abstract void SendPacket<TPacket>(TPacket packet) where TPacket : Packet;
 
         public abstract void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage);
         public abstract void SendPrivateMessage(ChatMessage chatMessage);
@@ -116,12 +129,12 @@ namespace PokeD.Server.Clients
         /// Will raise Disconnected event.
         /// </summary>
         /// <param name="reason"></param>
-        public virtual void SendKick(string reason = "") { Leave(); }
+        public virtual void SendKick(string reason = "") { LeaveAsync(); }
         /// <summary>
         /// Will raise Disconnected event.
         /// </summary>
         /// <param name="banTable"></param>
-        public virtual void SendBan(BanTable banTable) { Leave(); }
+        public virtual void SendBan(BanTable banTable) { LeaveAsync(); }
 
         Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
         public virtual void Save(bool force = false)
@@ -156,6 +169,9 @@ namespace PokeD.Server.Clients
             {
                 if (disposing)
                 {
+                    if (UpdateLockThread == Thread.CurrentThread)
+                        throw new InvalidOperationException("Do not call Dispose() from Update() cycle.");
+
                     if (UpdateToken?.IsCancellationRequested == false)
                     {
                         UpdateToken.Cancel();
@@ -180,6 +196,6 @@ namespace PokeD.Server.Clients
     {
         protected TServerModule Module { get; }
 
-        protected Client(TServerModule serverModule) : base(serverModule) { Module = serverModule; }
+        protected Client(TServerModule serverModule) : base(serverModule) => Module = serverModule;
     }
 }

@@ -34,7 +34,6 @@ namespace PokeD.Server.Services
         public DatabaseService(IServiceContainer services, ConfigType configType) : base(services, configType) { }
 
         public T DatabaseFind<T>(Expression<Func<T, bool>> exp) where T : IDatabaseTable, new() => Database.Find(exp);
-        public bool DatabaseFind<T>(object primaryKey) where T : IDatabaseTable, new() => Database.Find<T>(primaryKey) != null;
         public T DatabaseGet<T>(object primaryKey) where T : IDatabaseTable, new() => Database.Find<T>(primaryKey);
         public void DatabaseSet<T>(T obj) where T : IDatabaseTable, new() => Database.Insert(obj);
         public void DatabaseUpdate<T>(T obj) where T : IDatabaseTable, new() => Database.Update(obj);

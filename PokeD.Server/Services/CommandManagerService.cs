@@ -38,7 +38,7 @@ namespace PokeD.Server.Services
 
             public ServerClient(ServerModule serverModule) : base(serverModule) { }
 
-            public override void SendPacket<TPacket>(Func<TPacket> func) { }
+            public override void SendPacket<TPacket>(TPacket func) { }
 
             public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage) => Logger.LogChatMessage(chatMessage.Sender.Name, chatChannel.Name, chatMessage.Message);
             public override void SendServerMessage(string text) => Logger.Log(LogType.Command, text);

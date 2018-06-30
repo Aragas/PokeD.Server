@@ -4,14 +4,13 @@ using PCLExt.Config;
 using PCLExt.Config.Extensions;
 
 using PokeD.Core;
-using PokeD.Core.Data.PokeApi;
 using PokeD.Core.Services;
 using PokeD.Server.Services;
 using PokeD.Server.Storage.Files;
 
 namespace PokeD.Server
 {
-    public partial class Server : IDisposable
+    public class Server : IDisposable
     {
         private ConfigType ConfigType { get; }
         private IConfigFile ServerConfigFile => new ServerConfigFile(ConfigType);
@@ -19,13 +18,13 @@ namespace PokeD.Server
 
         #region Settings
 
-        private string _pokeApiUrl;
+        private string _pokeApiUrl = "https://pokeapi.co/";
         public string PokeApiUrl
         {
             get => _pokeApiUrl;
             private set
             {
-                if (!value.EndsWith("/"))
+                if (value?.EndsWith("/") == false)
                     value += "/";
                 _pokeApiUrl = value;
             }
