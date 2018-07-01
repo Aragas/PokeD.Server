@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 
 using PokeD.BattleEngine.Monster.Enums;
 using PokeD.Core.Data.PokeD;
@@ -77,8 +78,8 @@ namespace PokeD.Server.Database
 
             Experience = monster.Experience;
 
-            IV_Json = JsonConvert.SerializeObject(monster.IV, Formatting.None, new StatsConverter());
-            EV_Json = JsonConvert.SerializeObject(monster.EV, Formatting.None, new StatsConverter());
+            IV_Json = JsonConvert.SerializeObject(monster.IV, Formatting.None, new StatsConverter()) ?? string.Empty;
+            EV_Json = JsonConvert.SerializeObject(monster.EV, Formatting.None, new StatsConverter()) ?? string.Empty;
 
             CurrentHP = monster.CurrentHP;
             StatusEffect = monster.StatusEffect;
@@ -90,7 +91,7 @@ namespace PokeD.Server.Database
 
             EggSteps = monster.EggSteps;
 
-            Moves_Json = JsonConvert.SerializeObject(monster.Moves, Formatting.None, new AttackConverter());
+            Moves_Json = JsonConvert.SerializeObject(monster.Moves, Formatting.None, new AttackConverter()) ?? string.Empty;
 
             HeldItem = monster.HeldItem?.StaticData?.ID ?? 0;
         }

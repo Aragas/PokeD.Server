@@ -157,7 +157,12 @@ namespace PokeD.Server.Services
 
 
             var trade = CurrentTrades.FirstOrDefault(t => t.Equals(sender.ID, destClient.ID));
-            if (trade != null)
+            if (trade == null)
+            {
+                Logger.Log(LogType.Error, "Error while confirming trade request! trade was null.");
+                return;
+            }
+            try
             {
                 if (trade.Client0ID == sender.ID)
                     trade.Client0Confirmed = true;
@@ -170,6 +175,11 @@ namespace PokeD.Server.Services
                     CurrentTrades.Remove(trade);
                 }
             }
+            catch (Exception e)
+            {
+                Logger.Log(LogType.Error, $"Error while confirming trade request! Type: {e.GetType()}, Message: {e.Message}");
+                CurrentTrades.Remove(trade);
+            }
 
 
             Logger.Log(LogType.Trade, $"{sender.Name} confirmed a trade request with {destClient.Name}. Module {callerModule.GetType().Name}");
@@ -181,8 +191,12 @@ namespace PokeD.Server.Services
 
 
             var trade = CurrentTrades.FirstOrDefault(t => t.Equals(sender.ID, destClient.ID));
-            if (trade != null)
-                CurrentTrades.Remove(trade);
+            if (trade == null)
+            {
+                Logger.Log(LogType.Error, $"Error while cancelling trade request! trade was null.");
+                return;
+            }
+            CurrentTrades.Remove(trade);
 
 
             Logger.Log(LogType.Trade, $"{sender.Name} cancelled a trade request with {destClient.Name}. Module {callerModule.GetType().Name}");
