@@ -2,11 +2,12 @@
 using System.Linq;
 using System.Reflection;
 
+using Aragas.TupleEventSystem;
+
 using PCLExt.Config;
 using PCLExt.Config.Extensions;
 
 using PokeD.Core;
-using PokeD.Core.Event;
 using PokeD.Core.Services;
 
 namespace PokeD.Server.Services

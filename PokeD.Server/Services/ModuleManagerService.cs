@@ -5,12 +5,13 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 
+using Aragas.TupleEventSystem;
+
 using PCLExt.Config;
 
 using PokeD.Core;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Data.PokeD;
-using PokeD.Core.Event;
 using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Data;

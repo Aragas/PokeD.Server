@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)\PokeD.BattleEngine\PokeD.BattleEngine.csproj" />
     <ProjectReference Include="$(SolutionDir)\PokeD.Core\PokeD.Core\PokeD.Core.csproj" />
+    <ProjectReference Include="$(SolutionDir)\Aragas.TupleEventSystem\src\Aragas.TupleEventSystem\Aragas.TupleEventSystem.csproj" />
     <ProjectReference Include="$(SolutionDir)\kolben\Kolben\Kolben.Core.csproj" />
   </ItemGroup>
 
