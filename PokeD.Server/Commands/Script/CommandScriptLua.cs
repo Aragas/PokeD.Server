@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -29,7 +30,7 @@ namespace PokeD.Server.Commands
         private object[] CallHookFunction(params object[] args)
         {
             var ret = Script.Call(Hook["Call"], args).Tuple;
-            return ret?.Any() == true ? ret.Select(dynVal => dynVal.ToObject()).ToArray() : new object[0];
+            return ret?.Any() == true ? ret.Select(dynVal => dynVal.ToObject()).ToArray() : Array.Empty<object>();
         }
 
         public override void Handle(Client client, string alias, string[] arguments) => CallHookFunction("Handle", client, alias, arguments);

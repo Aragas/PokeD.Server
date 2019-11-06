@@ -19,8 +19,8 @@ namespace PokeD.Server.Services
 
         public ChatChannelManagerService(IServiceContainer services, ConfigType configType) : base(services, configType) { }
 
-        public ChatChannel FindByName(string name) => ChatChannels.FirstOrDefault(chatChannel => chatChannel.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-        public ChatChannel FindByAlias(string alias) => ChatChannels.FirstOrDefault(chatChannel => chatChannel.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase));
+        public ChatChannel FindByName(string name) => ChatChannels.Find(chatChannel => chatChannel.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        public ChatChannel FindByAlias(string alias) => ChatChannels.Find(chatChannel => chatChannel.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase));
 
         public IReadOnlyList<ChatChannel> GetChatChannels() => ChatChannels;
 
@@ -42,17 +42,17 @@ namespace PokeD.Server.Services
         private void LoadChatChannels()
         {
             var chatChannelTypes = typeof(ChatChannelManagerService).GetTypeInfo().Assembly.DefinedTypes
-                .Where(typeInfo => typeof(ChatChannel).GetTypeInfo().IsAssignableFrom(typeInfo))
-                .Where(typeInfo => !typeInfo.IsDefined(typeof(ChatChannelDisableAutoLoadAttribute), true))
-                .Where(typeInfo => !typeInfo.IsAbstract);
+                .Where(typeInfo => typeof(ChatChannel).GetTypeInfo().IsAssignableFrom(typeInfo) &&
+                !typeInfo.IsDefined(typeof(ChatChannelDisableAutoLoadAttribute), true) &&
+                !typeInfo.IsAbstract);
 
             foreach (var chatChannel in chatChannelTypes.Where(type => type != typeof(ScriptChatChannel).GetTypeInfo()).Select(type => (ChatChannel) Activator.CreateInstance(type.AsType())))
                 ChatChannels.Add(chatChannel);
 
             var scriptChatChannelLoaderTypes = typeof(ChatChannelManagerService).GetTypeInfo().Assembly.DefinedTypes
-                .Where(typeInfo => typeof(ScriptChatChannelLoader).GetTypeInfo().IsAssignableFrom(typeInfo))
-                .Where(typeInfo => !typeInfo.IsDefined(typeof(ChatChannelDisableAutoLoadAttribute), true))
-                .Where(typeInfo => !typeInfo.IsAbstract);
+                .Where(typeInfo => typeof(ScriptChatChannelLoader).GetTypeInfo().IsAssignableFrom(typeInfo) &&
+                !typeInfo.IsDefined(typeof(ChatChannelDisableAutoLoadAttribute), true) &&
+                !typeInfo.IsAbstract);
 
             foreach (var scriptChatChannelLoader in scriptChatChannelLoaderTypes.Where(type => type != typeof(ScriptChatChannelLoader).GetTypeInfo()).Select(type => (ScriptChatChannelLoader) Activator.CreateInstance(type.AsType())))
                 ChatChannels.AddRange(scriptChatChannelLoader.LoadChatChannels());

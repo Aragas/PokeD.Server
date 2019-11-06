@@ -23,7 +23,7 @@ namespace PokeD.Server.Clients.PokeD
 
             SendPacket(new AuthorizationResponsePacket { AuthorizationStatus = AuthorizationStatus });
 
-            if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
+            if ((AuthorizationStatus & AuthorizationStatus.EncryprionEnabled) != 0)
             {
                 /*
                 var publicKey = Module.Security.RSAKeyPair.PublicKeyToByteArray();
@@ -49,7 +49,7 @@ namespace PokeD.Server.Clients.PokeD
             if (IsInitialized)
                 return;
 
-            if (AuthorizationStatus.HasFlag(AuthorizationStatus.EncryprionEnabled))
+            if ((AuthorizationStatus & AuthorizationStatus.EncryprionEnabled) != 0)
             {
                 /*
                 var pkcs = new PKCS1Signer(Module.Security.RSAKeyPair);
@@ -91,7 +91,7 @@ namespace PokeD.Server.Clients.PokeD
         {
             if (packet.Message.StartsWith("/"))
             {
-                if (!packet.Message.ToLower().StartsWith("/login"))
+                if (!packet.Message.StartsWith("/login", System.StringComparison.OrdinalIgnoreCase))
                     SendPacket(new ChatGlobalMessagePacket { Message = packet.Message });
 
                 ExecuteCommand(packet.Message);

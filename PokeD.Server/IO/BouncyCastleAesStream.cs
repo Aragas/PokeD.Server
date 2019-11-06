@@ -18,10 +18,10 @@ namespace PokeD.Server.IO
 
             public EncryptorDecryptor(byte[] key)
             {
-                EncryptCipher = new BufferedBlockCipher(new CfbBlockCipher(new AesFastEngine(), 8));
+                EncryptCipher = new BufferedBlockCipher(new CfbBlockCipher(new AesEngine(), 8));
                 EncryptCipher.Init(true, new ParametersWithIV(new KeyParameter(key), key, 0, 16));
 
-                DecryptCipher = new BufferedBlockCipher(new CfbBlockCipher(new AesFastEngine(), 8));
+                DecryptCipher = new BufferedBlockCipher(new CfbBlockCipher(new AesEngine(), 8));
                 DecryptCipher.Init(false, new ParametersWithIV(new KeyParameter(key), key, 0, 16));
             }
 

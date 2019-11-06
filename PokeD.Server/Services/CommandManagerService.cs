@@ -66,7 +66,7 @@ namespace PokeD.Server.Services
             var messageArray = new Regex(@"[ ](?=(?:[^""]*""[^""]*"")*[^""]*$)").Split(commandWithoutSlash).Select(str => str.TrimStart('"').TrimEnd('"')).ToArray();
             //var messageArray = commandWithoutSlash.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-            if (messageArray.Length <= 0)
+            if (messageArray.Length == 0)
                 return false; // command not found
 
             var alias = messageArray[0];
@@ -94,7 +94,7 @@ namespace PokeD.Server.Services
                 return;
             }
 
-            if(command.LogCommand && !client.Permissions.HasFlag(PermissionFlags.UnVerified))
+            if(command.LogCommand && (client.Permissions & PermissionFlags.UnVerified) == 0)
                 Logger.LogCommandMessage(client.Name, $"/{alias} {string.Join(" ", arguments)}");
 
             if (command.Permissions == PermissionFlags.None)
@@ -112,8 +112,8 @@ namespace PokeD.Server.Services
             command.Handle(client, alias, arguments);
         }
 
-        public Command FindByName(string name) => Commands.FirstOrDefault(command => command.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-        public Command FindByAlias(string alias) => Commands.FirstOrDefault(command => command.Aliases.Contains(alias, StringComparer.OrdinalIgnoreCase));
+        public Command FindByName(string name) => Commands.Find(command => command.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        public Command FindByAlias(string alias) => Commands.Find(command => command.Aliases.Contains(alias, StringComparer.OrdinalIgnoreCase));
 
         public IReadOnlyList<Command> GetCommands() => Commands;
 
@@ -135,18 +135,18 @@ namespace PokeD.Server.Services
         private void LoadCommands()
         {
             var types = typeof(CommandManagerService).GetTypeInfo().Assembly.DefinedTypes
-                .Where(typeInfo => typeof(Command).GetTypeInfo().IsAssignableFrom(typeInfo))
-                .Where(typeInfo => !typeInfo.IsDefined(typeof(CommandDisableAutoLoadAttribute), true))
-                .Where(typeInfo => !typeInfo.IsAbstract);
+                .Where(typeInfo => typeof(Command).GetTypeInfo().IsAssignableFrom(typeInfo) &&
+                !typeInfo.IsDefined(typeof(CommandDisableAutoLoadAttribute), true) &&
+                !typeInfo.IsAbstract);
 
             foreach (var command in types.Where(type => !Equals(type, typeof(ScriptCommand).GetTypeInfo())).Select(type => (Command)Activator.CreateInstance(type.AsType(), Services)))
                 Commands.Add(command);
 
 
             var scriptCommandLoaderTypes = typeof(CommandManagerService).GetTypeInfo().Assembly.DefinedTypes
-                .Where(typeInfo => typeof(ScriptCommandLoader).GetTypeInfo().IsAssignableFrom(typeInfo))
-                .Where(typeInfo => !typeInfo.IsDefined(typeof(CommandDisableAutoLoadAttribute), true))
-                .Where(typeInfo => !typeInfo.IsAbstract);
+                .Where(typeInfo => typeof(ScriptCommandLoader).GetTypeInfo().IsAssignableFrom(typeInfo) &&
+                !typeInfo.IsDefined(typeof(CommandDisableAutoLoadAttribute), true) &&
+                !typeInfo.IsAbstract);
 
             foreach (var scriptCommandLoader in scriptCommandLoaderTypes.Where(type => type != typeof(ScriptCommandLoader).GetTypeInfo()).Select(type => (ScriptCommandLoader) Activator.CreateInstance(type.AsType())))
                 Commands.AddRange(scriptCommandLoader.LoadCommands(Services));

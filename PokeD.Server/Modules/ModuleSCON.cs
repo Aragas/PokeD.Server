@@ -30,17 +30,17 @@ namespace PokeD.Server.Modules
         public PasswordStorage SCONPassword { get; protected set; } = new PasswordStorage();
 
         public bool EncryptionEnabled { get; protected set; } = true;
-        
+
         #endregion Settings
 
-        TcpListener Listener { get; set; }
+        private TcpListener Listener { get; set; }
 
         [ConfigIgnore]
         public override bool ClientsVisible { get; } = false;
-        List<SCONClient> Clients { get; } = new List<SCONClient>();
-        List<SCONClient> PlayersJoining { get; } = new List<SCONClient>();
-        List<SCONClient> PlayersToAdd { get; } = new List<SCONClient>();
-        List<SCONClient> PlayersToRemove { get; } = new List<SCONClient>();
+        private List<SCONClient> Clients { get; } = new List<SCONClient>();
+        private List<SCONClient> PlayersJoining { get; } = new List<SCONClient>();
+        private List<SCONClient> PlayersToAdd { get; } = new List<SCONClient>();
+        private List<SCONClient> PlayersToRemove { get; } = new List<SCONClient>();
 
         private bool IsDisposed { get; set; }
 

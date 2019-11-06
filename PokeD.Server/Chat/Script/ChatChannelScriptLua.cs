@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 
 using MoonSharp.Interpreter;
@@ -22,7 +23,7 @@ namespace PokeD.Server.Chat
         private object[] CallHookFunction(params object[] args)
         {
             var ret = Script.Call(Hook["Call"], args).Tuple;
-            return ret?.Any() == true ? ret.Select(dynVal => dynVal.ToObject()).ToArray() : new object[0];
+            return ret?.Any() == true ? ret.Select(dynVal => dynVal.ToObject()).ToArray() : Array.Empty<object>();
         }
 
         public override bool MessageSend(ChatMessage chatMessage) => (bool) CallHookFunction("MessageSend", chatMessage)[0];

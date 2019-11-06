@@ -39,8 +39,8 @@ namespace PokeD.Server.Modules
         protected override string ComponentName { get; } = "ModulePokeD";
         protected override IConfigFile ComponentConfigFile => new ModulePokeDConfigFile(ConfigType);
 
-        static IFolder Maps => new DataFolder().CreateFolder("Maps", CreationCollisionOption.OpenIfExists);
-        static IFolder TileSets => Maps.CreateFolder("TileSets", CreationCollisionOption.OpenIfExists);
+        private static IFolder Maps => new DataFolder().CreateFolder("Maps", CreationCollisionOption.OpenIfExists);
+        private static IFolder TileSets => Maps.CreateFolder("TileSets", CreationCollisionOption.OpenIfExists);
 
         #region Settings
 
@@ -49,15 +49,15 @@ namespace PokeD.Server.Modules
         public override ushort Port { get; protected set; } = 15130;
 
         public bool EncryptionEnabled { get; protected set; } = true;
-        
+
         #endregion Settings
 
-        TcpListener Listener { get; set; }
+        private TcpListener Listener { get; set; }
 
-        List<PokeDPlayer> Clients { get; } = new List<PokeDPlayer>();
-        List<PokeDPlayer> PlayersJoining { get; } = new List<PokeDPlayer>();
-        List<PokeDPlayer> PlayersToAdd { get; } = new List<PokeDPlayer>();
-        List<PokeDPlayer> PlayersToRemove { get; } = new List<PokeDPlayer>();
+        private List<PokeDPlayer> Clients { get; } = new List<PokeDPlayer>();
+        private List<PokeDPlayer> PlayersJoining { get; } = new List<PokeDPlayer>();
+        private List<PokeDPlayer> PlayersToAdd { get; } = new List<PokeDPlayer>();
+        private List<PokeDPlayer> PlayersToRemove { get; } = new List<PokeDPlayer>();
 
         private bool IsDisposed { get; set; }
 

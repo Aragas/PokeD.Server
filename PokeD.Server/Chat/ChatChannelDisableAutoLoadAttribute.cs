@@ -2,5 +2,5 @@
 
 namespace PokeD.Server.Chat
 {
-    public class ChatChannelDisableAutoLoadAttribute : Attribute { }
+    public sealed class ChatChannelDisableAutoLoadAttribute : Attribute { }
 }

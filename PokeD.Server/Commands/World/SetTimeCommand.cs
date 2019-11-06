@@ -19,13 +19,13 @@ namespace PokeD.Server.Commands
         {
             if (arguments.Length == 1)
             {
-                if (arguments[0].ToLower() == "real")
+                if (string.Equals(arguments[0], "real", StringComparison.OrdinalIgnoreCase))
                 {
                     World.UseRealTime = !World.UseRealTime;
                     client.SendServerMessage(World.UseRealTime ? "Enabled Real Time!" : "Disabled Real Time!");
                     return;
                 }
-                if (arguments[0].ToLower() == "daycycle")
+                if (string.Equals(arguments[0], "daycycle", StringComparison.OrdinalIgnoreCase))
                 {
                     World.DoDayCycle = !World.DoDayCycle;
                     client.SendServerMessage(World.DoDayCycle ? "Enabled Day Cycle!" : "Disabled Day Cycle!");

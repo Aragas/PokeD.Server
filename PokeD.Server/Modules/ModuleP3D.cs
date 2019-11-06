@@ -197,7 +197,7 @@ namespace PokeD.Server.Modules
                 }
 
             }
-            catch (SocketException) { }
+            catch (Exception e) when (e is SocketException) { }
         }
 
         [ConfigIgnore]
@@ -455,7 +455,7 @@ namespace PokeD.Server.Modules
         /// <returns></returns>
         private (bool IsBanned, BanTable BanTable) BanStatusGJ(P3DPlayer client)
         {
-            var table = Database.DatabaseGetAll<BanTable>().FirstOrDefault(banTable => Database.DatabaseGetAll<ClientGJTable>().Where(gjTable => gjTable.GameJoltID == client.GameJoltID).FirstOrDefault(table1 => banTable.ClientID == table1.ClientID) != null);
+            var table = Database.DatabaseGetAll<BanTable>().FirstOrDefault(banTable => Database.DatabaseGetAll<ClientGJTable>().Where(gjTable => gjTable.GameJoltID == client.GameJoltID).Any(table1 => banTable.ClientID == table1.ClientID));
             return table != null ? (true, table) : (false, null);
         }
 

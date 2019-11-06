@@ -61,29 +61,18 @@ namespace PokeD.Server.Services
         public WorldService(IServiceContainer services, ConfigType configType) : base(services, configType) { }
 
 
-        private int WeekOfYear => (int) (DateTime.Now.DayOfYear - (DateTime.Now.DayOfWeek - DayOfWeek.Monday) / 7.0 + 1.0);
+        private int WeekOfYear => (int) (DateTime.Now.DayOfYear - ((DateTime.Now.DayOfWeek - DayOfWeek.Monday) / 7.0) + 1.0);
         private void UpdateWorld()
         {
-            switch (WeekOfYear % 4)
+            Season = (WeekOfYear % 4) switch
             {
-                case 1:
-                    Season = Season.Winter;
-                    break;
-                case 2:
-                    Season = Season.Spring;
-                    break;
-                case 3:
-                    Season = Season.Summer;
-                    break;
-                case 0:
-                    Season = Season.Fall;
-                    break;
-                
-                default:
-                    Season = Season.Summer;
-                    break;
-            }
+                1 => Season.Winter,
+                2 => Season.Spring,
+                3 => Season.Summer,
+                0 => Season.Fall,
 
+                _ => Season.Summer,
+            };
             var r = new Random().Next(0, 100);
             switch (Season)
             {

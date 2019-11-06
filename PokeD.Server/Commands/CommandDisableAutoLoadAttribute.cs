@@ -2,5 +2,5 @@
 
 namespace PokeD.Server.Commands
 {
-    public class CommandDisableAutoLoadAttribute : Attribute { }
+    public sealed class CommandDisableAutoLoadAttribute : Attribute { }
 }

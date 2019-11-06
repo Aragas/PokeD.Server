@@ -138,7 +138,7 @@ namespace PokeD.Server.Commands
 
         public abstract string Name { get; }
         public abstract string Description { get; }
-        public virtual IEnumerable<string> Aliases { get; } = new string[0];
+        public virtual IEnumerable<string> Aliases { get; } = Array.Empty<string>();
         public virtual PermissionFlags Permissions { get; } = PermissionFlags.None;
         public virtual bool LogCommand { get; } = true;
 

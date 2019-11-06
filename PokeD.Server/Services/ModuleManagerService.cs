@@ -130,7 +130,7 @@ namespace PokeD.Server.Services
 
             TradeInstance trade;
             if (!CurrentTrades.Any(t => t.Equals(sender.ID, destClient.ID)))
-                CurrentTrades.Add((trade = new TradeInstance { Client0ID = sender.ID, Client1ID = destClient.ID }));
+                CurrentTrades.Add(trade = new TradeInstance { Client0ID = sender.ID, Client1ID = destClient.ID });
             else
                 trade = CurrentTrades.First(t => t.Equals(sender.ID, destClient.ID));
             try // TODO: specify exceptions that should be processed here. 
@@ -156,7 +156,7 @@ namespace PokeD.Server.Services
                 module.OnTradeConfirm(sender, destClient);
 
 
-            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(sender.ID, destClient.ID));
+            var trade = CurrentTrades.Find(t => t.Equals(sender.ID, destClient.ID));
             if (trade == null)
             {
                 Logger.Log(LogType.Error, "Error while confirming trade request! trade was null.");
@@ -190,7 +190,7 @@ namespace PokeD.Server.Services
                 module.OnTradeCancel(sender, destClient);
 
 
-            var trade = CurrentTrades.FirstOrDefault(t => t.Equals(sender.ID, destClient.ID));
+            var trade = CurrentTrades.Find(t => t.Equals(sender.ID, destClient.ID));
             if (trade == null)
             {
                 Logger.Log(LogType.Error, $"Error while cancelling trade request! trade was null.");
