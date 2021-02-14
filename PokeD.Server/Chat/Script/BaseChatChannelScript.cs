@@ -8,7 +8,7 @@ namespace PokeD.Server.Chat
         public abstract string Description { get; }
         public abstract string Aliases { get; }
 
-        public abstract bool SendMessage(ChatMessage chatMessage);
+        public abstract bool MessageSend(ChatMessage chatMessage);
 
         public abstract bool Subscribe(Client client);
 

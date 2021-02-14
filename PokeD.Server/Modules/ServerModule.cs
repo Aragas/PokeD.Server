@@ -1,4 +1,6 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 using PCLExt.Config;
 
@@ -14,8 +16,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace PokeD.Server.Modules
 {
@@ -85,20 +85,18 @@ namespace PokeD.Server.Modules
             }
         }
 
-        protected virtual void OnClientReady(object sender, EventArgs eventArgs)
+        protected virtual void OnClientReady(Client client, EventArgs eventArgs)
         {
-            var client = sender as Client;
-           ((Action<object, ClientJoinedEventArgs>) ModuleManager.ClientJoined)?.Invoke(this, new ClientJoinedEventArgs(client));
+            ModuleManager.ClientJoined?.Invoke(this, new ClientJoinedEventArgs(client));
 
-           ChatChannelManager.FindByAlias("global").Subscribe(client);
+            ChatChannelManager.FindByAlias("global").Subscribe(client);
 
             if (ClientsVisible)
                 _logger.Log(LogLevel.Information, new EventId(30, "Event"), $"The player {client.Name} joined the game from IP {client.IP}");
         }
-        protected virtual void OnClientLeave(object sender, EventArgs eventArgs)
+        protected virtual void OnClientLeave(Client client, EventArgs eventArgs)
         {
-            var client = sender as Client;
-            ((Action<object, ClientLeavedEventArgs>) ModuleManager.ClientLeaved)?.Invoke(this, new ClientLeavedEventArgs(client));
+            ModuleManager.ClientLeaved.Invoke(this, new ClientLeavedEventArgs(client));
 
             foreach (var chatChannel in ChatChannelManager.GetChatChannels())
                 chatChannel.Unsubscribe(client);
@@ -143,6 +141,6 @@ namespace PokeD.Server.Modules
         public abstract Task StartAsync(CancellationToken cancellationToken);
         public abstract Task StopAsync(CancellationToken cancellationToken);
 
-        public abstract void Update();
+        public abstract Task UpdateAsync(CancellationToken ct);
     }
 }

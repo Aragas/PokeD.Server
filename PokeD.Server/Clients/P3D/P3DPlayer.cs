@@ -38,7 +38,7 @@ namespace PokeD.Server.Clients.P3D
         public override string Nickname { get; protected set; }
 
 
-        public override string LevelFile { get; set; }
+        public override string? LevelFile { get; set; }
         public override Vector3 Position { get; set; }
         public int Facing { get; private set; }
         public bool Moving { get; private set; }
@@ -192,7 +192,7 @@ namespace PokeD.Server.Clients.P3D
             PasswordHash = data.PasswordHash;
         }
 
-        
+
         private void Initialize()
         {
             if (!IsInitialized)

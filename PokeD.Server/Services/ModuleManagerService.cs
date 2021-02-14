@@ -1,6 +1,5 @@
 ﻿using Aragas.TupleEventSystem;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -45,22 +44,20 @@ namespace PokeD.Server.Services
 
         //public BaseEventHandler<ServerSentMessageEventArgs> ServerSentMessage = new CustomEventHandler<ServerSentMessageEventArgs>();
 
-        private CancellationTokenSource UpdateToken { get; set; } = new();
-        private ManualResetEventSlim UpdateLock { get; } = new(false);
+        private Task? _updateTask;
+        private readonly CancellationTokenSource _stoppingCts = new();
 
         private readonly ILogger _logger;
-        private readonly IServiceProvider _serviceProvider;
         private readonly DatabaseService _databaseService;
+        private readonly IServiceProvider _serviceProvider;
 
-        public ModuleManagerService(ILogger<ModuleManagerService> logger, IServiceProvider serviceProvider)
+        public ModuleManagerService(ILogger<ModuleManagerService> logger, IServiceProvider serviceProvider, DatabaseService databaseService)
         {
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            //_logger = serviceProvider.GetRequiredService<ILogger<ModuleManagerService>>();
-            _databaseService = serviceProvider.GetRequiredService<DatabaseService>();
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            //_databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
+            _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         }
-        private Assembly AppDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        private Assembly? AppDomain_AssemblyResolve(object? sender, ResolveEventArgs args)
         {
             _logger.LogDebug($"Resolving assembly {args.Name}");
             foreach (var moduleFile in new ModulesFolder().GetModuleFiles())
@@ -88,8 +85,8 @@ namespace PokeD.Server.Services
         public TResult AllClientsSelect<TResult>(Func<IReadOnlyList<Client>, TResult> func) => Modules.Where(module => module.ClientsVisible).Select(module => module.ClientsSelect(func)).FirstOrDefault();
         public IReadOnlyList<TResult> AllClientsSelect<TResult>(Func<IReadOnlyList<Client>, IReadOnlyList<TResult>> func) => Modules.Where(module => module.ClientsVisible).SelectMany(module => module.ClientsSelect(func)).ToList();
 
-        public Client GetClient(int id) => AllClientsSelect(list => list.Where(client => client.ID == id).ToList()).FirstOrDefault();
-        public Client GetClient(string name) => AllClientsSelect(list => list.Where(client => client.Name == name || client.Nickname == name).ToList()).FirstOrDefault();
+        public Client? GetClient(int id) => AllClientsSelect(list => list.Where(client => client.ID == id).ToList()).FirstOrDefault();
+        public Client? GetClient(string name) => AllClientsSelect(list => list.Where(client => client.Name == name || client.Nickname == name).ToList()).FirstOrDefault();
         public int GetClientID(string name) => GetClient(name)?.ID ?? -1;
         public string GetClientName(int id) => GetClient(id)?.Nickname ?? string.Empty;
 
@@ -195,7 +192,7 @@ namespace PokeD.Server.Services
         public void Ban(Client client, int minutes = 0, string reason = "")
         {
             var previousBan = _databaseService.DatabaseGet<BanTable>(client.ID);
-            if (previousBan != null)
+            if (previousBan is not null!)
             {
                 _logger.Log(LogLevel.Information, new EventId(30, "Event"), $"Player {client.Name} was already banned! Reason - \"{previousBan.Reason}\". Unban time - {previousBan.UnbanTime:G}!");
                 return;
@@ -212,10 +209,10 @@ namespace PokeD.Server.Services
             _logger.Log(LogLevel.Information, new EventId(30, "Event"), $"Player {client.Name} was unbanned!");
         }
 
-        public (bool IsBanned, BanTable BanTable) BanStatus(Client client)
+        public (bool IsBanned, BanTable? BanTable) BanStatus(Client client)
         {
             var banTable = _databaseService.DatabaseGet<BanTable>(client.ID);
-            if (banTable != null)
+            if (banTable is not null!)
             {
                 if (banTable.UnbanTime - DateTime.UtcNow < TimeSpan.Zero)
                 {
@@ -230,30 +227,23 @@ namespace PokeD.Server.Services
         }
 
 
-        public static long UpdateThread { get; private set; }
-        private void UpdateCycle()
+        private async Task UpdateCycleAsync(CancellationToken ct)
         {
-            UpdateLock.Reset();
-
             var watch = Stopwatch.StartNew();
-            while (!UpdateToken.IsCancellationRequested)
+            while (!ct.IsCancellationRequested)
             {
                 foreach (var module in Modules)
-                    module.Update();
+                    await module.UpdateAsync(ct);
 
                 if (watch.ElapsedMilliseconds < 10)
                 {
-                    UpdateThread = watch.ElapsedMilliseconds;
-
                     var time = (int) (10 - watch.ElapsedMilliseconds);
                     if (time < 0) time = 0;
-                    Thread.Sleep(time);
+                    await Task.Delay(time, ct);
                 }
                 watch.Reset();
                 watch.Start();
             }
-
-            UpdateLock.Set();
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -268,22 +258,22 @@ namespace PokeD.Server.Services
             _logger.LogDebug("Started Modules.");
 
             _logger.LogDebug("Starting UpdateThread...");
-            UpdateToken = new CancellationTokenSource();
-            new Thread(UpdateCycle)
-            {
-                Name = "ModuleManagerUpdateTread",
-                IsBackground = true
-            }.Start();
+            _updateTask = UpdateCycleAsync(_stoppingCts.Token);
             _logger.LogDebug("Started UpdateThread.");
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogDebug("Stopping UpdateThread...");
-            if (UpdateToken?.IsCancellationRequested == false)
+            try
             {
-                UpdateToken.Cancel();
-                UpdateLock.Wait(cancellationToken);
+                // Signal cancellation to the executing method
+                _stoppingCts.Cancel();
+            }
+            finally
+            {
+                // Wait until the task completes or the stop token triggers
+                await Task.WhenAny(_updateTask, Task.Delay(Timeout.Infinite, cancellationToken));
             }
             _logger.LogDebug("Stopped UpdateThread.");
 
@@ -297,14 +287,8 @@ namespace PokeD.Server.Services
         {
             AppDomain.CurrentDomain.AssemblyResolve -= AppDomain_AssemblyResolve;
 
-            ClientJoined?.Dispose();
-            ClientLeaved?.Dispose();
-
-            if (UpdateToken?.IsCancellationRequested == false)
-            {
-                UpdateToken.Cancel();
-                UpdateLock.Wait();
-            }
+            ClientJoined.Dispose();
+            ClientLeaved.Dispose();
         }
     }
 }

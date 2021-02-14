@@ -1,7 +1,10 @@
-﻿namespace PokeD.Core
+﻿using System.Threading;
+using System.Threading.Tasks;
+
+namespace PokeD.Core
 {
     public interface IUpdatable
     {
-        void Update();
+        Task UpdateAsync(CancellationToken ct);
     }
 }

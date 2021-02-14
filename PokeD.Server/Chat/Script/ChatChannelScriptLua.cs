@@ -26,7 +26,7 @@ namespace PokeD.Server.Chat
             return ret?.Any() == true ? ret.Select(dynVal => dynVal.ToObject()).ToArray() : Array.Empty<object>();
         }
 
-        public override bool SendMessage(ChatMessage chatMessage) => (bool) CallHookFunction("MessageSend", chatMessage)[0];
+        public override bool MessageSend(ChatMessage chatMessage) => (bool) CallHookFunction("MessageSend", chatMessage)[0];
 
         public override bool Subscribe(Client client) => (bool) CallHookFunction("Subscribe", client)[0];
 

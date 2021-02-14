@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Net.Sockets;
-using System.Threading;
-
-using Aragas.Network.IO;
+﻿using Aragas.Network.IO;
 using Aragas.Network.Packets;
 
 using PokeD.Core.Extensions;
 using PokeD.Server.Modules;
+
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PokeD.Server.Clients
 {
@@ -41,14 +42,13 @@ namespace PokeD.Server.Clients
         public sealed override void SendPacket<TPacket>(TPacket packet) => SendPacket(packet as TPacketType);
         public virtual void SendPacket(TPacketType packet) => PacketsToSend.Enqueue(packet);
 
-        public sealed override void Update()
+        public sealed override async Task UpdateAsync(CancellationToken ct)
         {
-            UpdateLock.Reset(); // Signal that the UpdateThread is alive.
             try
             {
-                while (!UpdateToken.IsCancellationRequested && Stream.IsConnected)
+                while (!ct.IsCancellationRequested && Stream.IsConnected)
                 {
-                    ConnectionLock.Reset(); // Signal that we are handling pending client data.
+                    //ConnectionLock.Reset(); // Signal that we are handling pending client data.
                     try
                     {
                         while (Stream.TryReadPacket(out var packetToReceive))
@@ -74,18 +74,16 @@ namespace PokeD.Server.Clients
                     }
                     finally
                     {
-                        ConnectionLock.Set(); // Signal that we are not handling anymore pending client data.
+                        //ConnectionLock.Set(); // Signal that we are not handling anymore pending client data.
                     }
 
-                    Thread.Sleep(100); // 100 calls per second should not be too often?
+                    await Task.Delay(100, ct); // 100 calls per second should not be too often?
                 }
             }
             finally
             {
-                UpdateLock.Set(); // Signal that the UpdateThread is finished
-
-                if (!UpdateToken.IsCancellationRequested && !Stream.IsConnected) // Leave() if the update cycle stopped unexpectedly
-                    LeaveAsync();
+                if (!ct.IsCancellationRequested && !Stream.IsConnected) // Leave() if the update cycle stopped unexpectedly
+                    await LeaveAsync(ct);
             }
         }
 

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-using PokeD.Core;
 using PokeD.Core.Data;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Server.Chat;
@@ -8,7 +8,6 @@ using PokeD.Server.Clients;
 using PokeD.Server.Commands;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
-using PokeD.Server.Modules;
 
 using System;
 using System.Collections.Generic;
@@ -18,7 +17,6 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace PokeD.Server.Services
 {
@@ -35,10 +33,10 @@ namespace PokeD.Server.Services
             public override PermissionFlags Permissions { get; set; } = PermissionFlags.Server;
             public override string IP { get; } = string.Empty;
             public override DateTime ConnectionTime { get; } = DateTime.MinValue;
-            public override CultureInfo Language { get; }
-            public override GameDataPacket GetDataPacket() => null;
+            public override CultureInfo Language { get; } = CultureInfo.InvariantCulture;
+            public override GameDataPacket? GetDataPacket() => null;
 
-            public ServerClient(ServerModule serverModule) : base(serverModule) { }
+            public ServerClient() : base(null!) { }
 
             public override void SendPacket<TPacket>(TPacket func) { }
             public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage)
@@ -56,7 +54,7 @@ namespace PokeD.Server.Services
             public override void Load(ClientTable data) { }
 
 
-            public override void Update() { }
+            public override Task UpdateAsync(CancellationToken ct) => Task.CompletedTask;
         }
 
         private List<Command> Commands { get; } = new();
@@ -97,7 +95,7 @@ namespace PokeD.Server.Services
         /// <summary>
         /// Return <see langword="false"/> if <see cref="Command"/> not found.
         /// </summary>
-        public bool ExecuteServerCommand(string message) => ExecuteClientCommand(new ServerClient(null), message);
+        public bool ExecuteServerCommand(string message) => ExecuteClientCommand(new ServerClient(), message);
 
         private void HandleCommand(Client client, string alias, string[] arguments)
         {
@@ -126,8 +124,8 @@ namespace PokeD.Server.Services
             command.Handle(client, alias, arguments);
         }
 
-        public Command FindByName(string name) => Commands.Find(command => command.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-        public Command FindByAlias(string alias) => Commands.Find(command => command.Aliases.Contains(alias, StringComparer.OrdinalIgnoreCase));
+        public Command? FindByName(string name) => Commands.Find(command => command.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        public Command? FindByAlias(string alias) => Commands.Find(command => command.Aliases.Contains(alias, StringComparer.OrdinalIgnoreCase));
 
         public IReadOnlyList<Command> GetCommands() => Commands;
 

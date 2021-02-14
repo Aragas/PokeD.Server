@@ -1,85 +1,58 @@
-﻿/*
-using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
-
-using Aragas.Network.Data;
-
+﻿using Aragas.Network.Data;
 using PCLExt.Config;
-
-using PokeD.Core;
 using PokeD.Core.Data.P3D;
-using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.SCON;
 using PokeD.Server.Services;
 using PokeD.Server.Storage.Files;
+using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace PokeD.Server.Modules
 {
     public class ModuleSCON : ServerModule
     {
-        protected override string ComponentName { get; } = "ModuleSCON";
-        protected override IConfigFile ComponentConfigFile => new ModuleSCONConfigFile(ConfigType);
-
-        #region Settings
-
         public override bool Enabled { get; protected set; } = false;
 
         public override ushort Port { get; protected set; } = 15126;
 
-        public PasswordStorage SCONPassword { get; protected set; } = new PasswordStorage();
+        public PasswordStorage SCONPassword { get; protected set; } = new();
 
         public bool EncryptionEnabled { get; protected set; } = true;
 
-        #endregion Settings
 
         private TcpListener Listener { get; set; }
 
         [ConfigIgnore]
         public override bool ClientsVisible { get; } = false;
-        private List<SCONClient> Clients { get; } = new List<SCONClient>();
-        private List<SCONClient> PlayersJoining { get; } = new List<SCONClient>();
-        private List<SCONClient> PlayersToAdd { get; } = new List<SCONClient>();
-        private List<SCONClient> PlayersToRemove { get; } = new List<SCONClient>();
+        private List<SCONClient> Clients { get; } = new();
+        private List<SCONClient> PlayersJoining { get; } = new();
+        private List<SCONClient> PlayersToAdd { get; } = new();
+        private List<SCONClient> PlayersToRemove { get; } = new();
 
-        private bool IsDisposed { get; set; }
+        private readonly ILogger _logger;
 
-        public ModuleSCON(WorldService world, DatabaseService database, SecurityService security,
-            ModuleManagerService moduleManager, ChatChannelManagerService chatChannelManager,
-            CommandManagerService commandManager) : base(world, database, security, moduleManager, chatChannelManager,
-            commandManager)
+        public ModuleSCON(IServiceProvider serviceProvider) : base(serviceProvider)
         {
+
         }
 
 
-        public override bool Start()
+        public override async Task StartAsync(CancellationToken cancellationToken)
         {
-            if (!base.Start())
-                return false;
-
-
-            Logger.Log(LogType.Debug, $"Starting {ComponentName}.");
+            _logger.LogTrace($"Starting {nameof(ModuleSCON)}.");
 
             Listener = new TcpListener(new IPEndPoint(IPAddress.Any, Port));
             Listener.Start();
-
-
-            return true;
         }
-        public override bool Stop()
+        public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            if (!base.Stop())
-                return false;
-
-
-            Logger.Log(LogType.Debug, $"Stopping {ComponentName}.");
-
-            Dispose();
-
-
-            return true;
+            _logger.LogTrace($"Stopping {nameof(ModuleSCON)}.");
         }
 
         public override void ClientsForeach(Action<IReadOnlyList<Client>> action)
@@ -98,7 +71,7 @@ namespace PokeD.Server.Modules
                 return func(Clients);
         }
 
-        protected override void OnClientReady(object sender, EventArgs eventArgs)
+        protected override void OnClientReady(Client sender, EventArgs eventArgs)
         {
             var client = sender as SCONClient;
 
@@ -107,7 +80,7 @@ namespace PokeD.Server.Modules
 
             base.OnClientReady(sender, eventArgs);
         }
-        protected override void OnClientLeave(object sender, EventArgs eventArgs)
+        protected override void OnClientLeave(Client sender, EventArgs eventArgs)
         {
             var client = sender as SCONClient;
 
@@ -117,10 +90,10 @@ namespace PokeD.Server.Modules
         }
 
 
-        public override void Update()
+        public override async Task UpdateAsync(CancellationToken ct)
         {
             if (Listener?.Pending() == true)
-                PlayersJoining.Add(new SCONClient(Listener.AcceptSocket(), this));
+                PlayersJoining.Add(new SCONClient(await Listener.AcceptSocketAsync(), this));
 
             #region Player Filtration
 
@@ -149,11 +122,11 @@ namespace PokeD.Server.Modules
 
             // Update actual players
             for (var i = Clients.Count - 1; i >= 0; i--)
-                Clients[i]?.Update();
+                await Clients[i].UpdateAsync(ct);
 
             // Update joining players
             for (var i = PlayersJoining.Count - 1; i >= 0; i--)
-                PlayersJoining[i]?.Update();
+                await PlayersJoining[i].UpdateAsync(ct);
 
             #endregion Player Updating
         }
@@ -166,39 +139,28 @@ namespace PokeD.Server.Modules
         public override void OnPosition(Client sender) { }
 
 
-        protected override void Dispose(bool disposing)
+        public void Dispose()
         {
-            if (!IsDisposed)
+            for (var i = PlayersJoining.Count - 1; i >= 0; i--)
+                PlayersJoining[i].Dispose();
+            PlayersJoining.Clear();
+
+            for (var i = Clients.Count - 1; i >= 0; i--)
             {
-                if (disposing)
-                {
-                    for (var i = PlayersJoining.Count - 1; i >= 0; i--)
-                        PlayersJoining[i].Dispose();
-                    PlayersJoining.Clear();
-
-                    for (var i = Clients.Count - 1; i >= 0; i--)
-                    {
-                        Clients[i].SendKick("Closing server!");
-                        Clients[i].Dispose();
-                    }
-                    Clients.Clear();
-
-                    for (var i = PlayersToAdd.Count - 1; i >= 0; i--)
-                    {
-                        PlayersToAdd[i].SendKick("Closing server!");
-                        PlayersToAdd[i].Dispose();
-                    }
-                    PlayersToAdd.Clear();
-
-                    // Do not dispose PlayersToRemove!
-                    PlayersToRemove.Clear();
-                }
-
-
-                IsDisposed = true;
+                Clients[i].SendKick("Closing server!");
+                Clients[i].Dispose();
             }
-            base.Dispose(disposing);
+            Clients.Clear();
+
+            for (var i = PlayersToAdd.Count - 1; i >= 0; i--)
+            {
+                PlayersToAdd[i].SendKick("Closing server!");
+                PlayersToAdd[i].Dispose();
+            }
+            PlayersToAdd.Clear();
+
+            // Do not dispose PlayersToRemove!
+            PlayersToRemove.Clear();
         }
     }
 }
-*/

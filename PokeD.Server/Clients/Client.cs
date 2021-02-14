@@ -1,25 +1,28 @@
-﻿using System;
-using System.Diagnostics;
-using System.Globalization;
-using System.Threading;
-
-using Aragas.Network.Packets;
+﻿using Aragas.Network.Packets;
 
 using PokeD.Core;
 using PokeD.Core.Data;
 using PokeD.Core.Packets.P3D.Shared;
 using PokeD.Server.Chat;
+using PokeD.Server.Commands;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
-using PokeD.Server.Commands;
 using PokeD.Server.Modules;
+
+using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PokeD.Server.Clients
 {
+    public delegate void ClientEventHandler(Client sender, EventArgs e);
+
     public abstract class Client : IUpdatable, IDisposable
     {
-        public event EventHandler Ready;
-        public event EventHandler Disconnected;
+        public event ClientEventHandler Ready;
+        public event ClientEventHandler Disconnected;
 
         public abstract int ID { get; set; }
 
@@ -35,9 +38,8 @@ namespace PokeD.Server.Clients
         public abstract DateTime ConnectionTime { get; }
         public abstract CultureInfo Language { get; }
 
-        protected CancellationTokenSource UpdateToken { get; set; }
-        protected ManualResetEventSlim UpdateLock { get; } = new(false);
-        protected Thread UpdateLockThread { get; set; }
+        protected CancellationTokenSource? UpdateToken { get; set; } = null;
+        protected Task UpdateTask { get; set; }
 
         protected ManualResetEventSlim ConnectionLock { get; } = new(true); // Will cause deadlock if false. See Leave();
 
@@ -51,41 +53,39 @@ namespace PokeD.Server.Clients
 
         public void StartListening()
         {
-            if (!UpdateLock.IsSet)
+            if (UpdateToken is null)
             {
                 UpdateToken = new CancellationTokenSource();
-                UpdateLockThread = new Thread(Update);
-                UpdateLockThread.Start();
+                UpdateTask = UpdateAsync(UpdateToken.Token);
             }
             else
-                throw new Exception("UpdateThread is already running!");
+                throw new Exception("UpdateTask is already running!");
         }
 
         protected void Join() => Ready?.Invoke(this, EventArgs.Empty);
 
         /// <summary>
-        /// Do not call Leave() directly from Update() cycle.
+        /// We do not need to call Leave() synchronously because of lock usages.
+        /// Calling Leave() from the Update() cycle will cause a deadlock, this is the fix for it.
         /// </summary>
-        protected void Leave()
+        protected async Task LeaveAsync(CancellationToken ct)
         {
-            if (UpdateLockThread == Thread.CurrentThread)
-                throw new InvalidOperationException("Do not call Leave() from Update() cycle, use LeaveAsync().");
-
-            ConnectionLock.Wait(); // this should ensure we will send every packet enqueued at the moment of calling Leave()
-
-            if (UpdateToken?.IsCancellationRequested == false)
+            try
             {
+                // Signal cancellation to the executing method
                 UpdateToken.Cancel();
-                UpdateLock.Wait(); // Wait for the Update cycle to finish
+            }
+            finally
+            {
+                if (UpdateTask is not null)
+                {
+                    // Wait until the task completes or the stop token triggers
+                    await Task.WhenAny(UpdateTask, Task.Delay(Timeout.Infinite, ct));
+                }
             }
 
             Disconnected?.Invoke(this, EventArgs.Empty);
         }
-        /// <summary>
-        /// We do not need to call Leave() synchronously because of lock usages.
-        /// Calling Leave() from the Update() cycle will cause a deadlock, this is the fix for it.
-        /// </summary>
-        protected void LeaveAsync() => ThreadPool.QueueUserWorkItem(obj => Leave());
 
         public virtual bool RegisterOrLogIn(string passwordHash)
         {
@@ -117,7 +117,7 @@ namespace PokeD.Server.Clients
             return false;
         }
 
-        public abstract GameDataPacket GetDataPacket();
+        public abstract GameDataPacket? GetDataPacket();
 
         public abstract void SendPacket<TPacket>(TPacket packet) where TPacket : Packet;
 
@@ -129,12 +129,12 @@ namespace PokeD.Server.Clients
         /// Will raise Disconnected event.
         /// </summary>
         /// <param name="reason"></param>
-        public virtual void SendKick(string reason = "") { LeaveAsync(); }
+        public virtual async void SendKick(string reason = "") { await LeaveAsync(CancellationToken.None); }
         /// <summary>
         /// Will raise Disconnected event.
         /// </summary>
         /// <param name="banTable"></param>
-        public virtual void SendBan(BanTable banTable) { LeaveAsync(); }
+        public virtual async void SendBan(BanTable banTable) { await LeaveAsync(CancellationToken.None); }
 
         Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
         public virtual void Save(bool force = false)
@@ -156,7 +156,7 @@ namespace PokeD.Server.Clients
                 ID = data.ClientID.Value;
         }
 
-        public abstract void Update();
+        public abstract Task UpdateAsync(CancellationToken ct);
 
         public void Dispose()
         {
@@ -169,16 +169,6 @@ namespace PokeD.Server.Clients
             {
                 if (disposing)
                 {
-                    if (UpdateLockThread == Thread.CurrentThread)
-                        throw new InvalidOperationException("Do not call Dispose() from Update() cycle.");
-
-                    if (UpdateToken?.IsCancellationRequested == false)
-                    {
-                        UpdateToken.Cancel();
-                        UpdateLock.Wait();
-                    }
-
-                    UpdateLock.Dispose();
                     ConnectionLock.Dispose();
                 }
 

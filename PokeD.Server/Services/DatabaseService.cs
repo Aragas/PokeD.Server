@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
-using PokeD.Core;
 using PokeD.Server.Database;
 using PokeD.Server.Storage.Folders;
 
@@ -13,25 +14,25 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace PokeD.Server.Services
 {
+    public sealed class DatabaseServiceOptions
+    {
+        public string DatabaseName { get; set; } = default!;
+    }
+
     public sealed class DatabaseService : IHostedService, IDisposable
     {
-        private SQLiteConnection Database { get; set; }
-
-        #region Settings
-
-        public string DatabaseName { get; private set; } = "Database";
-
-        #endregion
+        private SQLiteConnection Database { get; set; } = default!;
 
         private readonly ILogger _logger;
+        private readonly DatabaseServiceOptions _options;
 
-        public DatabaseService(ILogger<DatabaseService> logger)
+        public DatabaseService(ILogger<DatabaseService> logger, IOptions<DatabaseServiceOptions> options)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _options = options.Value ?? throw new ArgumentNullException(nameof(options));
         }
 
         public T DatabaseFind<T>(Expression<Func<T, bool>> exp) where T : IDatabaseTable, new() => Database.Find(exp);
@@ -52,26 +53,26 @@ namespace PokeD.Server.Services
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _logger.LogDebug($"Loading {DatabaseName}...");
-            Database = new SQLiteConnection(Path.Combine(new DatabaseFolder().Path, $"{DatabaseName}.sqlite3"));
+            _logger.LogDebug($"Loading {_options.DatabaseName}...");
+            Database = new SQLiteConnection(Path.Combine(new DatabaseFolder().Path, $"{_options.DatabaseName}.sqlite3"));
             CreateTables();
-            _logger.LogDebug($"Loaded {DatabaseName}.");
+            _logger.LogDebug($"Loaded {_options.DatabaseName}.");
 
             return Task.CompletedTask;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            //_logger.Log(LogType.Debug, $"Unloading {DatabaseName}...");
-            //Database?.Dispose();
-            //_logger.Log(LogType.Debug, $"Unloaded {DatabaseName}.");
+            _logger.LogDebug($"Unloading {_options.DatabaseName}...");
+            Database.Close();
+            _logger.LogDebug($"Unloaded {_options.DatabaseName}.");
 
             return Task.CompletedTask;
         }
 
         public void Dispose()
         {
-            Database?.Dispose();
+            Database.Dispose();
         }
     }
 }

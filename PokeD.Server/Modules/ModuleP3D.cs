@@ -1,8 +1,8 @@
 ﻿using Aragas.Network.Packets;
 
-using PCLExt.Config;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
-using PokeD.Core;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Packets.P3D;
 using PokeD.Core.Packets.P3D.Chat;
@@ -22,53 +22,52 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace PokeD.Server.Modules
 {
-    public class ModuleP3D : ServerModule, IDisposable
+    public class ModuleP3DOptions
     {
-        #region Settings
-
-        public override bool Enabled { get; protected set; } = true;
-
-        public override ushort Port { get; protected set; } = 15124;
+        public bool Enabled { get; protected set; } = true;
+        public ushort Port { get; protected set; } = 15124;
 
         public string ServerName { get; protected set; } = "Put Server Name Here";
-
         public string ServerMessage { get; protected set; } = "Put Server Description Here";
-
         public int MaxPlayers { get; protected set; } = 1000;
 
         public bool EnableOfflineAccounts { get; protected set; } = true;
-
         public bool ValidatePokemons { get; protected set; } = false;
-
-        //public bool EncryptionEnabled { get; protected set; } = true;
-
         public bool MoveCorrectionEnabled { get; protected set; } = true;
+    }
+
+    public class ModuleP3D : ServerModule
+    {
+        #region Settings
+
+        public override bool Enabled { get => Options.Enabled; protected set { } }
+        public override ushort Port { get => Options.Port; protected set { } }
 
         #endregion Settings
 
         private TcpListener Listener { get; set; }
 
-        private CancellationTokenSource PlayerWatcherToken { get; set; }
-        private ManualResetEventSlim PlayerWatcherLock { get; } = new();
-
-        private CancellationTokenSource PlayerCorrectionToken { get; set; }
-        private ManualResetEventSlim PlayerCorrectionLock { get; } = new();
-
-        private ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; } = new();
+        private ConcurrentDictionary<string, P3DPlayer[]?> NearPlayers { get; } = new();
 
         private List<P3DPlayer> JoiningClients { get; } = new();
         private List<P3DPlayer> Clients { get; } = new();
 
+        private Task? _updateTask;
+        private Task? _watcherTask;
+        private Task? _correctorTask;
+        private readonly CancellationTokenSource _stoppingCts = new();
+
         private readonly ILogger _logger;
+        public readonly ModuleP3DOptions Options;
 
         public ModuleP3D(IServiceProvider serviceProvider) : base(serviceProvider)
         {
             _logger = serviceProvider.GetRequiredService<ILogger<ModuleP3D>>();
+            Options = serviceProvider.GetRequiredService<IOptions<ModuleP3DOptions>>().Value;
         }
 
         public override async Task StartAsync(CancellationToken ct)
@@ -80,28 +79,12 @@ namespace PokeD.Server.Modules
             Listener.Server.SendTimeout = 5000;
             Listener.Start();
 
-            new Thread(ListenerCycle)
+            _updateTask = ListenerCycleAsync(_stoppingCts.Token);
+
+            if (Options.MoveCorrectionEnabled)
             {
-                Name = "ModuleP3DListenerThred",
-                IsBackground = true
-            }.Start();
-
-
-            if (MoveCorrectionEnabled)
-            {
-                PlayerWatcherToken = new CancellationTokenSource();
-                new Thread(PlayerWatcherCycle)
-                {
-                    Name = "ModuleP3DWatcherThread",
-                    IsBackground = true
-                }.Start();
-
-                PlayerCorrectionToken = new CancellationTokenSource();
-                new Thread(PlayerCorrectionCycle)
-                {
-                    Name = "ModuleP3DCorrectionThread",
-                    IsBackground = true
-                }.Start();
+                _watcherTask = PlayerWatcherCycleAsync(_stoppingCts.Token);
+                _correctorTask = PlayerCorrectionCycleAsync(_stoppingCts.Token);
             }
 
 
@@ -111,16 +94,19 @@ namespace PokeD.Server.Modules
         public override async Task StopAsync(CancellationToken ct)
         {
             _logger.LogDebug($"Stopping {nameof(ModuleP3D)}.");
-
-            if (PlayerWatcherToken?.IsCancellationRequested == false)
+            try
             {
-                PlayerWatcherToken.Cancel();
-                PlayerWatcherLock.Wait();
+                // Signal cancellation to the executing method
+                _stoppingCts.Cancel();
             }
-            if (PlayerCorrectionToken?.IsCancellationRequested == false)
+            finally
             {
-                PlayerCorrectionToken.Cancel();
-                PlayerCorrectionLock.Wait();
+                // Wait until the task completes or the stop token triggers
+                await Task.WhenAll(
+                    Task.WhenAny(_updateTask, Task.Delay(Timeout.Infinite, ct)),
+                    Task.WhenAny(_watcherTask, Task.Delay(Timeout.Infinite, ct)),
+                    Task.WhenAny(_correctorTask, Task.Delay(Timeout.Infinite, ct))
+                );
             }
 
             ModuleManager.ClientJoined -= ModuleManager_ClientJoined;
@@ -167,14 +153,14 @@ namespace PokeD.Server.Modules
         }
 
 
-        private void ListenerCycle()
+        private async Task ListenerCycleAsync(CancellationToken ct)
         {
             try
             {
-                while (true) // Listener.Stop() will stop it.
+                while (!ct.IsCancellationRequested) // Listener.Stop() will stop it.
                 {
 
-                    var client = new P3DPlayer(Listener.AcceptSocket(), this);
+                    var client = new P3DPlayer(await Listener.AcceptSocketAsync(), this);
                     client.Ready += OnClientReady;
                     client.Disconnected += OnClientLeave;
                     client.StartListening();
@@ -187,21 +173,17 @@ namespace PokeD.Server.Modules
             catch (Exception e) when (e is SocketException) { }
         }
 
-        [ConfigIgnore]
-        public static long PlayerWatcherThreadTime { get; private set; }
-        private void PlayerWatcherCycle()
+        private async Task PlayerWatcherCycleAsync(CancellationToken ct)
         {
-            PlayerWatcherLock.Reset();
-
             var watch = Stopwatch.StartNew();
-            while (!PlayerWatcherToken.IsCancellationRequested)
+            while (!ct.IsCancellationRequested)
             {
                 List<P3DPlayer> players;
                 lock (Clients)
                     players = new List<P3DPlayer>(Clients);
 
-                foreach (var player in players.Where(player => player.LevelFile != null && !NearPlayers.ContainsKey(player.LevelFile)))
-                    NearPlayers.TryAdd(player.LevelFile, null);
+                foreach (var player in players.Where(player => player.LevelFile is not null && !NearPlayers.ContainsKey(player.LevelFile)))
+                    NearPlayers.TryAdd(player.LevelFile!, null);
 
                 foreach (var level in NearPlayers.Keys)
                 {
@@ -217,27 +199,19 @@ namespace PokeD.Server.Modules
 
                 if (watch.ElapsedMilliseconds < 400)
                 {
-                    PlayerWatcherThreadTime = watch.ElapsedMilliseconds;
-
                     var time = (int) (400 - watch.ElapsedMilliseconds);
                     if (time < 0) time = 0;
-                    Thread.Sleep(time);
+                    await Task.Delay(time, ct);
                 }
                 watch.Reset();
                 watch.Start();
             }
-
-            PlayerWatcherLock.Set();
         }
 
-        [ConfigIgnore]
-        public static long PlayerCorrectionThreadTime { get; private set; }
-        private void PlayerCorrectionCycle()
+        private async Task PlayerCorrectionCycleAsync(CancellationToken ct)
         {
-            PlayerCorrectionLock.Reset();
-
             var watch = Stopwatch.StartNew();
-            while (!PlayerCorrectionToken.IsCancellationRequested)
+            while (!ct.IsCancellationRequested)
             {
                 foreach (var nearPlayers in NearPlayers.Where(nearPlayers => nearPlayers.Value != null))
                     foreach (var player in nearPlayers.Value.Where(player => player.Moving))
@@ -250,17 +224,13 @@ namespace PokeD.Server.Modules
 
                 if (watch.ElapsedMilliseconds < 10)
                 {
-                    PlayerCorrectionThreadTime = watch.ElapsedMilliseconds;
-
                     var time = (int) (5 - watch.ElapsedMilliseconds);
                     if (time < 0) time = 0;
-                    Thread.Sleep(time);
+                    await Task.Delay(time, ct);
                 }
                 watch.Reset();
                 watch.Start();
             }
-
-            PlayerCorrectionLock.Set();
         }
 
         public override void ClientsForeach(Action<IReadOnlyList<Client>> action)
@@ -279,57 +249,60 @@ namespace PokeD.Server.Modules
                 return func(Clients);
         }
 
-        protected override void OnClientReady(object sender, EventArgs eventArgs)
+        protected override void OnClientReady(Client sender, EventArgs eventArgs)
         {
-            var client = sender as Client;
-            // -- We assume the Client is a GameJolt or the Client's password is correct and no one is using the Client's name.
-
-            var (isBanned, banInfo) = ModuleManager.BanStatus(client);
-            if (isBanned)
+            if (sender is P3DPlayer client)
             {
-                client.SendBan(banInfo);
-                return;
-            }
+                // -- We assume the Client is a GameJolt or the Client's password is correct and no one is using the Client's name.
 
-            (isBanned, banInfo) = BanStatusGJ(client as P3DPlayer);
-            if (isBanned)
-            {
-                client.SendBan(banInfo);
-                return;
-            }
-
-            // Send to player all Players ID
-            lock (Clients)
-                foreach (var aClient in Clients)
+                var (isBanned, banInfo) = ModuleManager.BanStatus(client);
+                if (isBanned)
                 {
-                    client.SendPacket(new CreatePlayerPacket { Origin = Origin.Server, PlayerID = aClient.ID });
-                    client.SendPacket(aClient.GetDataPacket());
+                    client.SendBan(banInfo);
+                    return;
                 }
 
-            // Send to Players player ID
-            SendPacketToAll(new CreatePlayerPacket { Origin = Origin.Server, PlayerID = client.ID });
-            // Send to player his ID
-            client.SendPacket(new CreatePlayerPacket { Origin = Origin.Server, PlayerID = client.ID });
-            SendPacketToAll(client.GetDataPacket());
+                (isBanned, banInfo) = BanStatusGJ(client as P3DPlayer);
+                if (isBanned)
+                {
+                    client.SendBan(banInfo);
+                    return;
+                }
 
-            base.OnClientReady(sender, eventArgs);
+                // Send to player all Players ID
+                lock (Clients)
+                    foreach (var aClient in Clients)
+                    {
+                        client.SendPacket(new CreatePlayerPacket {Origin = Origin.Server, PlayerID = aClient.ID});
+                        client.SendPacket(aClient.GetDataPacket());
+                    }
+
+                // Send to Players player ID
+                SendPacketToAll(new CreatePlayerPacket {Origin = Origin.Server, PlayerID = client.ID});
+                // Send to player his ID
+                client.SendPacket(new CreatePlayerPacket {Origin = Origin.Server, PlayerID = client.ID});
+                SendPacketToAll(client.GetDataPacket());
+
+                base.OnClientReady(client, eventArgs);
+            }
         }
-        protected override void OnClientLeave(object sender, EventArgs eventArgs)
+        protected override void OnClientLeave(Client sender, EventArgs eventArgs)
         {
-            var client = sender as P3DPlayer;
+            if (sender is P3DPlayer client)
+            {
+                lock (Clients)
+                    Clients.Remove(client);
 
-            lock (Clients)
-                Clients.Remove(client);
+                if (client.ID > 0)
+                    base.OnClientLeave(sender, eventArgs);
 
-            if (client.ID > 0)
-                base.OnClientLeave(sender, eventArgs);
-
-            client.Dispose();
+                client.Dispose();
+            }
         }
 
 
         private Stopwatch UpdateWatch { get; } = Stopwatch.StartNew();
-        public override void Update()
+        public override async Task UpdateAsync(CancellationToken ct)
         {
             if (UpdateWatch.ElapsedMilliseconds > 1000)
             {
@@ -383,7 +356,7 @@ namespace PokeD.Server.Modules
             if (!(client is P3DPlayer p3dClient))
                 return false;
 
-            if (!EnableOfflineAccounts && !p3dClient.IsGameJoltPlayer)
+            if (!Options.EnableOfflineAccounts && !p3dClient.IsGameJoltPlayer)
             {
                 client.SendKick("Offline accounts are disabled on this server! Log in using your GameJolt account!");
                 return false;
@@ -444,21 +417,6 @@ namespace PokeD.Server.Modules
         {
             var table = Database.DatabaseGetAll<BanTable>().FirstOrDefault(banTable => Database.DatabaseGetAll<ClientGJTable>().Where(gjTable => gjTable.GameJoltID == client.GameJoltID).Any(table1 => banTable.ClientID == table1.ClientID));
             return table != null ? (true, table) : (false, null);
-        }
-
-
-        public void Dispose()
-        {
-            if (PlayerWatcherToken?.IsCancellationRequested == false)
-            {
-                PlayerWatcherToken.Cancel();
-                PlayerWatcherLock.Wait();
-            }
-            if (PlayerCorrectionToken?.IsCancellationRequested == false)
-            {
-                PlayerCorrectionToken.Cancel();
-                PlayerCorrectionLock.Wait();
-            }
         }
     }
 }

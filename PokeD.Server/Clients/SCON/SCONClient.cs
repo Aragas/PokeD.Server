@@ -1,9 +1,9 @@
-/*
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net.Sockets;
-
+using System.Threading;
+using System.Threading.Tasks;
 using Aragas.Network.Data;
 using Aragas.Network.IO;
 using Aragas.Network.Packets;
@@ -63,8 +63,8 @@ namespace PokeD.Server.Clients.SCON
 #if DEBUG
         // -- Debug -- //
         private const int QueueSize = 1000;
-        private Queue<SCONPacket> Received { get; } = new Queue<SCONPacket>(QueueSize);
-        private Queue<SCONPacket> Sended { get; } = new Queue<SCONPacket>(QueueSize);
+        private Queue<SCONPacket> Received { get; } = new(QueueSize);
+        private Queue<SCONPacket> Sended { get; } = new(QueueSize);
         // -- Debug -- //
 #endif
 
@@ -79,7 +79,7 @@ namespace PokeD.Server.Clients.SCON
             AuthorizationStatus = (EncryptionEnabled ? AuthorizationStatus.EncryprionEnabled : 0);
         }
 
-        public override void Update()
+        public override async Task UpdateAsync(CancellationToken ct)
         {
             if (Stream.IsConnected)
             {
@@ -96,7 +96,7 @@ namespace PokeD.Server.Clients.SCON
                 }
             }
             else
-                Leave();
+                await LeaveAsync(ct);
         }
 
         private void HandlePacket(SCONPacket packet)
@@ -234,4 +234,3 @@ namespace PokeD.Server.Clients.SCON
         }
     }
 }
-*/

@@ -38,7 +38,7 @@ namespace PokeD.Server.Commands
             public override void OnPosition(Client sender) { }
             public override Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
             public override Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-            public override void Update() {}
+            public override Task UpdateAsync(CancellationToken ct) => Task.CompletedTask;
         }
         private sealed class OfflineClient : Client
         {
@@ -110,7 +110,7 @@ namespace PokeD.Server.Commands
             public override void Load(ClientTable data) { }
 
 
-            public override void Update() { }
+            public override Task UpdateAsync(CancellationToken ct) => Task.CompletedTask;
         }
 
         // -- Should be hidden ideally

@@ -1,9 +1,6 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-using PCLExt.Config;
-
-using PokeD.Core;
 using PokeD.Core.Data.P3D;
 using PokeD.Server.Data;
 
@@ -15,39 +12,23 @@ using System.Threading.Tasks;
 
 namespace PokeD.Server.Services
 {
-    public sealed class WorldService : IHostedService, IDisposable
+    public sealed class WorldService : IHostedService
     {
-        private CancellationTokenSource UpdateToken { get; set; } = new();
-        private ManualResetEventSlim UpdateLock { get; } = new(false);
-
-        [ConfigIgnore]
-        public bool UseLocation { get; set; }
-        private bool LocationChanged { get; set; }
-
-        [ConfigIgnore]
-        public string Location
-        {
-            get => _location;
-            set { LocationChanged = _location != value; _location = value; }
-        }
-        private string _location = string.Empty;
-
         public bool UseRealTime { get; set; } = true;
-
         public bool DoDayCycle { get; set; } = true;
 
         public int WeatherUpdateTimeInMinutes { get; set; } = 60;
 
         public Season Season { get; set; } = Season.Spring;
-
         public Weather Weather { get; set; } = Weather.Sunny;
+        private int WeekOfYear => (int) (DateTime.Now.DayOfYear - ((DateTime.Now.DayOfWeek - DayOfWeek.Monday) / 7.0) + 1.0);
 
         public TimeSpan CurrentTime
         {
             get => TimeSpan.TryParseExact(CurrentTimeString, "hh\\,mm\\,ss", CultureInfo.InvariantCulture, TimeSpanStyles.None, out var timeSpan) ? timeSpan : TimeSpan.Zero;
             set => CurrentTimeString = $"{value.Hours:00},{value.Minutes:00},{value.Seconds:00}";
         }
-        private string CurrentTimeString { get; set; }
+        private string CurrentTimeString { get; set; } = string.Empty;
 
         private TimeSpan TimeSpanOffset { get; set; }
         //private TimeSpan TimeSpanOffset => TimeSpan.FromSeconds(TimeOffset);
@@ -55,6 +36,8 @@ namespace PokeD.Server.Services
 
         private DateTime WorldUpdateTime { get; set; } = DateTime.UtcNow;
 
+        private Task? _updateTask;
+        private readonly CancellationTokenSource _stoppingCts = new();
 
         private readonly ILogger _logger;
 
@@ -63,8 +46,32 @@ namespace PokeD.Server.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogDebug("Loading World...");
+            _updateTask = UpdateCycleAsync(_stoppingCts.Token);
+            _logger.LogDebug("Loaded World.");
 
-        private int WeekOfYear => (int) (DateTime.Now.DayOfYear - ((DateTime.Now.DayOfWeek - DayOfWeek.Monday) / 7.0) + 1.0);
+            return Task.CompletedTask;
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogDebug("Unloading World...");
+            try
+            {
+                // Signal cancellation to the executing method
+                _stoppingCts.Cancel();
+            }
+            finally
+            {
+                // Wait until the task completes or the stop token triggers
+                await Task.WhenAny(_updateTask, Task.Delay(Timeout.Infinite, cancellationToken));
+            }
+            _logger.LogDebug("Unloaded World.");
+        }
+
+
         private void UpdateWorld()
         {
             Season = (WeekOfYear % 4) switch
@@ -84,8 +91,8 @@ namespace PokeD.Server.Services
                         Weather = Weather.Rain;
                     else if (r >= 20 && r < 50)
                         Weather = Weather.Clear;
-                    //else
-                    //    Weather = Weather.Snow;
+                    else
+                        Weather = Weather.Snow;
                     break;
 
                 case Season.Spring:
@@ -107,10 +114,9 @@ namespace PokeD.Server.Services
                     break;
 
                 case Season.Fall:
-                    //if (r < 5)
-                    //    Weather = Weather.Snow;
-                    //else
-                    if (r >= 5 && r < 80)
+                    if (r < 5)
+                        Weather = Weather.Snow;
+                    else if (r >= 5 && r < 80)
                         Weather = Weather.Rain;
                     else
                         Weather = Weather.Clear;
@@ -125,12 +131,10 @@ namespace PokeD.Server.Services
             _logger.Log(LogLevel.Information, new EventId(30, "Event"), $"Set Weather: {Weather}");
         }
 
-        public void UpdateCycle()
+        public async Task UpdateCycleAsync(CancellationToken ct)
         {
-            UpdateLock.Reset();
-
             var watch = Stopwatch.StartNew();
-            while (!UpdateToken.IsCancellationRequested)
+            while (!ct.IsCancellationRequested)
             {
                 if (WorldUpdateTime < DateTime.UtcNow)
                 {
@@ -142,14 +146,12 @@ namespace PokeD.Server.Services
                 {
                     var time = (int)(10 - watch.ElapsedMilliseconds);
                     if (time < 0) time = 0;
-                    Thread.Sleep(time);
+                    await Task.Delay(time, ct);
                 }
-                TimeSpanOffset.Add(TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds));
+                TimeSpanOffset = TimeSpanOffset.Add(TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds));
                 watch.Reset();
                 watch.Start();
             }
-
-            UpdateLock.Set();
         }
 
 
@@ -177,47 +179,6 @@ namespace PokeD.Server.Services
                 CurrentTimeString = "12,00,00";
 
             return new DataItems(((int) Season).ToString(), ((int) Weather).ToString(), CurrentTimeString);
-        }
-
-
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            _logger.LogDebug("Loading World...");
-
-            UpdateToken = new CancellationTokenSource();
-            new Thread(UpdateCycle)
-            {
-                Name = "ModuleManagerUpdateTread",
-                IsBackground = true
-            }.Start();
-
-            _logger.LogDebug("Loaded World.");
-
-            return Task.CompletedTask;
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            _logger.LogDebug("Unloading World...");
-
-            if (UpdateToken?.IsCancellationRequested == false)
-            {
-                UpdateToken.Cancel();
-                UpdateLock.Wait(cancellationToken);
-            }
-
-            _logger.LogDebug("Unloaded World.");
-
-            return Task.CompletedTask;
-        }
-
-        public void Dispose()
-        {
-            if (UpdateToken?.IsCancellationRequested == false)
-            {
-                UpdateToken.Cancel();
-                UpdateLock.Wait();
-            }
         }
     }
 }

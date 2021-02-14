@@ -27,8 +27,8 @@ namespace PokeD.Server.Clients.P3D
             string.Equals(GameMode, "Pokemon 3D", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(GameMode, "Pokémon 3D", StringComparison.OrdinalIgnoreCase);
 
-        private bool PokemonsValid(string pokemonData) => !Module.ValidatePokemons || !IsOfficialGameMode || new DataItems(pokemonData).DataItemsToMonsters().All(pokemon => pokemon.IsValid);
-        private bool PokemonValid(string pokemonData) => !Module.ValidatePokemons || !IsOfficialGameMode || new Monster(pokemonData).IsValid;
+        private bool PokemonsValid(string pokemonData) => !Module.Options.ValidatePokemons || !IsOfficialGameMode || new DataItems(pokemonData).DataItemsToMonsters().All(pokemon => pokemon.IsValid);
+        private bool PokemonValid(string pokemonData) => !Module.Options.ValidatePokemons || !IsOfficialGameMode || new Monster(pokemonData).IsValid;
 
         private void ParseGameData(GameDataPacket packet)
         {
@@ -301,7 +301,7 @@ namespace PokeD.Server.Clients.P3D
         }
 
 
-        private void HandleServerDataRequest(ServerDataRequestPacket packet)
+        private async void HandleServerDataRequest(ServerDataRequestPacket packet)
         {
             var clientNames = Module.AllClientsSelect(clients => clients.Select(client => client.Name).ToList());
             SendPacket(new ServerInfoDataPacket
@@ -309,14 +309,14 @@ namespace PokeD.Server.Clients.P3D
                 Origin = ID,
 
                 CurrentPlayers = clientNames.Count,
-                MaxPlayers = Module.MaxPlayers,
+                MaxPlayers = Module.Options.MaxPlayers,
                 PlayerNames = clientNames.Any() ? clientNames.ToArray() : new string[0],
 
-                ServerName = Module.ServerName,
-                ServerMessage = Module.ServerMessage,
+                ServerName = Module.Options.ServerName,
+                ServerMessage = Module.Options.ServerMessage,
             });
 
-            LeaveAsync();
+            await LeaveAsync(CancellationToken.None);
         }
     }
 }

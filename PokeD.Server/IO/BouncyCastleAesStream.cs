@@ -10,7 +10,7 @@ namespace PokeD.Server.IO
 {
     internal partial class BouncyCastleAesStream : Stream
     {
-        private class EncryptorDecryptor
+        private sealed class EncryptorDecryptor
         {
             private BufferedBlockCipher DecryptCipher { get; }
             private BufferedBlockCipher EncryptCipher { get; }
