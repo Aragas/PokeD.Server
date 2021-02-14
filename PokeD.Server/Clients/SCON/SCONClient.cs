@@ -1,3 +1,4 @@
+/*
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -29,7 +30,7 @@ namespace PokeD.Server.Clients.SCON
 
         public override int ID { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
         public override string Nickname { get => throw new NotSupportedException(); protected set => throw new NotSupportedException(); }
-        
+
         public override string LevelFile { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
         public override Vector3 Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
 
@@ -110,17 +111,17 @@ namespace PokeD.Server.Clients.SCON
                 case SCONPacketTypes.EncryptionResponse:
                     HandleEncryptionResponse((EncryptionResponsePacket) packet);
                     break;
-                    
+
 
                 case SCONPacketTypes.AuthorizationPassword:
                     HandleAuthorizationPassword((AuthorizationPasswordPacket) packet);
                     break;
 
-                    
+
                 case SCONPacketTypes.ExecuteCommand:
                     HandleExecuteCommand((ExecuteCommandPacket) packet);
                     break;
-                   
+
 
                 case SCONPacketTypes.ChatReceivePacket:
                     HandleChatReceivePacket((ChatReceivePacket) packet);
@@ -233,3 +234,4 @@ namespace PokeD.Server.Clients.SCON
         }
     }
 }
+*/

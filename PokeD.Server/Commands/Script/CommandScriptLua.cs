@@ -4,7 +4,6 @@ using System.Linq;
 
 using MoonSharp.Interpreter;
 
-using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Storage.Files;
 
@@ -21,7 +20,7 @@ namespace PokeD.Server.Commands
         public override IEnumerable<string> Aliases => ((Table) Script.Globals["Aliases"]).Values.Select(obj => obj.ToString().Replace("\"", ""));
         public override PermissionFlags Permission => ParsePermissionFlags((string) Script.Globals["Permission"] ?? string.Empty);
 
-        public CommandScriptLua(IServiceContainer serviceContainer, LuaFile luaFile) : base(serviceContainer)
+        public CommandScriptLua(IServiceProvider serviceProvider, LuaFile luaFile) : base(serviceProvider)
         {
             LuaFile = luaFile;
             Script.Globals["World"] = World;

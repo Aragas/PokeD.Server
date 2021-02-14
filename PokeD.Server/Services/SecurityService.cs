@@ -1,48 +1,31 @@
-﻿using Org.BouncyCastle.Crypto;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
 
-using PCLExt.Config;
-
-using PokeD.Core;
-using PokeD.Core.Services;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PokeD.Server.Services
 {
-    public class SecurityService : BaseServerService
+    public sealed class SecurityService : IHostedService
     {
         private const int RsaKeySize = 1024;
 
-        [ConfigIgnore]
-        public AsymmetricCipherKeyPair RSAKeyPair { get; private set; }
+        public AsymmetricCipherKeyPair? RSAKeyPair { get; private set; }
 
-        private bool IsDisposed { get; set; }
+        private readonly ILogger _logger;
 
-        public SecurityService(IServiceContainer services, ConfigType configType) : base(services, configType) { }
-
-
-        public override bool Start()
+        public SecurityService(ILogger<ChatChannelManagerService> logger)
         {
-            Logger.Log(LogType.Debug, "Loading Security...");
-
-            Logger.Log(LogType.Debug, "Generating RSA key pair...");
-            RSAKeyPair = GenerateKeyPair();
-            Logger.Log(LogType.Debug, "Generated RSA key pair.");
-
-            Logger.Log(LogType.Debug, "Loaded Security.");
-
-            return true;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-        public override bool Stop()
-        {
-            Logger.Log(LogType.Debug, "Loading Security...");
-            RSAKeyPair = null;
-            Logger.Log(LogType.Debug, "Loaded Security.");
 
-            return true;
-        }
         private static AsymmetricCipherKeyPair GenerateKeyPair()
         {
             var secureRandom = new SecureRandom(new DigestRandomGenerator(new Sha512Digest()));
@@ -53,15 +36,26 @@ namespace PokeD.Server.Services
             return keyPairGenerator.GenerateKeyPair();
         }
 
-        protected override void Dispose(bool disposing)
+        public Task StartAsync(CancellationToken cancellationToken)
         {
-            if (!IsDisposed)
-            {
+            _logger.LogDebug("Starting Security...");
 
+            _logger.LogDebug("Generating RSA key pair...");
+            RSAKeyPair = GenerateKeyPair();
+            _logger.LogDebug("Generated RSA key pair.");
 
-                IsDisposed = true;
-            }
-            base.Dispose(disposing);
+            _logger.LogDebug("Started Security.");
+
+            return Task.CompletedTask;
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogDebug("Stopping Security...");
+            RSAKeyPair = null;
+            _logger.LogDebug("Stopped Security.");
+
+            return Task.CompletedTask;
         }
     }
 }

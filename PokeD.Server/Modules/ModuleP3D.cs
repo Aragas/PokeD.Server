@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading;
-
-using Aragas.Network.Packets;
+﻿using Aragas.Network.Packets;
 
 using PCLExt.Config;
 
@@ -17,33 +8,40 @@ using PokeD.Core.Packets.P3D;
 using PokeD.Core.Packets.P3D.Chat;
 using PokeD.Core.Packets.P3D.Server;
 using PokeD.Core.Packets.P3D.Trade;
-using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.P3D;
 using PokeD.Server.Database;
 using PokeD.Server.Services;
-using PokeD.Server.Storage.Files;
+
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace PokeD.Server.Modules
 {
-    public class ModuleP3D : ServerModule
+    public class ModuleP3D : ServerModule, IDisposable
     {
-        protected override string ComponentName { get; } = "ModuleP3D";
-        protected override IConfigFile ComponentConfigFile => new ModuleP3DConfigFile(ConfigType);
-
         #region Settings
 
-        public override bool Enabled { get; protected set; } = false;
+        public override bool Enabled { get; protected set; } = true;
 
         public override ushort Port { get; protected set; } = 15124;
 
         public string ServerName { get; protected set; } = "Put Server Name Here";
 
         public string ServerMessage { get; protected set; } = "Put Server Description Here";
-        
+
         public int MaxPlayers { get; protected set; } = 1000;
 
-        public bool EnableOfflineAccounts { get; protected set; } = false;
+        public bool EnableOfflineAccounts { get; protected set; } = true;
 
         public bool ValidatePokemons { get; protected set; } = false;
 
@@ -54,29 +52,28 @@ namespace PokeD.Server.Modules
         #endregion Settings
 
         private TcpListener Listener { get; set; }
-        
+
         private CancellationTokenSource PlayerWatcherToken { get; set; }
-        private ManualResetEventSlim PlayerWatcherLock { get; } = new ManualResetEventSlim();
+        private ManualResetEventSlim PlayerWatcherLock { get; } = new();
 
         private CancellationTokenSource PlayerCorrectionToken { get; set; }
-        private ManualResetEventSlim PlayerCorrectionLock { get; } = new ManualResetEventSlim();
+        private ManualResetEventSlim PlayerCorrectionLock { get; } = new();
 
-        private ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; } = new ConcurrentDictionary<string, P3DPlayer[]>();
+        private ConcurrentDictionary<string, P3DPlayer[]> NearPlayers { get; } = new();
 
-        private List<P3DPlayer> JoiningClients { get; } = new List<P3DPlayer>();
-        private List<P3DPlayer> Clients { get; } = new List<P3DPlayer>();
+        private List<P3DPlayer> JoiningClients { get; } = new();
+        private List<P3DPlayer> Clients { get; } = new();
 
-        private bool IsDisposed { get; set; }
+        private readonly ILogger _logger;
 
-        public ModuleP3D(IServiceContainer services, ConfigType configType) : base(services, configType) { }
-
-        public override bool Start()
+        public ModuleP3D(IServiceProvider serviceProvider) : base(serviceProvider)
         {
-            if (!base.Start())
-                return false;
+            _logger = serviceProvider.GetRequiredService<ILogger<ModuleP3D>>();
+        }
 
-
-            Logger.Log(LogType.Debug, $"Starting {ComponentName}.");
+        public override async Task StartAsync(CancellationToken ct)
+        {
+            _logger.LogDebug($"Starting {nameof(ModuleP3D)}.");
 
             Listener = new TcpListener(new IPEndPoint(IPAddress.Any, Port));
             Listener.Server.ReceiveTimeout = 5000;
@@ -110,17 +107,10 @@ namespace PokeD.Server.Modules
 
             ModuleManager.ClientJoined += (this, ModuleManager_ClientJoined);
             ModuleManager.ClientLeaved += (this, ModuleManager_ClientLeaved);
-
-
-            return true;
         }
-        public override bool Stop()
+        public override async Task StopAsync(CancellationToken ct)
         {
-            if (!base.Stop())
-                return false;
-
-
-            Logger.Log(LogType.Debug, $"Stopping {ComponentName}.");
+            _logger.LogDebug($"Stopping {nameof(ModuleP3D)}.");
 
             if (PlayerWatcherToken?.IsCancellationRequested == false)
             {
@@ -153,11 +143,8 @@ namespace PokeD.Server.Modules
             }
 
             NearPlayers.Clear();
-
-
-            return true;
         }
-       
+
         private void ModuleManager_ClientJoined(object sender, ClientJoinedEventArgs eventArgs)
         {
             var player = eventArgs.Client as P3DPlayer;
@@ -205,7 +192,7 @@ namespace PokeD.Server.Modules
         private void PlayerWatcherCycle()
         {
             PlayerWatcherLock.Reset();
-            
+
             var watch = Stopwatch.StartNew();
             while (!PlayerWatcherToken.IsCancellationRequested)
             {
@@ -460,29 +447,18 @@ namespace PokeD.Server.Modules
         }
 
 
-        protected override void Dispose(bool disposing)
+        public void Dispose()
         {
-            if (!IsDisposed)
+            if (PlayerWatcherToken?.IsCancellationRequested == false)
             {
-                if (disposing)
-                {
-                    // TODO
-                    if (PlayerWatcherToken?.IsCancellationRequested == false)
-                    {
-                        PlayerWatcherToken.Cancel();
-                        PlayerWatcherLock.Wait();
-                    }
-                    if (PlayerCorrectionToken?.IsCancellationRequested == false)
-                    {
-                        PlayerCorrectionToken.Cancel();
-                        PlayerCorrectionLock.Wait();
-                    }
-                }
-
-
-                IsDisposed = true;
+                PlayerWatcherToken.Cancel();
+                PlayerWatcherLock.Wait();
             }
-            base.Dispose(disposing);
+            if (PlayerCorrectionToken?.IsCancellationRequested == false)
+            {
+                PlayerCorrectionToken.Cancel();
+                PlayerCorrectionLock.Wait();
+            }
         }
     }
 }

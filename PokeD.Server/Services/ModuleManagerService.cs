@@ -1,98 +1,80 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
+﻿using Aragas.TupleEventSystem;
 
-using Aragas.TupleEventSystem;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-using PCLExt.Config;
-
-using PokeD.Core;
 using PokeD.Core.Data.P3D;
 using PokeD.Core.Data.PokeD;
-using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Data;
 using PokeD.Server.Database;
 using PokeD.Server.Modules;
 using PokeD.Server.Storage.Folders;
 
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace PokeD.Server.Services
 {
-    public class ClientJoinedEventArgs : EventArgs
+    public sealed class ClientJoinedEventArgs : EventArgs
     {
         public Client Client { get; }
 
         public ClientJoinedEventArgs(Client client) { Client = client; }
     }
-    public class ClientLeavedEventArgs : EventArgs
+    public sealed class ClientLeavedEventArgs : EventArgs
     {
         public Client Client { get; }
 
         public ClientLeavedEventArgs(Client client) { Client = client; }
     }
 
-    public class ModuleManagerService : BaseServerService
+    public sealed class ModuleManagerService : IHostedService, IDisposable
     {
-        private List<ServerModule> Modules { get; } = new List<ServerModule>();
-
+        private List<ServerModule> Modules { get; } = new();
 
         public BaseEventHandler<ClientJoinedEventArgs> ClientJoined = new WeakReferenceEventHandler<ClientJoinedEventArgs>();
         public BaseEventHandler<ClientLeavedEventArgs> ClientLeaved = new WeakReferenceEventHandler<ClientLeavedEventArgs>();
-        
+
 
         //public BaseEventHandler<ServerSentMessageEventArgs> ServerSentMessage = new CustomEventHandler<ServerSentMessageEventArgs>();
 
-        private CancellationTokenSource UpdateToken { get; set; } = new CancellationTokenSource();
-        private ManualResetEventSlim UpdateLock { get; } = new ManualResetEventSlim(false);
+        private CancellationTokenSource UpdateToken { get; set; } = new();
+        private ManualResetEventSlim UpdateLock { get; } = new(false);
 
-        private bool IsDisposed { get; set; }
+        private readonly ILogger _logger;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly DatabaseService _databaseService;
 
-        public ModuleManagerService(IServiceContainer services, ConfigType configType) : base(services, configType)
+        public ModuleManagerService(ILogger<ModuleManagerService> logger, IServiceProvider serviceProvider)
         {
-            Modules.Add(new ModuleSCON(Services, ConfigType));
-            //Modules.Add(new ModuleNPC(this, ConfigType));
-            Modules.Add(new ModuleP3D(Services, ConfigType));
-            //Modules.Add(new ModulePokeD(this, ConfigType));
-
-            //foreach (var module in LoadModules())
-            //    Modules.Add(module);
-        }    
-        private IEnumerable<ServerModule> LoadModules()
-        {
-            Logger.Log(LogType.Debug, "Loading external modules");
-            AppDomain.CurrentDomain.AssemblyResolve += AppDomain_AssemblyResolve;
-
-            foreach (var moduleFile in new ModulesFolder().GetModuleFiles())
-            {
-                Logger.Log(LogType.Debug, $"Loading module {moduleFile.Name}");
-                var assembly = moduleFile.GetModule();
-
-                var serverModule = assembly?.ExportedTypes.SingleOrDefault(type => type.GetTypeInfo().IsSubclassOf(typeof(ServerModule)) && !type.GetTypeInfo().IsAbstract);
-                if (serverModule != null)
-                {
-                    Logger.Log(LogType.Debug, $"Created module {serverModule.FullName}");
-                    yield return (ServerModule) Activator.CreateInstance(serverModule, Services, ConfigType);
-                }
-            }
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            //_logger = serviceProvider.GetRequiredService<ILogger<ModuleManagerService>>();
+            _databaseService = serviceProvider.GetRequiredService<DatabaseService>();
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            //_databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
         }
         private Assembly AppDomain_AssemblyResolve(object sender, ResolveEventArgs args)
         {
-            Logger.Log(LogType.Debug, $"Resolving assembly {args.Name}");
+            _logger.LogDebug($"Resolving assembly {args.Name}");
             foreach (var moduleFile in new ModulesFolder().GetModuleFiles())
             {
-                Logger.Log(LogType.Debug, $"Searching assembly in module {moduleFile.Name}");
+                _logger.LogDebug($"Searching assembly in module {moduleFile.Name}");
                 var assembly = moduleFile.GetAssembly(args.Name);
                 if (assembly != null)
                 {
-                    Logger.Log(LogType.Debug, "Found assembly!");
+                    _logger.LogDebug("Found assembly!");
                     return assembly;
                 }
             }
-            
-            Logger.Log(LogType.Debug, $"Assembly {args.Name} not found!");
+
+            _logger.LogDebug($"Assembly {args.Name} not found!");
             return null;
         }
 
@@ -116,12 +98,12 @@ namespace PokeD.Server.Services
             foreach (var module in Modules)
                 module.OnServerMessage(message);
 
-            Logger.Log(LogType.Chat, message);
+            _logger.Log(LogLevel.Information, new EventId(10, "Chat"), message);
         }
 
         #region Trade
-        
-        private List<TradeInstance> CurrentTrades { get; } = new List<TradeInstance>();
+
+        private List<TradeInstance> CurrentTrades { get; } = new();
 
         public void TradeRequest(Client sender, DataItems monster, Client destClient, ServerModule callerModule)
         {
@@ -134,7 +116,7 @@ namespace PokeD.Server.Services
                 CurrentTrades.Add(trade = new TradeInstance { Client0ID = sender.ID, Client1ID = destClient.ID });
             else
                 trade = CurrentTrades.First(t => t.Equals(sender.ID, destClient.ID));
-            try // TODO: specify exceptions that should be processed here. 
+            try // TODO: specify exceptions that should be processed here.
             {
                 if (trade.Client0ID == sender.ID)
                     trade.Client0Monster = new Monster(monster);
@@ -144,12 +126,12 @@ namespace PokeD.Server.Services
             }
             catch (Exception e)
             {
-                Logger.Log(LogType.Error, $"Error while creating trade request! Type: {e.GetType()}, Message: {e.Message}");
+                _logger.LogError($"Error while creating trade request! Type: {e.GetType()}, Message: {e.Message}");
                 CurrentTrades.Remove(trade);
             }
 
 
-            Logger.Log(LogType.Trade, $"{sender.Name} sent a trade request to {destClient.Name}. Module {callerModule.GetType().Name}");
+            _logger.Log(LogLevel.Information, new EventId(20, "Trade"), $"{sender.Name} sent a trade request to {destClient.Name}. Module {callerModule.GetType().Name}");
         }
         public void TradeConfirm(Client sender, Client destClient, ServerModule callerModule)
         {
@@ -160,7 +142,7 @@ namespace PokeD.Server.Services
             var trade = CurrentTrades.Find(t => t.Equals(sender.ID, destClient.ID));
             if (trade == null)
             {
-                Logger.Log(LogType.Error, "Error while confirming trade request! trade was null.");
+                _logger.LogError("Error while confirming trade request! trade was null.");
                 return;
             }
             try
@@ -172,18 +154,18 @@ namespace PokeD.Server.Services
 
                 if (trade.Client0Confirmed && trade.Client1Confirmed)
                 {
-                    Services.GetService<DatabaseService>().DatabaseSet(new TradeTable(Services.GetService<DatabaseService>(), trade));
+                    _databaseService.DatabaseSet(new TradeTable(_databaseService, trade));
                     CurrentTrades.Remove(trade);
                 }
             }
             catch (Exception e)
             {
-                Logger.Log(LogType.Error, $"Error while confirming trade request! Type: {e.GetType()}, Message: {e.Message}");
+                _logger.LogError($"Error while confirming trade request! Type: {e.GetType()}, Message: {e.Message}");
                 CurrentTrades.Remove(trade);
             }
 
 
-            Logger.Log(LogType.Trade, $"{sender.Name} confirmed a trade request with {destClient.Name}. Module {callerModule.GetType().Name}");
+            _logger.Log(LogLevel.Information, new EventId(20, "Trade"), $"{sender.Name} confirmed a trade request with {destClient.Name}. Module {callerModule.GetType().Name}");
         }
         public void TradeCancel(Client sender, Client destClient, ServerModule callerModule)
         {
@@ -194,13 +176,13 @@ namespace PokeD.Server.Services
             var trade = CurrentTrades.Find(t => t.Equals(sender.ID, destClient.ID));
             if (trade == null)
             {
-                Logger.Log(LogType.Error, $"Error while cancelling trade request! trade was null.");
+                _logger.LogError($"Error while cancelling trade request! trade was null.");
                 return;
             }
             CurrentTrades.Remove(trade);
 
 
-            Logger.Log(LogType.Trade, $"{sender.Name} cancelled a trade request with {destClient.Name}. Module {callerModule.GetType().Name}");
+            _logger.Log(LogLevel.Information, new EventId(20, "Trade"), $"{sender.Name} cancelled a trade request with {destClient.Name}. Module {callerModule.GetType().Name}");
         }
 
         #endregion
@@ -208,36 +190,36 @@ namespace PokeD.Server.Services
         public void Kick(Client client, string reason = "")
         {
             client.SendKick(reason);
-            Logger.Log(LogType.Event, $"Player {client.Name} was kicked!");
+            _logger.Log(LogLevel.Information, new EventId(30, "Event"), $"Player {client.Name} was kicked!");
         }
         public void Ban(Client client, int minutes = 0, string reason = "")
         {
-            var previousBan = Services.GetService<DatabaseService>().DatabaseGet<BanTable>(client.ID);
+            var previousBan = _databaseService.DatabaseGet<BanTable>(client.ID);
             if (previousBan != null)
             {
-                Logger.Log(LogType.Event, $"Player {client.Name} was already banned! Reason - \"{previousBan.Reason}\". Unban time - {previousBan.UnbanTime:G}!");
+                _logger.Log(LogLevel.Information, new EventId(30, "Event"), $"Player {client.Name} was already banned! Reason - \"{previousBan.Reason}\". Unban time - {previousBan.UnbanTime:G}!");
                 return;
             }
 
             var banTable = new BanTable(client, DateTime.UtcNow + TimeSpan.FromMinutes(minutes <= 0 ? int.MaxValue : minutes), reason);
-            Services.GetService<DatabaseService>().DatabaseSet(banTable);
+            _databaseService.DatabaseSet(banTable);
             client.SendBan(banTable);
-            Logger.Log(LogType.Event, $"Player {client.Name} was banned. Reason - \"{banTable.Reason}\". Unban time - {banTable.UnbanTime:G}!");
+            _logger.Log(LogLevel.Information, new EventId(30, "Event"), $"Player {client.Name} was banned. Reason - \"{banTable.Reason}\". Unban time - {banTable.UnbanTime:G}!");
         }
         public void Unban(Client client)
         {
-            Services.GetService<DatabaseService>().DatabaseRemove<BanTable>(client.ID);
-            Logger.Log(LogType.Event, $"Player {client.Name} was unbanned!");
+            _databaseService.DatabaseRemove<BanTable>(client.ID);
+            _logger.Log(LogLevel.Information, new EventId(30, "Event"), $"Player {client.Name} was unbanned!");
         }
 
         public (bool IsBanned, BanTable BanTable) BanStatus(Client client)
         {
-            var banTable = Services.GetService<DatabaseService>().DatabaseGet<BanTable>(client.ID);
+            var banTable = _databaseService.DatabaseGet<BanTable>(client.ID);
             if (banTable != null)
             {
                 if (banTable.UnbanTime - DateTime.UtcNow < TimeSpan.Zero)
                 {
-                    Services.GetService<DatabaseService>().DatabaseRemove<BanTable>(client.ID);
+                    _databaseService.DatabaseRemove<BanTable>(client.ID);
                     return (false, null);
                 }
                 else
@@ -247,46 +229,12 @@ namespace PokeD.Server.Services
                 return (false, null);
         }
 
-        public override bool Start()
-        {
-            Logger.Log(LogType.Debug, "Starting Modules...");
-            Modules.RemoveAll(module => !module.Start());
-            Logger.Log(LogType.Debug, "Started Modules.");
-
-            Logger.Log(LogType.Debug, "Starting UpdateThread...");
-            UpdateToken = new CancellationTokenSource();
-            new Thread(UpdateCycle)
-            {
-                Name = "ModuleManagerUpdateTread",
-                IsBackground = true
-            }.Start();
-            Logger.Log(LogType.Debug, "Started UpdateThread.");
-
-            return true;
-        }
-        public override bool Stop()
-        {
-            Logger.Log(LogType.Debug, "Stopping UpdateThread...");
-            if (UpdateToken?.IsCancellationRequested == false)
-            {
-                UpdateToken.Cancel();
-                UpdateLock.Wait();
-            }
-            Logger.Log(LogType.Debug, "Stopped UpdateThread.");
-
-            Logger.Log(LogType.Debug, "Stopping Modules...");
-            foreach (var module in Modules)
-                module.Stop();
-            Logger.Log(LogType.Debug, "Stopped Modules.");
-
-            return true;
-        }
 
         public static long UpdateThread { get; private set; }
         private void UpdateCycle()
         {
             UpdateLock.Reset();
-            
+
             var watch = Stopwatch.StartNew();
             while (!UpdateToken.IsCancellationRequested)
             {
@@ -304,32 +252,59 @@ namespace PokeD.Server.Services
                 watch.Reset();
                 watch.Start();
             }
-            
+
             UpdateLock.Set();
         }
 
-        protected override void Dispose(bool disposing)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
-            if (!IsDisposed)
+            Modules.Clear();
+            //Modules.Add(new ModuleSCON(_serviceProvider));
+            Modules.Add(new ModuleP3D(_serviceProvider));
+
+            _logger.LogDebug("Starting Modules...");
+            foreach (var module in Modules)
+                await module.StartAsync(cancellationToken);
+            _logger.LogDebug("Started Modules.");
+
+            _logger.LogDebug("Starting UpdateThread...");
+            UpdateToken = new CancellationTokenSource();
+            new Thread(UpdateCycle)
             {
-                if (disposing)
-                {
-                    AppDomain.CurrentDomain.AssemblyResolve -= AppDomain_AssemblyResolve;
+                Name = "ModuleManagerUpdateTread",
+                IsBackground = true
+            }.Start();
+            _logger.LogDebug("Started UpdateThread.");
+        }
 
-                    ClientJoined?.Dispose();
-                    ClientLeaved?.Dispose();
-
-                    if (UpdateToken?.IsCancellationRequested == false)
-                    {
-                        UpdateToken.Cancel();
-                        UpdateLock.Wait();
-                    }
-                }
-
-
-                IsDisposed = true;
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogDebug("Stopping UpdateThread...");
+            if (UpdateToken?.IsCancellationRequested == false)
+            {
+                UpdateToken.Cancel();
+                UpdateLock.Wait(cancellationToken);
             }
-            base.Dispose(disposing);
+            _logger.LogDebug("Stopped UpdateThread.");
+
+            _logger.LogDebug("Stopping Modules...");
+            foreach (var module in Modules)
+                await module.StopAsync(cancellationToken);
+            _logger.LogDebug("Stopped Modules.");
+        }
+
+        public void Dispose()
+        {
+            AppDomain.CurrentDomain.AssemblyResolve -= AppDomain_AssemblyResolve;
+
+            ClientJoined?.Dispose();
+            ClientLeaved?.Dispose();
+
+            if (UpdateToken?.IsCancellationRequested == false)
+            {
+                UpdateToken.Cancel();
+                UpdateLock.Wait();
+            }
         }
     }
 }

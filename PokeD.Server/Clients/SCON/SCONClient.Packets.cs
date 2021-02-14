@@ -1,3 +1,4 @@
+/*
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -136,7 +137,7 @@ namespace PokeD.Server.Clients.SCON
             var logs = new List<Log>();
             foreach (var file in list)
                 logs.Add(new Log { LogFileName = file.Name });
-            
+
             SendPacket(new LogListResponsePacket { Logs = logs.ToArray() });
         }
         private void HandleLogFileRequest(LogFileRequestPacket packet)
@@ -211,7 +212,7 @@ namespace PokeD.Server.Clients.SCON
 
         private void HandleUploadLuaToServer(UploadScriptToServerPacket packet)
         {
-            
+
         }
         private void HandleReloadNPCs(ReloadScriptPacket packet)
         {
@@ -219,3 +220,4 @@ namespace PokeD.Server.Clients.SCON
         }
     }
 }
+*/

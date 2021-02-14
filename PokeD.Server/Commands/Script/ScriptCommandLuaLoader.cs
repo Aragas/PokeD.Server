@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
-using PokeD.Core.Services;
 using PokeD.Server.Storage.Folders;
 
 namespace PokeD.Server.Commands
@@ -10,8 +10,8 @@ namespace PokeD.Server.Commands
     {
         private const string Identifier = "command_";
 
-        public override IEnumerable<ScriptCommand> LoadCommands(IServiceContainer serviceContainer) => new LuaFolder().GetScriptFiles()
+        public override IEnumerable<ScriptCommand> LoadCommands(IServiceProvider serviceProvider) => new LuaFolder().GetScriptFiles()
             .Where(file => file.Name.ToLower().StartsWith(Identifier))
-            .Select(file => new ScriptCommand(serviceContainer, new CommandScriptLua(serviceContainer, file)));
+            .Select(file => new ScriptCommand(serviceProvider, new CommandScriptLua(serviceProvider, file)));
     }
 }

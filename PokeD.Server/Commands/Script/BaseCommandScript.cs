@@ -1,9 +1,10 @@
-using System;
-using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 
-using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Services;
+
+using System;
+using System.Collections.Generic;
 
 namespace PokeD.Server.Commands
 {
@@ -30,10 +31,12 @@ namespace PokeD.Server.Commands
         public abstract IEnumerable<string> Aliases { get; }
         public abstract PermissionFlags Permission { get; }
 
-        private IServiceContainer ServiceContainer { get; }
-        protected WorldService World => ServiceContainer.GetService<WorldService>();
+        protected WorldService World { get; }
 
-        protected BaseCommandScript(IServiceContainer serviceContainer) { ServiceContainer = serviceContainer; }
+        protected BaseCommandScript(IServiceProvider serviceProvider)
+        {
+            World = serviceProvider.GetRequiredService<WorldService>();
+        }
 
         public abstract void Handle(Client client, string alias, string[] arguments);
 

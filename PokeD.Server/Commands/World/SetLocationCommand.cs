@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
-using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
 namespace PokeD.Server.Commands
@@ -12,7 +12,7 @@ namespace PokeD.Server.Commands
         public override IEnumerable<string> Aliases => new [] { "sl" };
         public override PermissionFlags Permissions => PermissionFlags.ModeratorOrHigher;
 
-        public SetLocationCommand(IServiceContainer componentManager) : base(componentManager) { }
+        public SetLocationCommand(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {

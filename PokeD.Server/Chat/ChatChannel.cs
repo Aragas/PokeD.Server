@@ -7,15 +7,15 @@ namespace PokeD.Server.Chat
 {
     public abstract class ChatChannel
     {
-        private static ConcurrentDictionary<Client, ChatChannel> Subscription { get; } = new ConcurrentDictionary<Client, ChatChannel>();
+        private static ConcurrentDictionary<Client, ChatChannel> Subscription { get; } = new();
 
-        public List<ChatMessage> History { get; } = new List<ChatMessage>();
+        public List<ChatMessage> History { get; } = new();
 
         public abstract string Name { get; }
         public abstract string Description { get; }
         public abstract string Alias { get; }
 
-        public virtual bool MessageSend(ChatMessage chatMessage)
+        public virtual bool SendMessage(ChatMessage chatMessage)
         {
             if (!Subscription.TryGetValue(chatMessage.Sender, out var chatChannel) || chatChannel != this)
                 return false;
@@ -28,7 +28,7 @@ namespace PokeD.Server.Chat
         public virtual bool Subscribe(Client client)
         {
             if (Subscription.TryGetValue(client, out var chatChannel))
-                chatChannel.UnSubscribe(client);
+                chatChannel.Unsubscribe(client);
 
             lock (Subscription)
                 Subscription.AddOrUpdate(client, this, (_, cc) => cc);
@@ -36,11 +36,11 @@ namespace PokeD.Server.Chat
             return true;
         }
 
-        public virtual bool UnSubscribe(Client client)
+        public virtual bool Unsubscribe(Client client)
         {
             lock (Subscription)
                 Subscription.TryRemove(client, out _);
-            
+
             return true;
         }
     }

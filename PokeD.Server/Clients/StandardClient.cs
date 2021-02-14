@@ -20,13 +20,13 @@ namespace PokeD.Server.Clients
     {
         protected TPacketTransmission Stream { get; }
 
-        private ConcurrentQueue<TPacketType> PacketsToSend { get; } = new ConcurrentQueue<TPacketType>();
+        private ConcurrentQueue<TPacketType> PacketsToSend { get; } = new();
 
 #if DEBUG
         // -- Debug -- //
         private const int QueueSize = 100;
-        protected virtual Queue<TPacketType> Received { get; } = new Queue<TPacketType>(QueueSize);
-        protected virtual Queue<TPacketType> Sended { get; } = new Queue<TPacketType>(QueueSize);
+        protected virtual Queue<TPacketType> Received { get; } = new(QueueSize);
+        protected virtual Queue<TPacketType> Sended { get; } = new(QueueSize);
         // -- Debug -- //
 #endif
 

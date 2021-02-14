@@ -1,11 +1,10 @@
-﻿using System.Collections.Generic;
-
-using PokeD.Core.Services;
+﻿using System;
+using System.Collections.Generic;
 
 namespace PokeD.Server.Commands
 {
     public abstract class ScriptCommandLoader
     {
-        public abstract IEnumerable<ScriptCommand> LoadCommands(IServiceContainer serviceContainer);
+        public abstract IEnumerable<ScriptCommand> LoadCommands(IServiceProvider serviceProvider);
     }
 }

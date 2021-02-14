@@ -1,4 +1,5 @@
-﻿using PokeD.Core.Services;
+﻿using System;
+
 using PokeD.Server.Clients;
 
 namespace PokeD.Server.Commands.Chat
@@ -9,7 +10,7 @@ namespace PokeD.Server.Commands.Chat
         public override string Description => "Speak as the Server.";
         public override PermissionFlags Permissions => PermissionFlags.AdministratorOrHigher;
 
-        public SayCommand(IServiceContainer componentManager) : base(componentManager) { }
+        public SayCommand(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {

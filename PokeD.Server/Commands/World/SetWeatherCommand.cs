@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Data;
 
@@ -14,7 +13,7 @@ namespace PokeD.Server.Commands
         public override IEnumerable<string> Aliases => new [] { "sw" };
         public override PermissionFlags Permissions => PermissionFlags.ModeratorOrHigher;
 
-        public SetWeatherCommand(IServiceContainer componentManager) : base(componentManager) { }
+        public SetWeatherCommand(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {

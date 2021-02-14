@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
-using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
 namespace PokeD.Server.Commands
@@ -13,7 +13,7 @@ namespace PokeD.Server.Commands
         public override PermissionFlags Permissions => PermissionFlags.UnVerified;
         public override bool LogCommand => false;
 
-        public LoginCommand(IServiceContainer componentManager) : base(componentManager) { }
+        public LoginCommand(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {

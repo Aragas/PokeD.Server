@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 
-using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
 namespace PokeD.Server.Commands
@@ -14,7 +13,7 @@ namespace PokeD.Server.Commands
         public override IEnumerable<string> Aliases => new [] { "sperm", "sp" };
         public override PermissionFlags Permissions => PermissionFlags.AdministratorOrHigher;
 
-        public SetPermissionCommand(IServiceContainer componentManager) : base(componentManager) { }
+        public SetPermissionCommand(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {

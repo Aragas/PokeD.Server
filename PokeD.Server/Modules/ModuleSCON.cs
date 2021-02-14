@@ -1,4 +1,5 @@
-﻿using System;
+﻿/*
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -12,6 +13,7 @@ using PokeD.Core.Data.P3D;
 using PokeD.Core.Services;
 using PokeD.Server.Clients;
 using PokeD.Server.Clients.SCON;
+using PokeD.Server.Services;
 using PokeD.Server.Storage.Files;
 
 namespace PokeD.Server.Modules
@@ -44,7 +46,12 @@ namespace PokeD.Server.Modules
 
         private bool IsDisposed { get; set; }
 
-        public ModuleSCON(IServiceContainer services, ConfigType configType) : base(services, configType) { }
+        public ModuleSCON(WorldService world, DatabaseService database, SecurityService security,
+            ModuleManagerService moduleManager, ChatChannelManagerService chatChannelManager,
+            CommandManagerService commandManager) : base(world, database, security, moduleManager, chatChannelManager,
+            commandManager)
+        {
+        }
 
 
         public override bool Start()
@@ -194,3 +201,4 @@ namespace PokeD.Server.Modules
         }
     }
 }
+*/

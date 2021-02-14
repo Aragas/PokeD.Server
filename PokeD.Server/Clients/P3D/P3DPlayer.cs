@@ -61,7 +61,7 @@ namespace PokeD.Server.Clients.P3D
         public override string IP => Stream.Host;
 
         public override DateTime ConnectionTime { get; } = DateTime.Now;
-        public override CultureInfo Language => new CultureInfo("en");
+        public override CultureInfo Language => new("en");
         public override PermissionFlags Permissions { get; set; } = PermissionFlags.UnVerified;
 
         private bool IsInitialized { get; set; }
@@ -210,7 +210,7 @@ namespace PokeD.Server.Clients.P3D
 
         private DataItems GenerateDataItems()
         {
-            return new DataItems(
+            return new(
                 GameMode,
                 IsGameJoltPlayer ? "1" : "0",
                 GameJoltID.ToString(CultureInfo),
@@ -227,7 +227,7 @@ namespace PokeD.Server.Clients.P3D
                 PokemonSkin,
                 PokemonFacing.ToString(CultureInfo));
         }
-        public override GameDataPacket GetDataPacket() => new GameDataPacket { Origin = ID, DataItems = GenerateDataItems() };
+        public override GameDataPacket GetDataPacket() => new() { Origin = ID, DataItems = GenerateDataItems() };
 
 
         protected override void Dispose(bool disposing)

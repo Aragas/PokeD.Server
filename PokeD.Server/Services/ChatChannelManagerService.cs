@@ -1,44 +1,32 @@
-﻿using System;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
+using PokeD.Server.Chat;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-
-using PCLExt.Config;
-
-using PokeD.Core;
-using PokeD.Core.Services;
-using PokeD.Server.Chat;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PokeD.Server.Services
 {
-    public class ChatChannelManagerService : BaseServerService
+    public sealed class ChatChannelManagerService : IHostedService, IDisposable
     {
-        private List<ChatChannel> ChatChannels { get; } = new List<ChatChannel>();
+        private readonly ILogger _logger;
+        private List<ChatChannel> ChatChannels { get; } = new();
 
-        private bool IsDisposed { get; set; }
-
-        public ChatChannelManagerService(IServiceContainer services, ConfigType configType) : base(services, configType) { }
+        public ChatChannelManagerService(ILogger<ChatChannelManagerService> logger)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
 
         public ChatChannel FindByName(string name) => ChatChannels.Find(chatChannel => chatChannel.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         public ChatChannel FindByAlias(string alias) => ChatChannels.Find(chatChannel => chatChannel.Alias.Equals(alias, StringComparison.OrdinalIgnoreCase));
 
         public IReadOnlyList<ChatChannel> GetChatChannels() => ChatChannels;
 
-        public override bool Start()
-        {
-            Logger.Log(LogType.Debug, "Loading ChatChannels...");
-            LoadChatChannels();
-            Logger.Log(LogType.Debug, "Loaded ChatChannels.");
-
-            return true;
-        }
-        public override bool Stop()
-        {
-            Logger.Log(LogType.Debug, "Unloading ChatChannels...");
-            ChatChannels.Clear();
-            Logger.Log(LogType.Debug, "Unloaded ChatChannels.");
-            return true;
-        }
         private void LoadChatChannels()
         {
             var chatChannelTypes = typeof(ChatChannelManagerService).GetTypeInfo().Assembly.DefinedTypes
@@ -58,19 +46,27 @@ namespace PokeD.Server.Services
                 ChatChannels.AddRange(scriptChatChannelLoader.LoadChatChannels());
         }
 
-        protected override void Dispose(bool disposing)
+        public Task StartAsync(CancellationToken cancellationToken)
         {
-            if (!IsDisposed)
-            {
-                if (disposing)
-                {
-                    ChatChannels.Clear();
-                }
+            _logger.LogDebug("Loading ChatChannels...");
+            LoadChatChannels();
+            _logger.LogDebug("Loaded ChatChannels.");
 
+            return Task.CompletedTask;
+        }
 
-                IsDisposed = true;
-            }
-            base.Dispose(disposing);
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogDebug("Unloading ChatChannels...");
+            ChatChannels.Clear();
+            _logger.LogDebug("Unloaded ChatChannels.");
+
+            return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            ChatChannels.Clear();
         }
     }
 }

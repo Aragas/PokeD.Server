@@ -119,17 +119,23 @@ namespace PokeD.Server.Clients.P3D
                     }
                 }
                 else
-                    Logger.Log(LogType.Warning, $"P3D Reading Error: ParseGameData DataItems < 14. Packet DataItems {packet.DataItems}.");
+                {
+                    // TODO:
+                    //Logger.Log(LogType.Warning, $"P3D Reading Error: ParseGameData DataItems < 14. Packet DataItems {packet.DataItems}.");
+                }
             }
             else
-                Logger.Log(LogType.Warning, "P3D Reading Error: ParseGameData DataItems is null.");
+            {
+                // TODO:
+                //Logger.Log(LogType.Warning, "P3D Reading Error: ParseGameData DataItems is null.");
+            }
         }
 
         private bool FirstGameData { get; set; }
         private void HandleGameData(GameDataPacket packet)
         {
             ParseGameData(packet);
-            
+
             if(IsInitialized)
                 Save();
 

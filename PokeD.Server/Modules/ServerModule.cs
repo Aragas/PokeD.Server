@@ -1,17 +1,21 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.Extensions.Hosting;
 
 using PCLExt.Config;
 
 using PokeD.Core;
 using PokeD.Core.Data.P3D;
-using PokeD.Core.Services;
 using PokeD.Server.Chat;
 using PokeD.Server.Clients;
-using PokeD.Server.Components;
 using PokeD.Server.Database;
 using PokeD.Server.Services;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace PokeD.Server.Modules
 {
@@ -21,35 +25,36 @@ namespace PokeD.Server.Modules
         ushort Port { get; }
     }
 
-    public abstract class ServerModule : ServerComponent, IServerModuleBaseSettings
+    public abstract class ServerModule : IHostedService, IServerModuleBaseSettings, IUpdatable
     {
-        #region Settings
-
         public abstract bool Enabled { get; protected set; }
         public abstract ushort Port { get; protected set; }
 
-        #endregion Settings
 
-        protected IServiceContainer Services { get; }
-
-        [ConfigIgnore]
-        public virtual WorldService World => Services.GetService<WorldService>();
-        [ConfigIgnore]
-        public virtual DatabaseService Database => Services.GetService<DatabaseService>();
-        [ConfigIgnore]
-        public virtual SecurityService Security => Services.GetService<SecurityService>();
-        [ConfigIgnore]
-        public virtual ModuleManagerService ModuleManager => Services.GetService<ModuleManagerService>();
+        public virtual WorldService World { get; }
+        public virtual DatabaseService Database { get; }
+        public virtual SecurityService Security { get; }
+        public virtual ModuleManagerService ModuleManager { get; }
+        public virtual ChatChannelManagerService ChatChannelManager { get; }
+        public virtual CommandManagerService CommandManager { get; }
 
         [ConfigIgnore]
         public virtual bool ClientsVisible => true;
 
-        private bool IsDisposed { get; set; }
+        private readonly ILogger _logger;
+
+        protected ServerModule(IServiceProvider serviceProvider)
+        {
+            _logger = serviceProvider.GetRequiredService<ILogger<ServerModule>>();
+            World = serviceProvider.GetRequiredService<WorldService>();
+            Database = serviceProvider.GetRequiredService<DatabaseService>();
+            Security = serviceProvider.GetRequiredService<SecurityService>();
+            ModuleManager = serviceProvider.GetRequiredService<ModuleManagerService>();
+            ChatChannelManager = serviceProvider.GetRequiredService<ChatChannelManagerService>();
+            CommandManager = serviceProvider.GetRequiredService<CommandManagerService>();
+        }
 
 
-        protected ServerModule(IServiceContainer services, ConfigType configType) : base(configType) { Services = services; }
-
-        
         public abstract void ClientsForeach(Action<IReadOnlyList<Client>> func);
         public abstract TResult ClientsSelect<TResult>(Func<IReadOnlyList<Client>, TResult> func);
         public abstract IReadOnlyList<TResult> ClientsSelect<TResult>(Func<IReadOnlyList<Client>, IReadOnlyList<TResult>> func);
@@ -57,7 +62,7 @@ namespace PokeD.Server.Modules
         public TResult AllClientsSelect<TResult>(Func<IReadOnlyList<Client>, TResult> func) => ModuleManager.AllClientsSelect(func);
         public IReadOnlyList<TResult> AllClientsSelect<TResult>(Func<IReadOnlyList<Client>, IReadOnlyList<TResult>> func) => ModuleManager.AllClientsSelect(func);
 
-        
+
         public Client GetClient(int id) => ModuleManager.GetClient(id);
         public Client GetClient(string name) => ModuleManager.GetClient(name);
         public int GetClientID(string name) => ModuleManager.GetClientID(name);
@@ -85,21 +90,21 @@ namespace PokeD.Server.Modules
             var client = sender as Client;
            ((Action<object, ClientJoinedEventArgs>) ModuleManager.ClientJoined)?.Invoke(this, new ClientJoinedEventArgs(client));
 
-            Services.GetService<ChatChannelManagerService>().FindByAlias("global").Subscribe(client);
+           ChatChannelManager.FindByAlias("global").Subscribe(client);
 
             if (ClientsVisible)
-                Logger.Log(LogType.Event, $"The player {client.Name} joined the game from IP {client.IP}");
+                _logger.Log(LogLevel.Information, new EventId(30, "Event"), $"The player {client.Name} joined the game from IP {client.IP}");
         }
         protected virtual void OnClientLeave(object sender, EventArgs eventArgs)
         {
             var client = sender as Client;
             ((Action<object, ClientLeavedEventArgs>) ModuleManager.ClientLeaved)?.Invoke(this, new ClientLeavedEventArgs(client));
 
-            foreach (var chatChannel in Services.GetService<ChatChannelManagerService>().GetChatChannels())
-                chatChannel.UnSubscribe(client);
+            foreach (var chatChannel in ChatChannelManager.GetChatChannels())
+                chatChannel.Unsubscribe(client);
 
             if (ClientsVisible)
-                Logger.Log(LogType.Event, $"The player {client.Name} disconnected, playtime was {DateTime.Now - client.ConnectionTime:hh\\:mm\\:ss}");
+                _logger.Log(LogLevel.Information, new EventId(30, "Event"), $"The player {client.Name} disconnected, playtime was {DateTime.Now - client.ConnectionTime:hh\\:mm\\:ss}");
         }
 
         public void OnServerMessage(string message)
@@ -113,9 +118,9 @@ namespace PokeD.Server.Modules
 
         public void OnClientChatMessage(ChatMessage chatMessage)
         {
-            foreach (var chatChannel in Services.GetService<ChatChannelManagerService>().GetChatChannels())
-                if (chatChannel.MessageSend(chatMessage))
-                    Logger.LogChatMessage(chatMessage.Sender.Name, chatChannel.Name, chatMessage.Message);
+            foreach (var chatChannel in ChatChannelManager.GetChatChannels())
+                if (chatChannel.SendMessage(chatMessage))
+                    _logger.Log(LogLevel.Information, new EventId(10, "Chat"), chatMessage.Sender.Name, chatChannel.Name, chatMessage.Message);
         }
 
         public virtual void OnTradeRequest(Client sender, DataItems monster, Client destClient) => ModuleManager.TradeRequest(sender, monster, destClient, this);
@@ -133,48 +138,11 @@ namespace PokeD.Server.Modules
 
         public virtual void OnPosition(Client sender) { }
 
-        public bool ExecuteClientCommand(Client client, string command) => Services.GetService<CommandManagerService>().ExecuteClientCommand(client, command);
-        
+        public bool ExecuteClientCommand(Client client, string command) => CommandManager.ExecuteClientCommand(client, command);
 
-        public override bool Start()
-        {
-            if (!base.Start())
-                return false;
+        public abstract Task StartAsync(CancellationToken cancellationToken);
+        public abstract Task StopAsync(CancellationToken cancellationToken);
 
-            if (!Enabled)
-            {
-                Logger.Log(LogType.Debug, $"{ComponentName} not enabled!");
-                return false;
-            }
-
-            return true;
-        }
-        public override bool Stop()
-        {
-            if (!base.Stop())
-                return false;
-
-            return true;
-        }
-
-        public override int GetHashCode() => ComponentName.GetHashCode();
-
-        private bool Equals(ServerModule a, ServerModule b) => string.Equals(a.ComponentName, b.ComponentName, StringComparison.Ordinal);
-        public override bool Equals(object obj) => obj is ServerModule serverModule && Equals(this, serverModule);
-
-        protected override void Dispose(bool disposing)
-        {
-            if (!IsDisposed)
-            {
-                if (disposing)
-                {
-
-                }
-
-
-                IsDisposed = true;
-            }
-            base.Dispose(disposing);
-        }
+        public abstract void Update();
     }
 }

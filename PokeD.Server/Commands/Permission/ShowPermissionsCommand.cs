@@ -1,6 +1,5 @@
 ﻿using System;
 
-using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
 namespace PokeD.Server.Commands
@@ -11,7 +10,7 @@ namespace PokeD.Server.Commands
         public override string Description => "Show available Client permissions.";
         public override PermissionFlags Permissions => PermissionFlags.AdministratorOrHigher;
 
-        public ShowPermissionsCommand(IServiceContainer componentManager) : base(componentManager) { }
+        public ShowPermissionsCommand(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {

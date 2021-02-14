@@ -11,11 +11,11 @@ namespace PokeD.Server.Chat
         public override string Description => "Local Chat System.";
         public override string Alias => "local";
 
-        public Dictionary<string, List<Client>> ClientsInLocation { get; } = new Dictionary<string, List<Client>>();
-        public Dictionary<Client, string> ClientInLocation { get; } = new Dictionary<Client, string>();
+        public Dictionary<string, List<Client>> ClientsInLocation { get; } = new();
+        public Dictionary<Client, string> ClientInLocation { get; } = new();
 
 
-        public override bool MessageSend(ChatMessage chatMessage)
+        public override bool SendMessage(ChatMessage chatMessage)
         {
             if (!ClientInLocation.ContainsKey(chatMessage.Sender))
                 return false;
@@ -65,7 +65,7 @@ namespace PokeD.Server.Chat
             return true;
         }
 
-        public override bool UnSubscribe(Client client)
+        public override bool Unsubscribe(Client client)
         {
             if (!ClientInLocation.ContainsKey(client))
                 return false;

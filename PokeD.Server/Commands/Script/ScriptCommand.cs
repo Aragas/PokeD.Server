@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
-using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
 namespace PokeD.Server.Commands
@@ -14,7 +14,7 @@ namespace PokeD.Server.Commands
         public override IEnumerable<string> Aliases => Script.Aliases;
         public override PermissionFlags Permissions => Script.Permission;
 
-        public ScriptCommand(IServiceContainer serviceContainer, BaseCommandScript script) : base(serviceContainer) => Script = script;
+        public ScriptCommand(IServiceProvider serviceProvider, BaseCommandScript script) : base(serviceProvider) => Script = script;
 
         public override void Handle(Client client, string alias, string[] arguments) => Script.Handle(client, alias, arguments);
 

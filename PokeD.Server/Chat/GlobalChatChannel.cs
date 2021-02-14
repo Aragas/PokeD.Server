@@ -11,13 +11,13 @@ namespace PokeD.Server.Chat
         public override string Alias => "global";
 
 
-        public List<Client> Subscribers { get; } = new List<Client>();
+        public List<Client> Subscribers { get; } = new();
 
-        public override bool MessageSend(ChatMessage chatMessage)
+        public override bool SendMessage(ChatMessage chatMessage)
         {
-            if (!base.MessageSend(chatMessage))
+            if (!base.SendMessage(chatMessage))
                 return false;
-            
+
             lock (Subscribers)
             {
                 foreach (var client in Subscribers)
@@ -43,9 +43,9 @@ namespace PokeD.Server.Chat
 
             return false;
         }
-        public override bool UnSubscribe(Client client)
+        public override bool Unsubscribe(Client client)
         {
-            if (!base.UnSubscribe(client))
+            if (!base.Unsubscribe(client))
                 return false;
 
             lock (Subscribers)

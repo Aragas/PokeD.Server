@@ -1,16 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
-
-using PCLExt.Config;
+﻿using Microsoft.Extensions.Hosting;
 
 using PokeD.Core;
 using PokeD.Core.Data;
 using PokeD.Core.Packets.P3D.Shared;
-using PokeD.Core.Services;
 using PokeD.Server.Chat;
 using PokeD.Server.Clients;
 using PokeD.Server.Commands;
@@ -18,11 +10,21 @@ using PokeD.Server.Data;
 using PokeD.Server.Database;
 using PokeD.Server.Modules;
 
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+
 namespace PokeD.Server.Services
 {
-    public class CommandManagerService : BaseServerService
+    public sealed class CommandManagerService : IHostedService, IDisposable
     {
-        private class ServerClient : Client
+        private sealed class ServerClient : Client
         {
             public override int ID { get; set; } = 0;
             public override string Nickname { get; protected set; } = "SERVER";
@@ -39,9 +41,16 @@ namespace PokeD.Server.Services
             public ServerClient(ServerModule serverModule) : base(serverModule) { }
 
             public override void SendPacket<TPacket>(TPacket func) { }
-
-            public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage) => Logger.LogChatMessage(chatMessage.Sender.Name, chatChannel.Name, chatMessage.Message);
-            public override void SendServerMessage(string text) => Logger.Log(LogType.Command, text);
+            public override void SendChatMessage(ChatChannel chatChannel, ChatMessage chatMessage)
+            {
+                // TODO:
+                //_logger.LogChatMessage(chatMessage.Sender.Name, chatChannel.Name, chatMessage.Message);
+            }
+            public override void SendServerMessage(string text)
+            {
+                // TODO:
+                //_logger.Log(LogType.Command, text);
+            }
             public override void SendPrivateMessage(ChatMessage chatMessage) { }
 
             public override void Load(ClientTable data) { }
@@ -50,11 +59,16 @@ namespace PokeD.Server.Services
             public override void Update() { }
         }
 
-        private List<Command> Commands { get; } = new List<Command>();
+        private List<Command> Commands { get; } = new();
 
-        private bool IsDisposed { get; set; }
+        private readonly ILogger _logger;
+        private readonly IServiceProvider _serviceProvider;
 
-        public CommandManagerService(IServiceContainer services, ConfigType configType) : base(services, configType) { }
+        public CommandManagerService(ILogger<CommandManagerService> logger, IServiceProvider serviceProvider)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        }
 
         /// <summary>
         /// Return <see langword="false"/> if <see cref="Command"/> not found.
@@ -95,17 +109,17 @@ namespace PokeD.Server.Services
             }
 
             if(command.LogCommand && (client.Permissions & PermissionFlags.UnVerified) == 0)
-                Logger.LogCommandMessage(client.Name, $"/{alias} {string.Join(" ", arguments)}");
+                _logger.Log(LogLevel.Information, new EventId(40, "Command"), client.Name, $"/{alias} {string.Join(" ", arguments)}");
 
             if (command.Permissions == PermissionFlags.None)
             {
-                client.SendServerMessage(@"Command is disabled!");
+                client.SendServerMessage("Command is disabled!");
                 return;
             }
 
             if ((client.Permissions & command.Permissions) == PermissionFlags.None)
             {
-                client.SendServerMessage(@"You have not the permission to use this command!");
+                client.SendServerMessage("You have not the permission to use this command!");
                 return;
             }
 
@@ -118,20 +132,6 @@ namespace PokeD.Server.Services
         public IReadOnlyList<Command> GetCommands() => Commands;
 
 
-        public override bool Start()
-        {
-            Logger.Log(LogType.Debug, "Loading Commands...");
-            LoadCommands();
-            Logger.Log(LogType.Debug, "Loaded Commands.");
-            return true;
-        }
-        public override bool Stop()
-        {
-            Logger.Log(LogType.Debug, "Unloading Commands...");
-            Commands.Clear();
-            Logger.Log(LogType.Debug, "Unloaded Commands.");
-            return true;
-        }
         private void LoadCommands()
         {
             var types = typeof(CommandManagerService).GetTypeInfo().Assembly.DefinedTypes
@@ -139,7 +139,7 @@ namespace PokeD.Server.Services
                 !typeInfo.IsDefined(typeof(CommandDisableAutoLoadAttribute), true) &&
                 !typeInfo.IsAbstract);
 
-            foreach (var command in types.Where(type => !Equals(type, typeof(ScriptCommand).GetTypeInfo())).Select(type => (Command)Activator.CreateInstance(type.AsType(), Services)))
+            foreach (var command in types.Where(type => !Equals(type, typeof(ScriptCommand).GetTypeInfo())).Select(type => (Command) Activator.CreateInstance(type.AsType(), _serviceProvider)))
                 Commands.Add(command);
 
 
@@ -149,22 +149,30 @@ namespace PokeD.Server.Services
                 !typeInfo.IsAbstract);
 
             foreach (var scriptCommandLoader in scriptCommandLoaderTypes.Where(type => type != typeof(ScriptCommandLoader).GetTypeInfo()).Select(type => (ScriptCommandLoader) Activator.CreateInstance(type.AsType())))
-                Commands.AddRange(scriptCommandLoader.LoadCommands(Services));
+                Commands.AddRange(scriptCommandLoader.LoadCommands(_serviceProvider));
         }
 
-        protected override void Dispose(bool disposing)
+        public Task StartAsync(CancellationToken cancellationToken)
         {
-            if (!IsDisposed)
-            {
-                if (disposing)
-                {
-                    Commands.Clear();
-                }
+            _logger.LogDebug("Loading Commands...");
+            LoadCommands();
+            _logger.LogDebug("Loaded Commands.");
 
+            return Task.CompletedTask;
+        }
 
-                IsDisposed = true;
-            }
-            base.Dispose(disposing);
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogDebug("Unloading Commands...");
+            Commands.Clear();
+            _logger.LogDebug("Unloaded Commands.");
+
+            return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            Commands.Clear();
         }
     }
 }

@@ -1,24 +1,24 @@
-﻿using System;
-using System.Diagnostics;
-using System.Globalization;
-using System.Threading;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 using PCLExt.Config;
 
 using PokeD.Core;
 using PokeD.Core.Data.P3D;
-using PokeD.Core.Services;
 using PokeD.Server.Data;
-using PokeD.Server.Storage.Files;
+
+using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PokeD.Server.Services
 {
-    public class WorldService : BaseServerService
+    public sealed class WorldService : IHostedService, IDisposable
     {
-        protected override IConfigFile ServiceConfigFile => new WorldComponentConfigFile(ConfigType);
-
-        private CancellationTokenSource UpdateToken { get; set; } = new CancellationTokenSource();
-        private ManualResetEventSlim UpdateLock { get; } = new ManualResetEventSlim(false);
+        private CancellationTokenSource UpdateToken { get; set; } = new();
+        private ManualResetEventSlim UpdateLock { get; } = new(false);
 
         [ConfigIgnore]
         public bool UseLocation { get; set; }
@@ -35,7 +35,7 @@ namespace PokeD.Server.Services
         public bool UseRealTime { get; set; } = true;
 
         public bool DoDayCycle { get; set; } = true;
-        
+
         public int WeatherUpdateTimeInMinutes { get; set; } = 60;
 
         public Season Season { get; set; } = Season.Spring;
@@ -55,10 +55,13 @@ namespace PokeD.Server.Services
 
         private DateTime WorldUpdateTime { get; set; } = DateTime.UtcNow;
 
-        private bool IsDisposed { get; set; }
 
+        private readonly ILogger _logger;
 
-        public WorldService(IServiceContainer services, ConfigType configType) : base(services, configType) { }
+        public WorldService(ILogger<ChatChannelManagerService> logger)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
 
 
         private int WeekOfYear => (int) (DateTime.Now.DayOfYear - ((DateTime.Now.DayOfWeek - DayOfWeek.Monday) / 7.0) + 1.0);
@@ -106,20 +109,20 @@ namespace PokeD.Server.Services
                 case Season.Fall:
                     //if (r < 5)
                     //    Weather = Weather.Snow;
-                    //else 
+                    //else
                     if (r >= 5 && r < 80)
                         Weather = Weather.Rain;
                     else
                         Weather = Weather.Clear;
                     break;
-                
+
                 default:
                     Weather = Weather.Clear;
                 break;
             }
 
-            Logger.Log(LogType.Event, $"Set Season: {Season}");
-            Logger.Log(LogType.Event, $"Set Weather: {Weather}");
+            _logger.Log(LogLevel.Information, new EventId(30, "Event"), $"Set Season: {Season}");
+            _logger.Log(LogLevel.Information, new EventId(30, "Event"), $"Set Weather: {Weather}");
         }
 
         public void UpdateCycle()
@@ -150,7 +153,6 @@ namespace PokeD.Server.Services
         }
 
 
-
         public DataItems GenerateDataItems()
         {
             if (DoDayCycle)
@@ -178,11 +180,9 @@ namespace PokeD.Server.Services
         }
 
 
-        public override bool Start()
+        public Task StartAsync(CancellationToken cancellationToken)
         {
-            Logger.Log(LogType.Debug, "Loading World...");
-            if (!base.Start())
-                return false;
+            _logger.LogDebug("Loading World...");
 
             UpdateToken = new CancellationTokenSource();
             new Thread(UpdateCycle)
@@ -191,44 +191,33 @@ namespace PokeD.Server.Services
                 IsBackground = true
             }.Start();
 
-            Logger.Log(LogType.Debug, "Loaded World.");
+            _logger.LogDebug("Loaded World.");
 
-            return true;
+            return Task.CompletedTask;
         }
-        public override bool Stop()
-        {
-            Logger.Log(LogType.Debug, "Unloading World...");
-            if (!base.Stop())
-                return false;
 
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogDebug("Unloading World...");
+
+            if (UpdateToken?.IsCancellationRequested == false)
+            {
+                UpdateToken.Cancel();
+                UpdateLock.Wait(cancellationToken);
+            }
+
+            _logger.LogDebug("Unloaded World.");
+
+            return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
             if (UpdateToken?.IsCancellationRequested == false)
             {
                 UpdateToken.Cancel();
                 UpdateLock.Wait();
             }
-
-            Logger.Log(LogType.Debug, "Unloaded World.");
-
-            return true;
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (!IsDisposed)
-            {
-                if (disposing)
-                {
-                    if (UpdateToken?.IsCancellationRequested == false)
-                    {
-                        UpdateToken.Cancel();
-                        UpdateLock.Wait();
-                    }
-                }
-
-
-                IsDisposed = true;
-            }
-            base.Dispose(disposing);
         }
     }
 }

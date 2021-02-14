@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
-using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
 namespace PokeD.Server.Commands
@@ -13,7 +13,7 @@ namespace PokeD.Server.Commands
         public override IEnumerable<string> Aliases => new [] { "k" };
         public override PermissionFlags Permissions => PermissionFlags.ModeratorOrHigher;
 
-        public KickCommand(IServiceContainer componentManager) : base(componentManager) { }
+        public KickCommand(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {

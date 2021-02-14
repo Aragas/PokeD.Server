@@ -16,7 +16,7 @@ namespace PokeD.Server.Storage.Files
     public class ModuleFile : BaseFile
     {
         private Assembly ModuleAssembly { get; }
-        private Dictionary<string, Assembly> DependencyAssemblyNames { get; } = new Dictionary<string, Assembly>();
+        private Dictionary<string, Assembly> DependencyAssemblyNames { get; } = new();
 
         public ModuleFile(IFile file) : base(file)
         {

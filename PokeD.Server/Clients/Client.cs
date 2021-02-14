@@ -36,10 +36,10 @@ namespace PokeD.Server.Clients
         public abstract CultureInfo Language { get; }
 
         protected CancellationTokenSource UpdateToken { get; set; }
-        protected ManualResetEventSlim UpdateLock { get; } = new ManualResetEventSlim(false);
+        protected ManualResetEventSlim UpdateLock { get; } = new(false);
         protected Thread UpdateLockThread { get; set; }
 
-        protected ManualResetEventSlim ConnectionLock { get; } = new ManualResetEventSlim(true); // Will cause deadlock if false. See Leave();
+        protected ManualResetEventSlim ConnectionLock { get; } = new(true); // Will cause deadlock if false. See Leave();
 
         private ServerModule Module { get; }
 

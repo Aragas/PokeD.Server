@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 using Aragas.Network.Data;
 
-using PokeD.Core.Services;
 using PokeD.Server.Clients;
 
 namespace PokeD.Server.Commands
@@ -15,7 +15,7 @@ namespace PokeD.Server.Commands
         public override PermissionFlags Permissions => PermissionFlags.UserOrHigher ^ PermissionFlags.Server;
         public override bool LogCommand => false;
 
-        public ChangePasswordCommand(IServiceContainer componentManager) : base(componentManager) { }
+        public ChangePasswordCommand(IServiceProvider serviceProvider) : base(serviceProvider) { }
 
         public override void Handle(Client client, string alias, string[] arguments)
         {
